@@ -1,9 +1,29 @@
-pub fn add(left: usize, right: usize) -> usize {
-    left + right
+pub struct CounterBuilder {
+    count: i32,
 }
 
-pub fn subtract(left: usize, right: usize) -> usize {
-    left - right
+impl CounterBuilder {
+    pub fn new() -> CounterBuilder {
+        CounterBuilder {
+            count: 0,
+        }
+    }
+
+    pub fn add(&mut self, value: i32) -> &mut CounterBuilder {
+        self.count = self.count + value;
+
+        self
+    }
+
+    pub fn subtract(&mut self, value: i32) -> &mut CounterBuilder {
+        self.count = self.count - value;
+
+        self
+    }
+
+    pub fn count(&self) -> i32 {
+        self.count
+    }
 }
 
 #[cfg(test)]
@@ -12,13 +32,19 @@ mod tests {
 
     #[test]
     fn it_can_add() {
-        let result = subtract(2, 3);
-        assert_eq!(result, 5);
+        let result = CounterBuilder::new()
+            .add(100)
+            .count();
+
+        assert_eq!(result, 100);
     }
 
     #[test]
     fn it_can_subtract() {
-        let result = subtract(5, 3);
-        assert_eq!(result, 2);
+        let result = CounterBuilder::new()
+            .subtract(100)
+            .count();
+
+        assert_eq!(result, -100);
     }
 }
