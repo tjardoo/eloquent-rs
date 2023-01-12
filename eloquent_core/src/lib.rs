@@ -9,6 +9,12 @@ impl CounterBuilder {
         }
     }
 
+    pub fn init_value(&mut self, value: i32) -> &mut CounterBuilder {
+        self.count = value;
+
+        self
+    }
+
     pub fn add(&mut self, value: i32) -> &mut CounterBuilder {
         self.count = self.count + value;
 
@@ -29,6 +35,15 @@ impl CounterBuilder {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn it_can_use_init_value() {
+        let result = CounterBuilder::new()
+            .init_value(100)
+            .count();
+
+        assert_eq!(result, 100);
+    }
 
     #[test]
     fn it_can_add() {

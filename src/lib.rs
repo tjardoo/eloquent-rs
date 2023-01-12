@@ -1,7 +1,8 @@
 pub use eloquent_core::CounterBuilder;
 
-pub fn random_logic(add_value: i32, sub_value: i32) -> i32 {
+pub fn random_logic(init_value: i32, add_value: i32, sub_value: i32) -> i32 {
     let total = CounterBuilder::new()
+        .init_value(init_value)
         .add(add_value)
         .subtract(sub_value)
         .count();
@@ -15,12 +16,12 @@ mod tests {
 
     #[test]
     fn it_works() {
-        let result = random_logic(200, 150);
+        let result = random_logic(0, 200, 150);
 
         assert_eq!(result, 50);
 
-        let result = random_logic(-500, -200);
+        let result = random_logic(100, -500, -200);
 
-        assert_eq!(result, -300);
+        assert_eq!(result, -200);
     }
 }
