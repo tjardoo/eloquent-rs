@@ -12,6 +12,6 @@ mod tests {
             .to_sql()
             .unwrap();
 
-        assert_eq!(query, "SELECT * FROM \"flights\" WHERE flight_number = KL0835;");
+        assert_eq!(query, "SELECT * FROM flights WHERE flight_number = \"KL0835\";");
     }
 }

@@ -59,7 +59,7 @@ impl Eloquent {
             return Err(error::EloquentError::MissingTableNameError);
         };
 
-        Ok(format!("SELECT * FROM {:?} WHERE {} {} {};",
+        Ok(format!("SELECT * FROM {} WHERE {} {} \"{}\";",
             table_name,
             self.clauses[0].column,
             self.clauses[0].operator,
@@ -91,7 +91,7 @@ mod tests {
             .to_sql()
             .unwrap();
 
-        assert_eq!(query, "SELECT * FROM \"users\" WHERE name = John;");
+        assert_eq!(query, "SELECT * FROM users WHERE name = \"John\";");
     }
 
     #[test]
@@ -102,7 +102,7 @@ mod tests {
             .to_sql()
             .unwrap();
 
-        assert_eq!(query, "SELECT * FROM \"users\" WHERE name != John;");
+        assert_eq!(query, "SELECT * FROM users WHERE name != \"John\";");
     }
 
     #[test]
