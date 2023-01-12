@@ -1,14 +1,4 @@
-pub use eloquent_core::CounterBuilder;
-
-pub fn random_logic(init_value: i32, add_value: i32, sub_value: i32) -> i32 {
-    let total = CounterBuilder::new()
-        .init_value(init_value)
-        .add(add_value)
-        .subtract(sub_value)
-        .count();
-
-    total
-}
+pub use eloquent_core::Eloquent;
 
 #[cfg(test)]
 mod tests {
@@ -16,12 +6,12 @@ mod tests {
 
     #[test]
     fn it_works() {
-        let result = random_logic(0, 200, 150);
+        let query = Eloquent::query()
+            .table("flights".to_string())
+            .r#where("flight_number".to_string(), "KL0835".to_string())
+            .to_sql()
+            .unwrap();
 
-        assert_eq!(result, 50);
-
-        let result = random_logic(100, -500, -200);
-
-        assert_eq!(result, -200);
+        assert_eq!(query, "SELECT * FROM \"flights\" WHERE flight_number = KL0835;");
     }
 }
