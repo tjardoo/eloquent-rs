@@ -6,6 +6,10 @@ license = "MIT"
 repository = "https://github.com/tjardoo/eloquent-rs"
 description = "An enjoyable way of interacting with the database."
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+[workspace]
+members = [
+    "eloquent_core",
+]
 
 [dependencies]
+eloquent_core = { path = "eloquent_core", version = "0.1.0" }
