@@ -59,12 +59,40 @@ impl Eloquent {
             return Err(error::EloquentError::MissingTableNameError);
         };
 
-        Ok(format!("SELECT * FROM {} WHERE {} {} \"{}\";",
-            table_name,
-            self.clauses[0].column,
-            self.clauses[0].operator,
-            self.clauses[0].value,
+        let select_part = "SELECT *";
+        let from_part = format!("FROM {}", table_name);
+        let where_part = Self::format_where_clauses(&self.clauses);
+
+        Ok(format!("{} {} {};",
+            select_part,
+            from_part,
+            where_part,
         ))
+    }
+
+    fn format_where_clauses(clauses: &Vec<Clause>) -> String {
+        let mut query: String = "WHERE ".to_owned();
+
+        let mut clauses = clauses.iter().peekable();
+
+        while let Some(clause) = clauses.next() {
+            let mut and_or_empty = "";
+
+            if clauses.peek().is_some() {
+                and_or_empty = " AND ";
+            }
+
+            let item = format!("{} {} \"{}\"{}",
+                clause.column,
+                clause.operator,
+                clause.value,
+                and_or_empty,
+            );
+
+            query.push_str(&item);
+        }
+
+        query
     }
 }
 
@@ -84,7 +112,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn it_can_create_a_where_query() {
+    fn it_can_create_a_single_where_query() {
         let query = Eloquent::query()
             .table("users".to_string())
             .r#where("name".to_string(), "John".to_string())
@@ -95,7 +123,7 @@ mod tests {
     }
 
     #[test]
-    fn it_can_create_a_where_not_query() {
+    fn it_can_create_a_single_where_not_query() {
         let query = Eloquent::query()
             .table("users".to_string())
             .where_not("name".to_string(), "John".to_string())
@@ -103,6 +131,18 @@ mod tests {
             .unwrap();
 
         assert_eq!(query, "SELECT * FROM users WHERE name != \"John\";");
+    }
+
+    #[test]
+    fn it_can_create_multiple_where_queries() {
+        let query = Eloquent::query()
+            .table("users".to_string())
+            .r#where("first_name".to_string(), "John".to_string())
+            .r#where("last_name".to_string(), "Doe".to_string())
+            .to_sql()
+            .unwrap();
+
+        assert_eq!(query, "SELECT * FROM users WHERE first_name = \"John\" AND last_name = \"Doe\";");
     }
 
     #[test]
