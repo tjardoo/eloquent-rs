@@ -1,6 +1,6 @@
 [package]
 name = "eloquent"
-version = "0.1.0"
+version = "0.1.1"
 edition = "2021"
 license = "MIT"
 repository = "https://github.com/tjardoo/eloquent-rs"
@@ -12,4 +12,4 @@ members = [
 ]
 
 [dependencies]
-eloquent_core = { path = "eloquent_core", version = "0.1.0" }
+eloquent_core = { path = "eloquent_core", version = "0.1.1" }
