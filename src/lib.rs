@@ -16,11 +16,12 @@ mod tests {
             .r#where("departure_code".to_string(), "AMS".to_string())
             .r#where("destination".to_string(), "SIN".to_string())
             .where_not("terminal_id".to_string(), "A".to_string())
-            .order_by("destination".to_string(), Direction::Asc)
+            .group_by("destination".to_string())
+            .order_by("flight_number".to_string(), Direction::Asc)
             .order_by("id".to_string(), Direction::Desc)
             .to_sql()
             .unwrap();
 
-        assert_eq!(query, "SELECT id, flight_number, destination FROM flights WHERE departure_code = \"AMS\" AND destination = \"SIN\" AND terminal_id != \"A\" ORDER BY destination ASC, id DESC;");
+        assert_eq!(query, "SELECT id, flight_number, destination FROM flights WHERE departure_code = \"AMS\" AND destination = \"SIN\" AND terminal_id != \"A\" GROUP BY destination ORDER BY flight_number ASC, id DESC;");
     }
 }
