@@ -1,14 +1,15 @@
 use std::fmt;
-use crate::{Eloquent, error::EloquentError};
+
+use crate::{Eloquent, error::EloquentError, GenericVar};
 use super::formattable::Formattable;
 
 pub struct WhereClauses {
     pub clauses: Vec<WhereClause>,
 }
 
-pub struct WhereClause {
+pub struct WhereClause{
     pub column: String,
-    pub value: String,
+    pub value: GenericVar,
     pub operator: WhereOperator,
 }
 
@@ -18,7 +19,7 @@ pub enum WhereOperator {
 }
 
 impl Eloquent {
-    pub fn r#where(&mut self, column_name: String, value: String) -> &mut Eloquent {
+    pub fn r#where(&mut self, column_name: String, value: GenericVar) -> &mut Eloquent {
         self.where_clauses.clauses.push(WhereClause {
             column: column_name,
             value,
@@ -28,7 +29,7 @@ impl Eloquent {
         self
     }
 
-    pub fn where_not(&mut self, column_name: String, value: String) -> &mut Eloquent {
+    pub fn where_not(&mut self, column_name: String, value: GenericVar) -> &mut Eloquent {
         self.where_clauses.clauses.push(WhereClause {
             column: column_name,
             value,
@@ -58,7 +59,7 @@ impl Formattable for WhereClauses {
                 and_or_empty = "";
             }
 
-            let item = format!("{} {} \"{}\"{}",
+            let item = format!("{} {} {}{}",
                 clause.column,
                 clause.operator,
                 clause.value,
@@ -89,7 +90,7 @@ mod tests {
     fn it_can_create_a_single_where_query() {
         let query = Eloquent::query()
             .table("users".to_string())
-            .r#where("name".to_string(), "John".to_string())
+            .r#where("name".to_string(), GenericVar::Str("John".to_string()))
             .to_sql()
             .unwrap();
 
@@ -100,7 +101,7 @@ mod tests {
     fn it_can_create_a_single_where_not_query() {
         let query = Eloquent::query()
             .table("users".to_string())
-            .where_not("name".to_string(), "John".to_string())
+            .where_not("name".to_string(), GenericVar::Str("John".to_string()))
             .to_sql()
             .unwrap();
 
@@ -111,8 +112,8 @@ mod tests {
     fn it_can_create_multiple_where_queries() {
         let query = Eloquent::query()
             .table("users".to_string())
-            .r#where("first_name".to_string(), "John".to_string())
-            .r#where("last_name".to_string(), "Doe".to_string())
+            .r#where("first_name".to_string(), GenericVar::Str("John".to_string()))
+            .r#where("last_name".to_string(), GenericVar::Str("Doe".to_string()))
             .to_sql()
             .unwrap();
 
@@ -123,8 +124,8 @@ mod tests {
     fn it_can_create_multiple_where_not_queries() {
         let query = Eloquent::query()
             .table("users".to_string())
-            .where_not("first_name".to_string(), "John".to_string())
-            .where_not("last_name".to_string(), "Doe".to_string())
+            .where_not("first_name".to_string(), GenericVar::Str("John".to_string()))
+            .where_not("last_name".to_string(), GenericVar::Str("Doe".to_string()))
             .to_sql()
             .unwrap();
 
@@ -139,5 +140,39 @@ mod tests {
             .unwrap();
 
         assert_eq!(query, "SELECT * FROM users;");
+    }
+
+    #[test]
+    fn it_can_create_a_where_query_with_string_value() {
+        let query = Eloquent::query()
+            .table("users".to_string())
+            .r#where("name".to_string(), GenericVar::Str("John".to_string()))
+            .to_sql()
+            .unwrap();
+
+        assert_eq!(query, "SELECT * FROM users WHERE name = \"John\";");
+    }
+
+    #[test]
+    fn it_can_create_a_where_query_with_integer_value() {
+        let query = Eloquent::query()
+            .table("users".to_string())
+            .r#where("age".to_string(), GenericVar::Int(25))
+            .to_sql()
+            .unwrap();
+
+        assert_eq!(query, "SELECT * FROM users WHERE age = 25;");
+    }
+
+    #[test]
+    fn it_can_create_a_where_query_with_boolean_value() {
+        let query = Eloquent::query()
+            .table("users".to_string())
+            .r#where("is_active".to_string(), GenericVar::Bool(true))
+            .r#where("is_blocked".to_string(), GenericVar::Bool(false))
+            .to_sql()
+            .unwrap();
+
+        assert_eq!(query, "SELECT * FROM users WHERE is_active = 1 AND is_blocked = 0;");
     }
 }

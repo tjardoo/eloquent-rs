@@ -1,3 +1,5 @@
+use std::fmt;
+
 use expressions::from_clause::FromClause;
 use expressions::group_clause::GroupClauses;
 use expressions::order_clause::OrderClauses;
@@ -17,9 +19,28 @@ pub struct Eloquent {
 }
 
 #[derive(Debug)]
+pub enum GenericVar
+{
+    Str(String),
+    Int(u32),
+    Bool(bool)
+}
+
+#[derive(Debug)]
 pub enum Direction {
     Asc,
     Desc,
+}
+
+impl fmt::Display for GenericVar {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            GenericVar::Str(value) => write!(f, "\"{}\"", value),
+            GenericVar::Int(value) => write!(f, "{}", value),
+            GenericVar::Bool(true) => write!(f, "{}", 1),
+            GenericVar::Bool(false) => write!(f, "{}", 0),
+        }
+    }
 }
 
 impl Eloquent {

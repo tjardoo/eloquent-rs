@@ -27,7 +27,7 @@ impl Formattable for FromClause {
 
 #[cfg(test)]
 mod tests {
-    use crate::error::EloquentError;
+    use crate::{error::EloquentError, GenericVar};
 
     use super::*;
 
@@ -44,7 +44,7 @@ mod tests {
     #[test]
     fn it_throws_a_missing_table_name_error_if_no_table_name_set() {
         let query = Eloquent::query()
-            .where_not("name".to_string(), "John".to_string())
+            .where_not("name".to_string(), GenericVar::Str("John".to_string()))
             .to_sql()
             .unwrap_err();
 
