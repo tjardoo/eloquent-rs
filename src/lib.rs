@@ -2,7 +2,7 @@ pub use eloquent_core::Eloquent;
 
 #[cfg(test)]
 mod tests {
-    use eloquent_core::{Direction, GenericVar, InsertClause};
+    use eloquent_core::{Direction, GenericVar, InsertClause, UpdateClause};
 
     use super::*;
 
@@ -47,5 +47,25 @@ mod tests {
             .unwrap();
 
         assert_eq!(query, "INSERT INTO flights (`id`, `flight_code`, `destination`) VALUES (1, \"KL0803\", \"Bangkok\");");
+    }
+
+    #[test]
+    fn it_works_with_an_update_query() {
+        let query = Eloquent::query()
+            .update("flights".to_string(), vec![
+                UpdateClause {
+                    column: "flight_code".to_string(),
+                    value: GenericVar::Str("KL0803".to_string()),
+                },
+                UpdateClause {
+                    column: "destination".to_string(),
+                    value: GenericVar::Str("Bangkok".to_string()),
+                }
+            ])
+            .r#where("id".to_string(), GenericVar::Int(1))
+            .to_sql()
+            .unwrap();
+
+        assert_eq!(query, "UPDATE flights SET `flight_code` = \"KL0803\", `destination` = \"Bangkok\" WHERE `id` = 1;");
     }
 }

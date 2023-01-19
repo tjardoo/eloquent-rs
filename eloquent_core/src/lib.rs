@@ -6,6 +6,7 @@ use expressions::group_clause::GroupClauses;
 use expressions::insert_clause::InsertClauses;
 use expressions::order_clause::OrderClauses;
 use expressions::select_clause::SelectClauses;
+use expressions::update_clause::UpdateClauses;
 use expressions::where_clause::WhereClauses;
 use expressions::formattable::Formattable;
 
@@ -16,6 +17,7 @@ pub struct Eloquent {
     pub from_clause: FromClause,
     pub select_clauses: SelectClauses,
     pub insert_clause: InsertClauses,
+    pub update_clause: UpdateClauses,
     pub where_clauses: WhereClauses,
     pub group_clauses: GroupClauses,
     pub order_clauses: OrderClauses,
@@ -36,6 +38,11 @@ pub enum Direction {
 }
 
 pub struct InsertClause {
+    pub column: String,
+    pub value: GenericVar,
+}
+
+pub struct UpdateClause {
     pub column: String,
     pub value: GenericVar,
 }
@@ -61,6 +68,10 @@ impl Eloquent {
                 clauses: vec![],
             },
             insert_clause: InsertClauses {
+                table: None,
+                clauses: vec![],
+            },
+            update_clause: UpdateClauses {
                 table: None,
                 clauses: vec![],
             },
@@ -104,6 +115,14 @@ impl Eloquent {
 
             return Ok(format!("{};",
                 insert_binding,
+            ));
+        } else if self.update_clause.is_used() {
+            let update_binding = &self.update_clause.to_query_format()?;
+            let where_binding = &self.where_clauses.to_query_format()?;
+
+            return Ok(format!("{}{};",
+                update_binding,
+                where_binding,
             ));
         }
 
