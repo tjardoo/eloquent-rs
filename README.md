@@ -18,5 +18,5 @@ Add this to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-eloquent = "0.1.1"
+eloquent = "0.1.2"
 ```
