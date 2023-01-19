@@ -41,6 +41,10 @@ impl Eloquent {
 }
 
 impl Formattable for WhereClauses {
+    fn is_used(&self) -> bool {
+        self.clauses.is_empty() == false
+    }
+
     fn to_query_format(&self) -> Result<String, EloquentError> {
         if self.clauses.is_empty() {
             return Ok("".to_string());
@@ -59,7 +63,7 @@ impl Formattable for WhereClauses {
                 and_or_empty = "";
             }
 
-            let item = format!("{} {} {}{}",
+            let item = format!("`{}` {} {}{}",
                 clause.column,
                 clause.operator,
                 clause.value,
@@ -94,7 +98,7 @@ mod tests {
             .to_sql()
             .unwrap();
 
-        assert_eq!(query, "SELECT * FROM users WHERE name = \"John\";");
+        assert_eq!(query, "SELECT * FROM users WHERE `name` = \"John\";");
     }
 
     #[test]
@@ -105,7 +109,7 @@ mod tests {
             .to_sql()
             .unwrap();
 
-        assert_eq!(query, "SELECT * FROM users WHERE name != \"John\";");
+        assert_eq!(query, "SELECT * FROM users WHERE `name` != \"John\";");
     }
 
     #[test]
@@ -117,7 +121,7 @@ mod tests {
             .to_sql()
             .unwrap();
 
-        assert_eq!(query, "SELECT * FROM users WHERE first_name = \"John\" AND last_name = \"Doe\";");
+        assert_eq!(query, "SELECT * FROM users WHERE `first_name` = \"John\" AND `last_name` = \"Doe\";");
     }
 
     #[test]
@@ -129,7 +133,7 @@ mod tests {
             .to_sql()
             .unwrap();
 
-        assert_eq!(query, "SELECT * FROM users WHERE first_name != \"John\" AND last_name != \"Doe\";");
+        assert_eq!(query, "SELECT * FROM users WHERE `first_name` != \"John\" AND `last_name` != \"Doe\";");
     }
 
     #[test]
@@ -150,7 +154,7 @@ mod tests {
             .to_sql()
             .unwrap();
 
-        assert_eq!(query, "SELECT * FROM users WHERE name = \"John\";");
+        assert_eq!(query, "SELECT * FROM users WHERE `name` = \"John\";");
     }
 
     #[test]
@@ -161,7 +165,7 @@ mod tests {
             .to_sql()
             .unwrap();
 
-        assert_eq!(query, "SELECT * FROM users WHERE age = 25;");
+        assert_eq!(query, "SELECT * FROM users WHERE `age` = 25;");
     }
 
     #[test]
@@ -173,6 +177,6 @@ mod tests {
             .to_sql()
             .unwrap();
 
-        assert_eq!(query, "SELECT * FROM users WHERE is_active = 1 AND is_blocked = 0;");
+        assert_eq!(query, "SELECT * FROM users WHERE `is_active` = 1 AND `is_blocked` = 0;");
     }
 }

@@ -21,6 +21,10 @@ impl Eloquent {
 }
 
 impl Formattable for GroupClauses {
+    fn is_used(&self) -> bool {
+        self.clauses.is_empty() == false
+    }
+
     fn to_query_format(&self) -> Result<String, EloquentError> {
         if self.clauses.is_empty() {
             return Ok("".to_string());
@@ -39,7 +43,7 @@ impl Formattable for GroupClauses {
                 comma_or_empty = "";
             }
 
-            let item = format!("{}{}",
+            let item = format!("`{}`{}",
                 clause.column,
                 comma_or_empty,
             );
@@ -63,7 +67,7 @@ mod tests {
             .to_sql()
             .unwrap();
 
-        assert_eq!(query, "SELECT * FROM users GROUP BY country_id;");
+        assert_eq!(query, "SELECT * FROM users GROUP BY `country_id`;");
     }
 
     #[test]
@@ -75,6 +79,6 @@ mod tests {
             .to_sql()
             .unwrap();
 
-        assert_eq!(query, "SELECT * FROM users GROUP BY country_id, city;");
+        assert_eq!(query, "SELECT * FROM users GROUP BY `country_id`, `city`;");
     }
 }

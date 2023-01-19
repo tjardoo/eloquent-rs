@@ -33,6 +33,10 @@ impl fmt::Display for Direction {
 }
 
 impl Formattable for OrderClauses {
+    fn is_used(&self) -> bool {
+        self.clauses.is_empty() == false
+    }
+
     fn to_query_format(&self) -> Result<String, EloquentError> {
         if self.clauses.is_empty() {
             return Ok("".to_string());
@@ -51,7 +55,7 @@ impl Formattable for OrderClauses {
                 comma_or_empty = "";
             }
 
-            let item = format!("{} {}{}",
+            let item = format!("`{}` {}{}",
                 clause.column,
                 clause.direction,
                 comma_or_empty,
@@ -76,7 +80,7 @@ mod tests {
             .to_sql()
             .unwrap();
 
-        assert_eq!(query, "SELECT * FROM users ORDER BY id ASC;");
+        assert_eq!(query, "SELECT * FROM users ORDER BY `id` ASC;");
     }
 
     #[test]
@@ -87,7 +91,7 @@ mod tests {
             .to_sql()
             .unwrap();
 
-        assert_eq!(query, "SELECT * FROM users ORDER BY id DESC;");
+        assert_eq!(query, "SELECT * FROM users ORDER BY `id` DESC;");
     }
 
     #[test]
@@ -99,6 +103,6 @@ mod tests {
             .to_sql()
             .unwrap();
 
-        assert_eq!(query, "SELECT * FROM flights ORDER BY destination ASC, terminal_id DESC;");
+        assert_eq!(query, "SELECT * FROM flights ORDER BY `destination` ASC, `terminal_id` DESC;");
     }
 }

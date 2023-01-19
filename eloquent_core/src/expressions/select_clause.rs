@@ -20,6 +20,10 @@ impl Eloquent {
 }
 
 impl Formattable for SelectClauses {
+    fn is_used(&self) -> bool {
+        self.clauses.is_empty() == false
+    }
+
     fn to_query_format(&self) -> Result<String, EloquentError> {
         let mut query: String = "SELECT ".to_owned();
 
@@ -37,7 +41,7 @@ impl Formattable for SelectClauses {
                     comma_or_empty = "";
                 }
 
-                let item = format!("{}{}",
+                let item = format!("`{}`{}",
                     clause.column,
                     comma_or_empty,
                 );
@@ -62,7 +66,7 @@ mod tests {
             .to_sql()
             .unwrap();
 
-        assert_eq!(query, "SELECT first_name FROM users;");
+        assert_eq!(query, "SELECT `first_name` FROM users;");
     }
 
     #[test]
@@ -74,7 +78,7 @@ mod tests {
             .to_sql()
             .unwrap();
 
-        assert_eq!(query, "SELECT first_name, last_name FROM users;");
+        assert_eq!(query, "SELECT `first_name`, `last_name` FROM users;");
     }
 
     #[test]
