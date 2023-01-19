@@ -1,6 +1,7 @@
 use std::fmt;
 
 use error::EloquentError;
+use expressions::delete_clause::DeleteClause;
 use expressions::from_clause::FromClause;
 use expressions::group_clause::GroupClauses;
 use expressions::insert_clause::InsertClauses;
@@ -18,6 +19,7 @@ pub struct Eloquent {
     pub select_clauses: SelectClauses,
     pub insert_clause: InsertClauses,
     pub update_clause: UpdateClauses,
+    pub delete_clause: DeleteClause,
     pub where_clauses: WhereClauses,
     pub group_clauses: GroupClauses,
     pub order_clauses: OrderClauses,
@@ -75,6 +77,9 @@ impl Eloquent {
                 table: None,
                 clauses: vec![],
             },
+            delete_clause: DeleteClause {
+                table: None,
+            },
             where_clauses: WhereClauses {
                 clauses: vec![],
             },
@@ -122,6 +127,14 @@ impl Eloquent {
 
             return Ok(format!("{}{};",
                 update_binding,
+                where_binding,
+            ));
+        } else if self.delete_clause.is_used() {
+            let delete_binding = &self.delete_clause.to_query_format()?;
+            let where_binding = &self.where_clauses.to_query_format()?;
+
+            return Ok(format!("{}{};",
+                delete_binding,
                 where_binding,
             ));
         }

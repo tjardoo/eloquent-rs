@@ -68,4 +68,15 @@ mod tests {
 
         assert_eq!(query, "UPDATE flights SET `flight_code` = \"KL0803\", `destination` = \"Bangkok\" WHERE `id` = 1;");
     }
+
+    #[test]
+    fn it_works_with_a_delete_query() {
+        let query = Eloquent::query()
+            .delete("flights".to_string())
+            .r#where("id".to_string(), GenericVar::Int(1))
+            .to_sql()
+            .unwrap();
+
+        assert_eq!(query, "DELETE FROM flights WHERE `id` = 1;");
+    }
 }
