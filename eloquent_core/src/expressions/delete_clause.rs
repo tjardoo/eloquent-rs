@@ -6,6 +6,23 @@ pub struct DeleteClause {
 }
 
 impl Eloquent {
+    /// Delete clause
+    ///
+    /// It is used to delete existing records in the table.
+    ///
+    /// # Example
+    ///
+    /// This example will delete the record with `id` is `1` in the flights table.
+    ///
+    /// ```rs
+    /// use eloquent_core::{Eloquent, GenericVar};
+    ///
+    /// let query = Eloquent::query()
+    ///     .delete("flights".to_string())
+    ///     .r#where("id".to_string(), GenericVar::Int(1))
+    ///     .to_sql()
+    ///     .unwrap();
+    /// ```
     pub fn delete(&mut self, table_name: String) -> &mut Eloquent {
         self.delete_clause = DeleteClause {
             table: Some(table_name),

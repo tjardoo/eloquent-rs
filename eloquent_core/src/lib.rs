@@ -1,3 +1,20 @@
+//! # Eloquent Core
+//!
+//! Eloquent is a query builder designed to reduce the boilerplate for database interactions.
+//!
+//! # Example
+//!
+//! ```
+//! use eloquent_core::Eloquent;
+//!
+//! let query = Eloquent::query()
+//!     .table("users".to_string())
+//!     .select("first_name".to_string())
+//!     .to_sql()
+//!     .unwrap();
+//!
+//! assert_eq!(query, "SELECT `first_name` FROM users;");
+//! ```
 use std::fmt;
 
 use error::EloquentError;
@@ -14,6 +31,15 @@ use expressions::formattable::Formattable;
 mod error;
 mod expressions;
 
+/// Eloquent query builder.
+///
+/// # Example
+///
+/// ```rs
+/// use eloquent_core::Eloquent;
+///
+/// let query = Eloquent::query();
+/// ```
 pub struct Eloquent {
     pub from_clause: FromClause,
     pub select_clauses: SelectClauses,
@@ -25,6 +51,7 @@ pub struct Eloquent {
     pub order_clauses: OrderClauses,
 }
 
+/// Used in where/insert/update queries to allow multiple types of variables.
 #[derive(Debug)]
 pub enum GenericVar
 {
@@ -33,18 +60,15 @@ pub enum GenericVar
     Bool(bool)
 }
 
+/// Used to indicate whether the order by query must be in ascending or descending order.
 #[derive(Debug)]
 pub enum Direction {
     Asc,
     Desc,
 }
 
-pub struct InsertClause {
-    pub column: String,
-    pub value: GenericVar,
-}
-
-pub struct UpdateClause {
+/// Used to map a value to a certain column.
+pub struct Clause {
     pub column: String,
     pub value: GenericVar,
 }

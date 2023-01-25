@@ -1,8 +1,13 @@
+//! # Eloquent
+//!
+//! Eloquent is a query builder designed to reduce the boilerplate for database interactions.
+//!
+
 pub use eloquent_core::Eloquent;
 
 #[cfg(test)]
 mod tests {
-    use eloquent_core::{Direction, GenericVar, InsertClause, UpdateClause};
+    use eloquent_core::{Direction, GenericVar, Clause};
 
     use super::*;
 
@@ -30,15 +35,15 @@ mod tests {
     fn it_works_with_an_insert_query() {
         let query = Eloquent::query()
             .insert("flights".to_string(), vec![
-                InsertClause {
+                Clause {
                     column: "id".to_string(),
                     value: GenericVar::Int(1),
                 },
-                InsertClause {
+                Clause {
                     column: "flight_code".to_string(),
                     value: GenericVar::Str("KL0803".to_string()),
                 },
-                InsertClause {
+                Clause {
                     column: "destination".to_string(),
                     value: GenericVar::Str("Bangkok".to_string()),
                 }
@@ -53,11 +58,11 @@ mod tests {
     fn it_works_with_an_update_query() {
         let query = Eloquent::query()
             .update("flights".to_string(), vec![
-                UpdateClause {
+                Clause {
                     column: "flight_code".to_string(),
                     value: GenericVar::Str("KL0803".to_string()),
                 },
-                UpdateClause {
+                Clause {
                     column: "destination".to_string(),
                     value: GenericVar::Str("Bangkok".to_string()),
                 }

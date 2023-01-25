@@ -19,6 +19,23 @@ pub enum WhereOperator {
 }
 
 impl Eloquent {
+    /// Where clause
+    ///
+    /// It is used to extract only those records that fulfill the specified condition.
+    ///
+    /// # Example
+    ///
+    /// ```rs
+    /// use eloquent_core::{Eloquent, GenericVar};
+    ///
+    /// This example will select all records from the flights table where the `destination` is `SIN` (Singapore).
+    ///
+    /// let query = Eloquent::query()
+    ///     .table("flights".to_string())
+    ///     .r#where("destination".to_string(), GenericVar::Str("SIN".to_string()))
+    ///     .to_sql()
+    ///     .unwrap();
+    /// ```
     pub fn r#where(&mut self, column_name: String, value: GenericVar) -> &mut Eloquent {
         self.where_clauses.clauses.push(WhereClause {
             column: column_name,
@@ -29,6 +46,23 @@ impl Eloquent {
         self
     }
 
+    /// Where Not clause
+    ///
+    /// It is used to extract only those records that do NOT fulfill the specified condition.
+    ///
+    /// # Example
+    ///
+    /// This example will select all records from the flights table where the `destination` is NOT `SIN` (Singapore).
+    ///
+    /// ```rs
+    /// use eloquent_core::{Eloquent, GenericVar};
+    ///
+    /// let query = Eloquent::query()
+    ///     .table("flights".to_string())
+    ///     .r#where("destination".to_string(), GenericVar::Str("SIN".to_string()))
+    ///     .to_sql()
+    ///     .unwrap();
+    /// ```
     pub fn where_not(&mut self, column_name: String, value: GenericVar) -> &mut Eloquent {
         self.where_clauses.clauses.push(WhereClause {
             column: column_name,

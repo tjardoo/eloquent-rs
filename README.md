@@ -18,5 +18,80 @@ Add this to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-eloquent = "0.1.2"
+eloquent = "0.1.3"
+```
+
+### Select Query
+
+```rs
+use eloquent_core::{Direction, GenericVar};
+
+let query = Eloquent::query()
+    .table("flights".to_string())
+    .select("id".to_string())
+    .select("flight_number".to_string())
+    .r#where("destination".to_string(), GenericVar::Str("SIN".to_string()))
+    .to_sql()
+    .unwrap();
+
+    assert_eq!(query, "SELECT `id`, `flight_number` FROM flights WHERE `destination` = \"SIN\";");
+```
+
+### Insert Query
+
+```rs
+use eloquent_core::{Direction, GenericVar, Clause};
+
+let query = Eloquent::query()
+    .insert("flights".to_string(), vec![
+        Clause {
+            column: "id".to_string(),
+            value: GenericVar::Int(1),
+        },
+        Clause {
+            column: "flight_code".to_string(),
+            value: GenericVar::Str("KL0803".to_string()),
+        },
+    ])
+    .to_sql()
+    .unwrap();
+
+    assert_eq!(query, "INSERT INTO flights (`id`, `flight_code`) VALUES (1, \"KL0803\");");
+```
+
+### Update Query
+
+```rs
+use eloquent_core::{Direction, GenericVar, Clause};
+
+let query = Eloquent::query()
+    .update("flights".to_string(), vec![
+        Clause {
+            column: "flight_code".to_string(),
+            value: GenericVar::Str("KL0803".to_string()),
+        },
+        Clause {
+            column: "destination".to_string(),
+            value: GenericVar::Str("Bangkok".to_string()),
+        },
+    ])
+    .r#where("id".to_string(), GenericVar::Int(1))
+    .to_sql()
+    .unwrap();
+
+    assert_eq!(query, "INSERT INTO flights (`id`, `flight_code`) VALUES (1, \"KL0803\") WHERE `id` = 1;");
+```
+
+### Delete Query
+
+```rs
+use eloquent_core::{Direction, GenericVar};
+
+let query = Eloquent::query()
+    .delete("flights".to_string())
+    .r#where("id".to_string(), GenericVar::Int(1))
+    .to_sql()
+    .unwrap();
+
+assert_eq!(query, "DELETE FROM flights WHERE `id` = 1;");
 ```

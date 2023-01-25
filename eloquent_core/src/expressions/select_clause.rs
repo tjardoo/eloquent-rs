@@ -10,6 +10,24 @@ pub struct SelectClause {
 }
 
 impl Eloquent {
+    /// Select clause
+    ///
+    /// It is used to retreive only those columns that are specified.
+    /// If not specified it will retreive all columns.
+    ///
+    /// # Example
+    ///
+    /// ```rs
+    /// use eloquent_core::{Eloquent, GenericVar};
+    ///
+    /// This example will select the column `id` of all rows from the flights table.
+    ///
+    /// let query = Eloquent::query()
+    ///     .table("flights".to_string())
+    ///     .select("id".to_string())
+    ///     .to_sql()
+    ///     .unwrap();
+    /// ```
     pub fn select(&mut self, column_name: String) -> &mut Eloquent {
         self.select_clauses.clauses.push(SelectClause {
             column: column_name,

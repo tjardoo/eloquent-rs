@@ -1,13 +1,38 @@
-use crate::{Eloquent, error::EloquentError, InsertClause};
+use crate::{Eloquent, error::EloquentError, Clause};
 use super::formattable::Formattable;
 
 pub struct InsertClauses {
     pub table: Option<String>,
-    pub clauses: Vec<InsertClause>,
+    pub clauses: Vec<Clause>,
 }
 
 impl Eloquent {
-    pub fn insert(&mut self, table_name: String, clauses: Vec<InsertClause>) -> &mut Eloquent {
+    /// Insert clause
+    ///
+    /// It is used to insert new records in the table.
+    ///
+    /// # Example
+    ///
+    /// This example will insert a new record flights table.
+    ///
+    /// ```rs
+    /// use eloquent_core::{Eloquent, GenericVar};
+    ///
+    /// let query = Eloquent::query()
+    ///     .insert("flights".to_string(), vec![
+    ///         Clause {
+    ///             column: "id".to_string(),
+    ///             value: GenericVar::Int(1),
+    ///         },
+    ///         Clause {
+    ///             column: "flight_code".to_string(),
+    ///             value: GenericVar::Str("KL0803".to_string()),
+    ///         },
+    ///     ])
+    ///     .to_sql()
+    ///     .unwrap();
+    /// ```
+    pub fn insert(&mut self, table_name: String, clauses: Vec<Clause>) -> &mut Eloquent {
         self.insert_clause = InsertClauses {
             table: Some(table_name),
             clauses,
@@ -78,7 +103,7 @@ mod tests {
     fn it_can_create_a_single_insert_query() {
         let query = Eloquent::query()
             .insert("todos".to_string(), vec![
-                InsertClause {
+                Clause {
                     column: "description".to_string(),
                     value: GenericVar::Str("learn Rust".to_string()),
                 },
@@ -93,11 +118,11 @@ mod tests {
     fn it_can_create_a_multiple_insert_query() {
         let query = Eloquent::query()
             .insert("todos".to_string(), vec![
-                InsertClause {
+                Clause {
                     column: "description".to_string(),
                     value: GenericVar::Str("learn Rust".to_string()),
                 },
-                InsertClause {
+                Clause {
                     column: "is_completed".to_string(),
                     value: GenericVar::Bool(false),
                 },

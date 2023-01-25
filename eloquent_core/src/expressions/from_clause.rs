@@ -7,6 +7,22 @@ pub struct FromClause {
 }
 
 impl Eloquent {
+    /// From clause
+    ///
+    /// It is used to set the table on which the query will be performed.
+    ///
+    /// # Example
+    ///
+    ///  This example will select all (default) from the flights table.
+    ///
+    /// ```rs
+    /// use eloquent_core::Eloquent;
+    ///
+    /// let query = Eloquent::query()
+    ///     .table("flights".to_string())
+    ///     .to_sql()
+    ///     .unwrap();
+    /// ```
     pub fn table(&mut self, table_name: String) -> &mut Eloquent {
         self.from_clause = FromClause {
             table: Some(table_name),
