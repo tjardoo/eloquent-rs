@@ -25,10 +25,10 @@ impl Eloquent {
     ///
     /// # Example
     ///
-    /// ```rs
-    /// use eloquent_core::{Eloquent, GenericVar};
-    ///
     /// This example will select all records from the flights table where the `destination` is `SIN` (Singapore).
+    ///
+    /// ```
+    /// use eloquent_core::{Eloquent, GenericVar};
     ///
     /// let query = Eloquent::query()
     ///     .table("flights".to_string())
@@ -54,7 +54,7 @@ impl Eloquent {
     ///
     /// This example will select all records from the flights table where the `destination` is NOT `SIN` (Singapore).
     ///
-    /// ```rs
+    /// ```
     /// use eloquent_core::{Eloquent, GenericVar};
     ///
     /// let query = Eloquent::query()

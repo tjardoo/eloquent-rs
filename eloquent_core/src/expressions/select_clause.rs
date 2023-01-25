@@ -17,10 +17,10 @@ impl Eloquent {
     ///
     /// # Example
     ///
-    /// ```rs
-    /// use eloquent_core::{Eloquent, GenericVar};
-    ///
     /// This example will select the column `id` of all rows from the flights table.
+    ///
+    /// ```
+    /// use eloquent_core::{Eloquent, GenericVar};
     ///
     /// let query = Eloquent::query()
     ///     .table("flights".to_string())

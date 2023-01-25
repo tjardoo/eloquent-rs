@@ -14,7 +14,7 @@ impl Eloquent {
     ///
     /// This example will delete the record with `id` is `1` in the flights table.
     ///
-    /// ```rs
+    /// ```
     /// use eloquent_core::{Eloquent, GenericVar};
     ///
     /// let query = Eloquent::query()

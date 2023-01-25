@@ -35,7 +35,7 @@ mod expressions;
 ///
 /// # Example
 ///
-/// ```rs
+/// ```
 /// use eloquent_core::Eloquent;
 ///
 /// let query = Eloquent::query();
