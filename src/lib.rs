@@ -1,6 +1,39 @@
-//! # Eloquent
+//! # Eloquent Core
 //!
 //! Eloquent is a query builder designed to reduce the boilerplate for database interactions.
+//!
+//! # Quick Start
+//!
+//! To get you started quickly, the easiest way to create a query is by using the simplest
+//! version and adding conditions as-you-go.
+//!
+//! # Example
+//!
+//! ```
+//! use eloquent_core::Eloquent;
+//!
+//! let query = Eloquent::query()
+//!     .table("users".to_string())
+//!     .select("first_name".to_string())
+//!     .to_sql()
+//!     .unwrap();
+//!
+//! assert_eq!(query, "SELECT `first_name` FROM users;");
+//! ```
+//!
+//! # Support
+//!
+//! - [X] SELECT
+//! - [ ] WHERE
+//!   - [X] WHERE
+//!   - [X] WHERE NOT
+//!   - [ ] WHERE IS NULL
+//!   - [ ] WHERE IS NOT NULL
+//! - [X] INSERT
+//! - [X] UPDATE
+//! - [X] DELETE
+//! - [X] ORDER BY
+//! - [X] GROUP BY
 //!
 
 pub use eloquent_core::Eloquent;
