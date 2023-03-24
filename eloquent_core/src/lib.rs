@@ -4,7 +4,7 @@
 //!
 //! # Example
 //!
-//! ```
+//! ```rust
 //! use eloquent_core::Eloquent;
 //!
 //! let query = Eloquent::query()
@@ -35,7 +35,7 @@ mod expressions;
 ///
 /// # Example
 ///
-/// ```
+/// ```rust
 /// use eloquent_core::Eloquent;
 ///
 /// let query = Eloquent::query();

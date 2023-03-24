@@ -15,7 +15,7 @@ impl Eloquent {
     ///
     ///  This example will select all (default) from the flights table.
     ///
-    /// ```
+    /// ```rust
     /// use eloquent_core::Eloquent;
     ///
     /// let query = Eloquent::query()

@@ -27,7 +27,7 @@ impl Eloquent {
     ///
     /// This example will select all records from the flights table where the `destination` is `SIN` (Singapore).
     ///
-    /// ```
+    /// ```rust
     /// use eloquent_core::{Eloquent, GenericVar};
     ///
     /// let query = Eloquent::query()
@@ -54,7 +54,7 @@ impl Eloquent {
     ///
     /// This example will select all records from the flights table where the `destination` is NOT `SIN` (Singapore).
     ///
-    /// ```
+    /// ```rust
     /// use eloquent_core::{Eloquent, GenericVar};
     ///
     /// let query = Eloquent::query()

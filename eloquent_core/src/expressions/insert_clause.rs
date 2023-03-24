@@ -15,7 +15,7 @@ impl Eloquent {
     ///
     /// This example will insert a new record flights table.
     ///
-    /// ```
+    /// ```rust
     /// use eloquent_core::{Eloquent, GenericVar, Clause};
     ///
     /// let query = Eloquent::query()

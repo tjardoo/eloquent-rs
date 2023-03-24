@@ -7,23 +7,25 @@
 
 A Rust library for building queries in an eloquent way.
 
-## Documentation
-
-- [API reference (master branch)](https://github.com/tjardoo/eloquent-rs)
-- [API reference (docs.rs)](https://docs.rs/eloquent/latest/eloquent)
+- [Usage](#usage)
+- Examples
+  - [Select query](#select-query)
+  - [Insert query](#insert-query)
+  - [Update query](#update-query)
+  - [Delete query](#delete-query)
 
 ## Usage
 
 Add this to your `Cargo.toml`:
 
-```toml
+```ini
 [dependencies]
-eloquent = "0.1.3"
+eloquent = "0.1.4"
 ```
 
 ### Select Query
 
-```rs
+```rust
 use eloquent_core::{Direction, GenericVar};
 
 let query = Eloquent::query()
@@ -39,7 +41,7 @@ let query = Eloquent::query()
 
 ### Insert Query
 
-```rs
+```rust
 use eloquent_core::{Direction, GenericVar, Clause};
 
 let query = Eloquent::query()
@@ -61,7 +63,7 @@ let query = Eloquent::query()
 
 ### Update Query
 
-```rs
+```rust
 use eloquent_core::{Direction, GenericVar, Clause};
 
 let query = Eloquent::query()
@@ -84,7 +86,7 @@ let query = Eloquent::query()
 
 ### Delete Query
 
-```rs
+```rust
 use eloquent_core::{Direction, GenericVar};
 
 let query = Eloquent::query()

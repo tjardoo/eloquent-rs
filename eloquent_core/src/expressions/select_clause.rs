@@ -19,7 +19,7 @@ impl Eloquent {
     ///
     /// This example will select the column `id` of all rows from the flights table.
     ///
-    /// ```
+    /// ```rust
     /// use eloquent_core::{Eloquent, GenericVar};
     ///
     /// let query = Eloquent::query()

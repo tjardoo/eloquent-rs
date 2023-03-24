@@ -15,7 +15,7 @@ impl Eloquent {
     ///
     /// This example will update the `flight_code` column with KL0803 where the `id` is `1` in the flights table.
     ///
-    /// ```
+    /// ```rust
     /// use eloquent_core::{Eloquent, GenericVar, Clause};
     ///
     /// let query = Eloquent::query()

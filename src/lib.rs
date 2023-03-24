@@ -9,7 +9,7 @@
 //!
 //! # Example
 //!
-//! ```
+//! ```rust
 //! use eloquent_core::Eloquent;
 //!
 //! let query = Eloquent::query()
