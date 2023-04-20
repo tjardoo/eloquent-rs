@@ -14,4 +14,4 @@ members = [
 ]
 
 [dependencies]
-eloquent_core = { path = "eloquent_core" }
+eloquent_core = { path = "eloquent_core", version = "0.2" }
