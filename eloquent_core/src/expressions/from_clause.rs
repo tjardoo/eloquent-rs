@@ -19,13 +19,13 @@ impl Eloquent {
     /// use eloquent_core::Eloquent;
     ///
     /// let query = Eloquent::query()
-    ///     .table("flights".to_string())
+    ///     .table("flights")
     ///     .to_sql()
     ///     .unwrap();
     /// ```
-    pub fn table(&mut self, table_name: String) -> &mut Eloquent {
+    pub fn table(&mut self, table_name: &str) -> &mut Eloquent {
         self.from_clause = FromClause {
-            table: Some(table_name),
+            table: Some(table_name.to_string()),
         };
 
         self
@@ -52,7 +52,7 @@ mod tests {
     #[test]
     fn it_can_set_the_table_name() {
         let query = Eloquent::query()
-            .table("users".to_string())
+            .table("users")
             .to_sql()
             .unwrap();
 

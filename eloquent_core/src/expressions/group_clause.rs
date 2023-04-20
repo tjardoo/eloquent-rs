@@ -11,9 +11,9 @@ pub struct GroupClause {
 }
 
 impl Eloquent {
-    pub fn group_by(&mut self, column_name: String) -> &mut Eloquent {
+    pub fn group_by(&mut self, column_name: &str) -> &mut Eloquent {
         self.group_clauses.clauses.push(GroupClause {
-            column: column_name,
+            column: column_name.to_string(),
         });
 
         self
@@ -62,8 +62,8 @@ mod tests {
     #[test]
     fn it_can_group_by_a_single_column_asc() {
         let query = Eloquent::query()
-            .table("users".to_string())
-            .group_by("country_id".to_string())
+            .table("users")
+            .group_by("country_id")
             .to_sql()
             .unwrap();
 
@@ -73,9 +73,9 @@ mod tests {
     #[test]
     fn it_can_group_by_multiple_columns() {
         let query = Eloquent::query()
-            .table("users".to_string())
-            .group_by("country_id".to_string())
-            .group_by("city".to_string())
+            .table("users")
+            .group_by("country_id")
+            .group_by("city")
             .to_sql()
             .unwrap();
 

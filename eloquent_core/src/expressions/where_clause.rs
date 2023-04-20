@@ -31,14 +31,14 @@ impl Eloquent {
     /// use eloquent_core::{Eloquent, GenericVar};
     ///
     /// let query = Eloquent::query()
-    ///     .table("flights".to_string())
-    ///     .r#where("destination".to_string(), GenericVar::Str("SIN".to_string()))
+    ///     .table("flights")
+    ///     .r#where("destination", GenericVar::Str("SIN".to_string()))
     ///     .to_sql()
     ///     .unwrap();
     /// ```
-    pub fn r#where(&mut self, column_name: String, value: GenericVar) -> &mut Eloquent {
+    pub fn r#where(&mut self, column_name: &str, value: GenericVar) -> &mut Eloquent {
         self.where_clauses.clauses.push(WhereClause {
-            column: column_name,
+            column: column_name.to_string(),
             value,
             operator: WhereOperator::Where,
         });
@@ -58,14 +58,14 @@ impl Eloquent {
     /// use eloquent_core::{Eloquent, GenericVar};
     ///
     /// let query = Eloquent::query()
-    ///     .table("flights".to_string())
-    ///     .r#where("destination".to_string(), GenericVar::Str("SIN".to_string()))
+    ///     .table("flights")
+    ///     .r#where("destination", GenericVar::Str("SIN".to_string()))
     ///     .to_sql()
     ///     .unwrap();
     /// ```
-    pub fn where_not(&mut self, column_name: String, value: GenericVar) -> &mut Eloquent {
+    pub fn where_not(&mut self, column_name: &str, value: GenericVar) -> &mut Eloquent {
         self.where_clauses.clauses.push(WhereClause {
-            column: column_name,
+            column: column_name.to_string(),
             value,
             operator: WhereOperator::WhereNot,
         });
@@ -127,8 +127,8 @@ mod tests {
     #[test]
     fn it_can_create_a_single_where_query() {
         let query = Eloquent::query()
-            .table("users".to_string())
-            .r#where("name".to_string(), GenericVar::Str("John".to_string()))
+            .table("users")
+            .r#where("name", GenericVar::Str("John".to_string()))
             .to_sql()
             .unwrap();
 
@@ -138,8 +138,8 @@ mod tests {
     #[test]
     fn it_can_create_a_single_where_not_query() {
         let query = Eloquent::query()
-            .table("users".to_string())
-            .where_not("name".to_string(), GenericVar::Str("John".to_string()))
+            .table("users")
+            .where_not("name", GenericVar::Str("John".to_string()))
             .to_sql()
             .unwrap();
 
@@ -149,9 +149,9 @@ mod tests {
     #[test]
     fn it_can_create_multiple_where_queries() {
         let query = Eloquent::query()
-            .table("users".to_string())
-            .r#where("first_name".to_string(), GenericVar::Str("John".to_string()))
-            .r#where("last_name".to_string(), GenericVar::Str("Doe".to_string()))
+            .table("users")
+            .r#where("first_name", GenericVar::Str("John".to_string()))
+            .r#where("last_name", GenericVar::Str("Doe".to_string()))
             .to_sql()
             .unwrap();
 
@@ -161,9 +161,9 @@ mod tests {
     #[test]
     fn it_can_create_multiple_where_not_queries() {
         let query = Eloquent::query()
-            .table("users".to_string())
-            .where_not("first_name".to_string(), GenericVar::Str("John".to_string()))
-            .where_not("last_name".to_string(), GenericVar::Str("Doe".to_string()))
+            .table("users")
+            .where_not("first_name", GenericVar::Str("John".to_string()))
+            .where_not("last_name", GenericVar::Str("Doe".to_string()))
             .to_sql()
             .unwrap();
 
@@ -173,7 +173,7 @@ mod tests {
     #[test]
     fn it_can_create_query_without_where_clauses() {
         let query = Eloquent::query()
-            .table("users".to_string())
+            .table("users")
             .to_sql()
             .unwrap();
 
@@ -183,8 +183,8 @@ mod tests {
     #[test]
     fn it_can_create_a_where_query_with_string_value() {
         let query = Eloquent::query()
-            .table("users".to_string())
-            .r#where("name".to_string(), GenericVar::Str("John".to_string()))
+            .table("users")
+            .r#where("name", GenericVar::Str("John".to_string()))
             .to_sql()
             .unwrap();
 
@@ -194,8 +194,8 @@ mod tests {
     #[test]
     fn it_can_create_a_where_query_with_integer_value() {
         let query = Eloquent::query()
-            .table("users".to_string())
-            .r#where("age".to_string(), GenericVar::Int(25))
+            .table("users")
+            .r#where("age", GenericVar::Int(25))
             .to_sql()
             .unwrap();
 
@@ -205,9 +205,9 @@ mod tests {
     #[test]
     fn it_can_create_a_where_query_with_boolean_value() {
         let query = Eloquent::query()
-            .table("users".to_string())
-            .r#where("is_active".to_string(), GenericVar::Bool(true))
-            .r#where("is_blocked".to_string(), GenericVar::Bool(false))
+            .table("users")
+            .r#where("is_active", GenericVar::Bool(true))
+            .r#where("is_blocked", GenericVar::Bool(false))
             .to_sql()
             .unwrap();
 

@@ -23,14 +23,14 @@ impl Eloquent {
     /// use eloquent_core::{Eloquent, GenericVar};
     ///
     /// let query = Eloquent::query()
-    ///     .table("flights".to_string())
-    ///     .select("id".to_string())
+    ///     .table("flights")
+    ///     .select("id")
     ///     .to_sql()
     ///     .unwrap();
     /// ```
-    pub fn select(&mut self, column_name: String) -> &mut Eloquent {
+    pub fn select(&mut self, column_name: &str) -> &mut Eloquent {
         self.select_clauses.clauses.push(SelectClause {
-            column: column_name,
+            column: column_name.to_string(),
         });
 
         self
@@ -79,8 +79,8 @@ mod tests {
     #[test]
     fn it_can_create_a_single_select_query() {
         let query = Eloquent::query()
-            .table("users".to_string())
-            .select("first_name".to_string())
+            .table("users")
+            .select("first_name")
             .to_sql()
             .unwrap();
 
@@ -90,9 +90,9 @@ mod tests {
     #[test]
     fn it_can_create_multiple_select_queries() {
         let query = Eloquent::query()
-            .table("users".to_string())
-            .select("first_name".to_string())
-            .select("last_name".to_string())
+            .table("users")
+            .select("first_name")
+            .select("last_name")
             .to_sql()
             .unwrap();
 
@@ -102,7 +102,7 @@ mod tests {
     #[test]
     fn it_selects_all_columns_if_no_select_query_set() {
         let query = Eloquent::query()
-            .table("users".to_string())
+            .table("users")
             .to_sql()
             .unwrap();
 

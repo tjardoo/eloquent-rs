@@ -13,9 +13,9 @@ pub struct OrderClause {
 }
 
 impl Eloquent {
-    pub fn order_by(&mut self, column_name: String, direction: Direction) -> &mut Eloquent {
+    pub fn order_by(&mut self, column_name: &str, direction: Direction) -> &mut Eloquent {
         self.order_clauses.clauses.push(OrderClause {
-            column: column_name,
+            column: column_name.to_string(),
             direction,
         });
 
@@ -75,8 +75,8 @@ mod tests {
     #[test]
     fn it_can_order_by_a_single_column_asc() {
         let query = Eloquent::query()
-            .table("users".to_string())
-            .order_by("id".to_string(), Direction::Asc)
+            .table("users")
+            .order_by("id", Direction::Asc)
             .to_sql()
             .unwrap();
 
@@ -86,8 +86,8 @@ mod tests {
     #[test]
     fn it_can_order_by_a_single_column_desc() {
         let query = Eloquent::query()
-            .table("users".to_string())
-            .order_by("id".to_string(), Direction::Desc)
+            .table("users")
+            .order_by("id", Direction::Desc)
             .to_sql()
             .unwrap();
 
@@ -97,9 +97,9 @@ mod tests {
     #[test]
     fn it_can_order_by_multiple_columns() {
         let query = Eloquent::query()
-            .table("flights".to_string())
-            .order_by("destination".to_string(), Direction::Asc)
-            .order_by("terminal_id".to_string(), Direction::Desc)
+            .table("flights")
+            .order_by("destination", Direction::Asc)
+            .order_by("terminal_id", Direction::Desc)
             .to_sql()
             .unwrap();
 

@@ -19,19 +19,19 @@ impl Eloquent {
     /// use eloquent_core::{Eloquent, GenericVar, Clause};
     ///
     /// let query = Eloquent::query()
-    ///     .update("flights".to_string(), vec![
+    ///     .update("flights", vec![
     ///         Clause {
     ///             column: "flight_code".to_string(),
     ///             value: GenericVar::Str("KL0803".to_string()),
     ///         },
     ///     ])
-    ///     .r#where("id".to_string(), GenericVar::Int(1))
+    ///     .r#where("id", GenericVar::Int(1))
     ///     .to_sql()
     ///     .unwrap();
     /// ```
-    pub fn update(&mut self, table_name: String, clauses: Vec<Clause>) -> &mut Eloquent {
+    pub fn update(&mut self, table_name: &str, clauses: Vec<Clause>) -> &mut Eloquent {
         self.update_clause = UpdateClauses {
-            table: Some(table_name),
+            table: Some(table_name.to_string()),
             clauses,
         };
 
@@ -90,13 +90,13 @@ mod tests {
     #[test]
     fn it_can_create_a_single_update_query() {
         let query = Eloquent::query()
-            .update("todos".to_string(), vec![
+            .update("todos", vec![
                 Clause {
                     column: "description".to_string(),
                     value: GenericVar::Str("learn Rust".to_string()),
                 },
             ])
-            .r#where("id".to_string(), GenericVar::Int(1))
+            .r#where("id", GenericVar::Int(1))
             .to_sql()
             .unwrap();
 
@@ -106,7 +106,7 @@ mod tests {
     #[test]
     fn it_can_create_a_multiple_update_query() {
         let query = Eloquent::query()
-            .update("todos".to_string(), vec![
+            .update("todos", vec![
                 Clause {
                     column: "description".to_string(),
                     value: GenericVar::Str("learn Rust".to_string()),
@@ -116,7 +116,7 @@ mod tests {
                     value: GenericVar::Bool(false),
                 },
             ])
-            .r#where("id".to_string(), GenericVar::Int(1))
+            .r#where("id", GenericVar::Int(1))
             .to_sql()
             .unwrap();
 

@@ -1,15 +1,15 @@
 //! # Eloquent Core
 //!
-//! Eloquent is a query builder designed to reduce the boilerplate for database interactions.
+//! Core query builder expressions and tools.
 //!
-//! # Example
+//! # Quick Start
 //!
 //! ```rust
 //! use eloquent_core::Eloquent;
 //!
 //! let query = Eloquent::query()
-//!     .table("users".to_string())
-//!     .select("first_name".to_string())
+//!     .table("users")
+//!     .select("first_name")
 //!     .to_sql()
 //!     .unwrap();
 //!

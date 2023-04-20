@@ -1,20 +1,15 @@
-//! # Eloquent Core
+//! # Eloquent
 //!
-//! Eloquent is a query builder designed to reduce the boilerplate for database interactions.
+//! Eloquent database query builder provides a convenient, fluent interface to create database queries.
 //!
 //! # Quick Start
-//!
-//! To get you started quickly, the easiest way to create a query is by using the simplest
-//! version and adding conditions as-you-go.
-//!
-//! # Example
 //!
 //! ```rust
 //! use eloquent_core::Eloquent;
 //!
 //! let query = Eloquent::query()
-//!     .table("users".to_string())
-//!     .select("first_name".to_string())
+//!     .table("users")
+//!     .select("first_name")
 //!     .to_sql()
 //!     .unwrap();
 //!
@@ -24,11 +19,10 @@
 //! # Support
 //!
 //! - [X] SELECT
-//! - [ ] WHERE
-//!   - [X] WHERE
-//!   - [X] WHERE NOT
-//!   - [ ] WHERE IS NULL
-//!   - [ ] WHERE IS NOT NULL
+//! - [X] WHERE
+//! - [X] WHERE NOT
+//! - [ ] WHERE IS NULL
+//! - [ ] WHERE IS NOT NULL
 //! - [X] INSERT
 //! - [X] UPDATE
 //! - [X] DELETE
@@ -47,17 +41,17 @@ mod tests {
     #[test]
     fn it_works_with_a_select_query() {
         let query = Eloquent::query()
-            .table("flights".to_string())
-            .select("id".to_string())
-            .select("flight_number".to_string())
-            .select("destination".to_string())
-            .r#where("departure_code".to_string(), GenericVar::Str("AMS".to_string()))
-            .r#where("destination".to_string(), GenericVar::Str("SIN".to_string()))
-            .where_not("terminal_id".to_string(), GenericVar::Int(2))
-            .r#where("is_active".to_string(), GenericVar::Bool(true))
-            .group_by("destination".to_string())
-            .order_by("flight_number".to_string(), Direction::Asc)
-            .order_by("id".to_string(), Direction::Desc)
+            .table("flights")
+            .select("id")
+            .select("flight_number")
+            .select("destination")
+            .r#where("departure_code", GenericVar::Str("AMS".to_string()))
+            .r#where("destination", GenericVar::Str("SIN".to_string()))
+            .where_not("terminal_id", GenericVar::Int(2))
+            .r#where("is_active", GenericVar::Bool(true))
+            .group_by("destination")
+            .order_by("flight_number", Direction::Asc)
+            .order_by("id", Direction::Desc)
             .to_sql()
             .unwrap();
 
@@ -67,7 +61,7 @@ mod tests {
     #[test]
     fn it_works_with_an_insert_query() {
         let query = Eloquent::query()
-            .insert("flights".to_string(), vec![
+            .insert("flights", vec![
                 Clause {
                     column: "id".to_string(),
                     value: GenericVar::Int(1),
@@ -90,7 +84,7 @@ mod tests {
     #[test]
     fn it_works_with_an_update_query() {
         let query = Eloquent::query()
-            .update("flights".to_string(), vec![
+            .update("flights", vec![
                 Clause {
                     column: "flight_code".to_string(),
                     value: GenericVar::Str("KL0803".to_string()),
@@ -100,7 +94,7 @@ mod tests {
                     value: GenericVar::Str("Bangkok".to_string()),
                 }
             ])
-            .r#where("id".to_string(), GenericVar::Int(1))
+            .r#where("id", GenericVar::Int(1))
             .to_sql()
             .unwrap();
 
@@ -110,8 +104,8 @@ mod tests {
     #[test]
     fn it_works_with_a_delete_query() {
         let query = Eloquent::query()
-            .delete("flights".to_string())
-            .r#where("id".to_string(), GenericVar::Int(1))
+            .delete("flights")
+            .r#where("id", GenericVar::Int(1))
             .to_sql()
             .unwrap();
 

@@ -18,14 +18,14 @@ impl Eloquent {
     /// use eloquent_core::{Eloquent, GenericVar};
     ///
     /// let query = Eloquent::query()
-    ///     .delete("flights".to_string())
-    ///     .r#where("id".to_string(), GenericVar::Int(1))
+    ///     .delete("flights")
+    ///     .r#where("id", GenericVar::Int(1))
     ///     .to_sql()
     ///     .unwrap();
     /// ```
-    pub fn delete(&mut self, table_name: String) -> &mut Eloquent {
+    pub fn delete(&mut self, table_name: &str) -> &mut Eloquent {
         self.delete_clause = DeleteClause {
-            table: Some(table_name),
+            table: Some(table_name.to_string()),
         };
 
         self
@@ -54,8 +54,8 @@ mod tests {
     #[test]
     fn it_can_create_a_delete_query() {
         let query = Eloquent::query()
-            .delete("todos".to_string())
-            .r#where("id".to_string(), GenericVar::Int(1))
+            .delete("todos")
+            .r#where("id", GenericVar::Int(1))
             .to_sql()
             .unwrap();
 

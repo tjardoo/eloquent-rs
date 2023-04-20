@@ -19,7 +19,7 @@ impl Eloquent {
     /// use eloquent_core::{Eloquent, GenericVar, Clause};
     ///
     /// let query = Eloquent::query()
-    ///     .insert("flights".to_string(), vec![
+    ///     .insert("flights", vec![
     ///         Clause {
     ///             column: "id".to_string(),
     ///             value: GenericVar::Int(1),
@@ -32,9 +32,9 @@ impl Eloquent {
     ///     .to_sql()
     ///     .unwrap();
     /// ```
-    pub fn insert(&mut self, table_name: String, clauses: Vec<Clause>) -> &mut Eloquent {
+    pub fn insert(&mut self, table_name: &str, clauses: Vec<Clause>) -> &mut Eloquent {
         self.insert_clause = InsertClauses {
-            table: Some(table_name),
+            table: Some(table_name.to_string()),
             clauses,
         };
 
@@ -102,7 +102,7 @@ mod tests {
     #[test]
     fn it_can_create_a_single_insert_query() {
         let query = Eloquent::query()
-            .insert("todos".to_string(), vec![
+            .insert("todos", vec![
                 Clause {
                     column: "description".to_string(),
                     value: GenericVar::Str("learn Rust".to_string()),
@@ -117,7 +117,7 @@ mod tests {
     #[test]
     fn it_can_create_a_multiple_insert_query() {
         let query = Eloquent::query()
-            .insert("todos".to_string(), vec![
+            .insert("todos", vec![
                 Clause {
                     column: "description".to_string(),
                     value: GenericVar::Str("learn Rust".to_string()),

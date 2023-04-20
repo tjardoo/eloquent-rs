@@ -1,9 +1,8 @@
 # Eloquent
 
-[![Test Status](https://github.com/tjardoo/eloquent-rs/workflows/test/badge.svg?event=push)](https://github.com/tjardoo/eloquent-rs/actions)
-[![Crate](https://img.shields.io/crates/v/eloquent.svg)](https://crates.io/crates/eloquent)
-[![API](https://docs.rs/eloquent/badge.svg)](https://docs.rs/eloquent)
-[![Minimum rustc version](https://img.shields.io/badge/rustc-1.56+-lightgray.svg)](https://github.com/tjardoo/eloquent-rs#rust-version-requirements)
+[![tests](https://github.com/tjardoo/eloquent-rs/workflows/test/badge.svg?event=push)](https://github.com/tjardoo/eloquent-rs/actions)
+[![crate.io](https://img.shields.io/crates/v/eloquent.svg)](https://crates.io/crates/eloquent)
+[![docs](https://docs.rs/eloquent/badge.svg)](https://docs.rs/eloquent)
 
 A Rust library for building queries in an eloquent way.
 
@@ -16,11 +15,9 @@ A Rust library for building queries in an eloquent way.
 
 ## Usage
 
-Add this to your `Cargo.toml`:
-
 ```ini
 [dependencies]
-eloquent = "0.1.4"
+eloquent = "0.2"
 ```
 
 ### Select Query
@@ -29,10 +26,10 @@ eloquent = "0.1.4"
 use eloquent_core::{Direction, GenericVar};
 
 let query = Eloquent::query()
-    .table("flights".to_string())
-    .select("id".to_string())
-    .select("flight_number".to_string())
-    .r#where("destination".to_string(), GenericVar::Str("SIN".to_string()))
+    .table("flights")
+    .select("id")
+    .select("flight_number")
+    .r#where("destination", GenericVar::Str("SIN".to_string()))
     .to_sql()
     .unwrap();
 
@@ -45,7 +42,7 @@ let query = Eloquent::query()
 use eloquent_core::{Direction, GenericVar, Clause};
 
 let query = Eloquent::query()
-    .insert("flights".to_string(), vec![
+    .insert("flights", vec![
         Clause {
             column: "id".to_string(),
             value: GenericVar::Int(1),
@@ -67,7 +64,7 @@ let query = Eloquent::query()
 use eloquent_core::{Direction, GenericVar, Clause};
 
 let query = Eloquent::query()
-    .update("flights".to_string(), vec![
+    .update("flights", vec![
         Clause {
             column: "flight_code".to_string(),
             value: GenericVar::Str("KL0803".to_string()),
@@ -77,7 +74,7 @@ let query = Eloquent::query()
             value: GenericVar::Str("Bangkok".to_string()),
         },
     ])
-    .r#where("id".to_string(), GenericVar::Int(1))
+    .r#where("id", GenericVar::Int(1))
     .to_sql()
     .unwrap();
 
@@ -90,8 +87,8 @@ let query = Eloquent::query()
 use eloquent_core::{Direction, GenericVar};
 
 let query = Eloquent::query()
-    .delete("flights".to_string())
-    .r#where("id".to_string(), GenericVar::Int(1))
+    .delete("flights")
+    .r#where("id", GenericVar::Int(1))
     .to_sql()
     .unwrap();
 
