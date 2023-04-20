@@ -5,7 +5,7 @@ edition = "2021"
 license = "MIT"
 description = "A Rust library for building queries in an eloquent way."
 repository = "https://github.com/tjardoo/eloquent-rs"
-documentation = "https://docs.rs/eloquent-rs"
+documentation = "https://docs.rs/eloquent"
 keywords = ["database", "query"]
 
 [workspace]
