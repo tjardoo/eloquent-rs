@@ -57,7 +57,8 @@ pub enum GenericVar
 {
     Str(String),
     Int(u32),
-    Bool(bool)
+    Bool(bool),
+    None,
 }
 
 /// Used to indicate whether the order by query must be in ascending or descending order.
@@ -80,6 +81,7 @@ impl fmt::Display for GenericVar {
             GenericVar::Int(value) => write!(f, "{}", value),
             GenericVar::Bool(true) => write!(f, "{}", 1),
             GenericVar::Bool(false) => write!(f, "{}", 0),
+            GenericVar::None => write!(f, ""),
         }
     }
 }

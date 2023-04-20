@@ -21,8 +21,8 @@
 //! - [X] SELECT
 //! - [X] WHERE
 //! - [X] WHERE NOT
-//! - [ ] WHERE IS NULL
-//! - [ ] WHERE IS NOT NULL
+//! - [X] WHERE IS NULL
+//! - [X] WHERE IS NOT NULL
 //! - [X] INSERT
 //! - [X] UPDATE
 //! - [X] DELETE
