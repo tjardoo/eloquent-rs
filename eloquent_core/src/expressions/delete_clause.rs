@@ -5,7 +5,7 @@ pub struct DeleteClause {
     pub table: Option<String>,
 }
 
-impl Eloquent {
+impl<'a> Eloquent<'a> {
     /// Delete clause
     ///
     /// It is used to delete existing records in the table.
@@ -23,7 +23,7 @@ impl Eloquent {
     ///     .to_sql()
     ///     .unwrap();
     /// ```
-    pub fn delete(&mut self, table_name: &str) -> &mut Eloquent {
+    pub fn delete(&mut self, table_name: &str) -> &mut Eloquent<'a> {
         self.delete_clause = DeleteClause {
             table: Some(table_name.to_string()),
         };

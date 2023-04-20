@@ -10,8 +10,8 @@ pub struct GroupClause {
     pub column: String,
 }
 
-impl Eloquent {
-    pub fn group_by(&mut self, column_name: &str) -> &mut Eloquent {
+impl<'a> Eloquent<'a> {
+    pub fn group_by(&mut self, column_name: &str) -> &mut Eloquent<'a> {
         self.group_clauses.clauses.push(GroupClause {
             column: column_name.to_string(),
         });

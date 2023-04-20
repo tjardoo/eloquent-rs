@@ -12,8 +12,8 @@ pub struct OrderClause {
     pub direction: Direction,
 }
 
-impl Eloquent {
-    pub fn order_by(&mut self, column_name: &str, direction: Direction) -> &mut Eloquent {
+impl<'a> Eloquent<'a> {
+    pub fn order_by(&mut self, column_name: &str, direction: Direction) -> &mut Eloquent<'a> {
         self.order_clauses.clauses.push(OrderClause {
             column: column_name.to_string(),
             direction,

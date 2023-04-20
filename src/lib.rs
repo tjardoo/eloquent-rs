@@ -45,8 +45,8 @@ mod tests {
             .select("id")
             .select("flight_number")
             .select("destination")
-            .r#where("departure_code", GenericVar::Str("AMS".to_string()))
-            .r#where("destination", GenericVar::Str("SIN".to_string()))
+            .r#where("departure_code", GenericVar::Str("AMS"))
+            .r#where("destination", GenericVar::Str("SIN"))
             .where_not("terminal_id", GenericVar::Int(2))
             .r#where("is_active", GenericVar::Bool(true))
             .group_by("destination")
@@ -68,11 +68,11 @@ mod tests {
                 },
                 Clause {
                     column: "flight_code".to_string(),
-                    value: GenericVar::Str("KL0803".to_string()),
+                    value: GenericVar::Str("KL0803"),
                 },
                 Clause {
                     column: "destination".to_string(),
-                    value: GenericVar::Str("Bangkok".to_string()),
+                    value: GenericVar::Str("Bangkok"),
                 }
             ])
             .to_sql()
@@ -87,11 +87,11 @@ mod tests {
             .update("flights", vec![
                 Clause {
                     column: "flight_code".to_string(),
-                    value: GenericVar::Str("KL0803".to_string()),
+                    value: GenericVar::Str("KL0803"),
                 },
                 Clause {
                     column: "destination".to_string(),
-                    value: GenericVar::Str("Bangkok".to_string()),
+                    value: GenericVar::Str("Bangkok"),
                 }
             ])
             .r#where("id", GenericVar::Int(1))

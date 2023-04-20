@@ -1,12 +1,12 @@
 use crate::{Eloquent, error::EloquentError, Clause};
 use super::formattable::Formattable;
 
-pub struct UpdateClauses {
+pub struct UpdateClauses<'a> {
     pub table: Option<String>,
-    pub clauses: Vec<Clause>,
+    pub clauses: Vec<Clause<'a>>,
 }
 
-impl Eloquent {
+impl<'a> Eloquent<'a> {
     /// Update clause
     ///
     /// It is used to update existing records in the table.
@@ -22,14 +22,14 @@ impl Eloquent {
     ///     .update("flights", vec![
     ///         Clause {
     ///             column: "flight_code".to_string(),
-    ///             value: GenericVar::Str("KL0803".to_string()),
+    ///             value: GenericVar::Str("KL0803"),
     ///         },
     ///     ])
     ///     .r#where("id", GenericVar::Int(1))
     ///     .to_sql()
     ///     .unwrap();
     /// ```
-    pub fn update(&mut self, table_name: &str, clauses: Vec<Clause>) -> &mut Eloquent {
+    pub fn update(&mut self, table_name: &str, clauses: Vec<Clause<'a>>) -> &mut Eloquent<'a> {
         self.update_clause = UpdateClauses {
             table: Some(table_name.to_string()),
             clauses,
@@ -39,7 +39,7 @@ impl Eloquent {
     }
 }
 
-impl Formattable for UpdateClauses {
+impl Formattable for UpdateClauses<'_> {
     fn is_used(&self) -> bool {
         self.clauses.is_empty() == false
     }
@@ -93,7 +93,7 @@ mod tests {
             .update("todos", vec![
                 Clause {
                     column: "description".to_string(),
-                    value: GenericVar::Str("learn Rust".to_string()),
+                    value: GenericVar::Str("learn Rust"),
                 },
             ])
             .r#where("id", GenericVar::Int(1))
@@ -109,7 +109,7 @@ mod tests {
             .update("todos", vec![
                 Clause {
                     column: "description".to_string(),
-                    value: GenericVar::Str("learn Rust".to_string()),
+                    value: GenericVar::Str("learn Rust"),
                 },
                 Clause {
                     column: "is_completed".to_string(),

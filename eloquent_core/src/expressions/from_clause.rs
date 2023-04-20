@@ -6,7 +6,7 @@ pub struct FromClause {
     pub table: Option<String>,
 }
 
-impl Eloquent {
+impl<'a> Eloquent<'a> {
     /// From clause
     ///
     /// It is used to set the table on which the query will be performed.
@@ -23,7 +23,7 @@ impl Eloquent {
     ///     .to_sql()
     ///     .unwrap();
     /// ```
-    pub fn table(&mut self, table_name: &str) -> &mut Eloquent {
+    pub fn table(&mut self, table_name: &str) -> &mut Eloquent<'a> {
         self.from_clause = FromClause {
             table: Some(table_name.to_string()),
         };

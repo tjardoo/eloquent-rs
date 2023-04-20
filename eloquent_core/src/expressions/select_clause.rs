@@ -9,7 +9,7 @@ pub struct SelectClause {
     pub column: String,
 }
 
-impl Eloquent {
+impl<'a> Eloquent<'a> {
     /// Select clause
     ///
     /// It is used to retreive only those columns that are specified.
@@ -28,7 +28,7 @@ impl Eloquent {
     ///     .to_sql()
     ///     .unwrap();
     /// ```
-    pub fn select(&mut self, column_name: &str) -> &mut Eloquent {
+    pub fn select(&mut self, column_name: &str) -> &mut Eloquent<'a> {
         self.select_clauses.clauses.push(SelectClause {
             column: column_name.to_string(),
         });

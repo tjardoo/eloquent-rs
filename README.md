@@ -29,7 +29,7 @@ let query = Eloquent::query()
     .table("flights")
     .select("id")
     .select("flight_number")
-    .r#where("destination", GenericVar::Str("SIN".to_string()))
+    .r#where("destination", GenericVar::Str("SIN"))
     .to_sql()
     .unwrap();
 
@@ -49,7 +49,7 @@ let query = Eloquent::query()
         },
         Clause {
             column: "flight_code".to_string(),
-            value: GenericVar::Str("KL0803".to_string()),
+            value: GenericVar::Str("KL0803"),
         },
     ])
     .to_sql()
@@ -67,11 +67,11 @@ let query = Eloquent::query()
     .update("flights", vec![
         Clause {
             column: "flight_code".to_string(),
-            value: GenericVar::Str("KL0803".to_string()),
+            value: GenericVar::Str("KL0803"),
         },
         Clause {
             column: "destination".to_string(),
-            value: GenericVar::Str("Bangkok".to_string()),
+            value: GenericVar::Str("Bangkok"),
         },
     ])
     .r#where("id", GenericVar::Int(1))

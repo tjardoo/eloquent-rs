@@ -3,13 +3,13 @@ use std::fmt;
 use crate::{Eloquent, error::EloquentError, GenericVar};
 use super::formattable::Formattable;
 
-pub struct WhereClauses {
-    pub clauses: Vec<WhereClause>,
+pub struct WhereClauses<'a> {
+    pub clauses: Vec<WhereClause<'a>>,
 }
 
-pub struct WhereClause{
+pub struct WhereClause<'a> {
     pub column: String,
-    pub value: GenericVar,
+    pub value: GenericVar<'a>,
     pub operator: WhereOperator,
 }
 
@@ -20,7 +20,7 @@ pub enum WhereOperator {
     WhereNotNull,
 }
 
-impl Eloquent {
+impl<'a> Eloquent<'a> {
     /// Where clause
     ///
     /// It is used to extract only those records that fulfill the specified condition.
@@ -34,13 +34,13 @@ impl Eloquent {
     ///
     /// let query = Eloquent::query()
     ///     .table("flights")
-    ///     .r#where("destination", GenericVar::Str("SIN".to_string()))
+    ///     .r#where("destination", GenericVar::Str("SIN"))
     ///     .to_sql()
     ///     .unwrap();
     ///
     /// assert_eq!(query, "SELECT * FROM flights WHERE `destination` = \"SIN\";");
     /// ```
-    pub fn r#where(&mut self, column_name: &str, value: GenericVar) -> &mut Eloquent {
+    pub fn r#where(&mut self, column_name: &str, value: GenericVar<'a>) -> &mut Eloquent<'a> {
         self.where_clauses.clauses.push(WhereClause {
             column: column_name.to_string(),
             value,
@@ -63,13 +63,13 @@ impl Eloquent {
     ///
     /// let query = Eloquent::query()
     ///     .table("flights")
-    ///     .where_not("destination", GenericVar::Str("SIN".to_string()))
+    ///     .where_not("destination", GenericVar::Str("SIN"))
     ///     .to_sql()
     ///     .unwrap();
     ///
     /// assert_eq!(query, "SELECT * FROM flights WHERE `destination` != \"SIN\";");
     /// ```
-    pub fn where_not(&mut self, column_name: &str, value: GenericVar) -> &mut Eloquent {
+    pub fn where_not(&mut self, column_name: &str, value: GenericVar<'a>) -> &mut Eloquent<'a> {
         self.where_clauses.clauses.push(WhereClause {
             column: column_name.to_string(),
             value,
@@ -98,7 +98,7 @@ impl Eloquent {
     ///
     /// assert_eq!(query, "SELECT * FROM flights WHERE `destination` IS NULL;");
     /// ```
-    pub fn where_null(&mut self, column_name: &str) -> &mut Eloquent {
+    pub fn where_null(&mut self, column_name: &str) -> &mut Eloquent<'a> {
         self.where_clauses.clauses.push(WhereClause {
             column: column_name.to_string(),
             value: GenericVar::None,
@@ -127,7 +127,7 @@ impl Eloquent {
     ///
     /// assert_eq!(query, "SELECT * FROM flights WHERE `destination` IS NOT NULL;");
     /// ```
-    pub fn where_not_null(&mut self, column_name: &str) -> &mut Eloquent {
+    pub fn where_not_null(&mut self, column_name: &str) -> &mut Eloquent<'a> {
         self.where_clauses.clauses.push(WhereClause {
             column: column_name.to_string(),
             value: GenericVar::None,
@@ -138,7 +138,7 @@ impl Eloquent {
     }
 }
 
-impl Formattable for WhereClauses {
+impl Formattable for WhereClauses<'_> {
     fn is_used(&self) -> bool {
         self.clauses.is_empty() == false
     }
@@ -194,7 +194,7 @@ mod tests {
     fn it_can_create_a_single_where_query() {
         let query = Eloquent::query()
             .table("users")
-            .r#where("name", GenericVar::Str("John".to_string()))
+            .r#where("name", GenericVar::Str("John"))
             .to_sql()
             .unwrap();
 
@@ -205,7 +205,7 @@ mod tests {
     fn it_can_create_a_single_where_not_query() {
         let query = Eloquent::query()
             .table("users")
-            .where_not("name", GenericVar::Str("John".to_string()))
+            .where_not("name", GenericVar::Str("John"))
             .to_sql()
             .unwrap();
 
@@ -216,8 +216,8 @@ mod tests {
     fn it_can_create_multiple_where_queries() {
         let query = Eloquent::query()
             .table("users")
-            .r#where("first_name", GenericVar::Str("John".to_string()))
-            .r#where("last_name", GenericVar::Str("Doe".to_string()))
+            .r#where("first_name", GenericVar::Str("John"))
+            .r#where("last_name", GenericVar::Str("Doe"))
             .to_sql()
             .unwrap();
 
@@ -228,8 +228,8 @@ mod tests {
     fn it_can_create_multiple_where_not_queries() {
         let query = Eloquent::query()
             .table("users")
-            .where_not("first_name", GenericVar::Str("John".to_string()))
-            .where_not("last_name", GenericVar::Str("Doe".to_string()))
+            .where_not("first_name", GenericVar::Str("John"))
+            .where_not("last_name", GenericVar::Str("Doe"))
             .to_sql()
             .unwrap();
 
@@ -250,7 +250,7 @@ mod tests {
     fn it_can_create_a_where_query_with_string_value() {
         let query = Eloquent::query()
             .table("users")
-            .r#where("name", GenericVar::Str("John".to_string()))
+            .r#where("name", GenericVar::Str("John"))
             .to_sql()
             .unwrap();
 

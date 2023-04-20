@@ -1,12 +1,12 @@
 use crate::{Eloquent, error::EloquentError, Clause};
 use super::formattable::Formattable;
 
-pub struct InsertClauses {
+pub struct InsertClauses<'a> {
     pub table: Option<String>,
-    pub clauses: Vec<Clause>,
+    pub clauses: Vec<Clause<'a>>,
 }
 
-impl Eloquent {
+impl<'a> Eloquent<'a> {
     /// Insert clause
     ///
     /// It is used to insert new records in the table.
@@ -26,13 +26,13 @@ impl Eloquent {
     ///         },
     ///         Clause {
     ///             column: "flight_code".to_string(),
-    ///             value: GenericVar::Str("KL0803".to_string()),
+    ///             value: GenericVar::Str("KL0803"),
     ///         },
     ///     ])
     ///     .to_sql()
     ///     .unwrap();
     /// ```
-    pub fn insert(&mut self, table_name: &str, clauses: Vec<Clause>) -> &mut Eloquent {
+    pub fn insert(&mut self, table_name: &str, clauses: Vec<Clause<'a>>) -> &mut Eloquent<'a> {
         self.insert_clause = InsertClauses {
             table: Some(table_name.to_string()),
             clauses,
@@ -42,7 +42,7 @@ impl Eloquent {
     }
 }
 
-impl Formattable for InsertClauses {
+impl Formattable for InsertClauses<'_> {
     fn is_used(&self) -> bool {
         self.clauses.is_empty() == false
     }
@@ -105,7 +105,7 @@ mod tests {
             .insert("todos", vec![
                 Clause {
                     column: "description".to_string(),
-                    value: GenericVar::Str("learn Rust".to_string()),
+                    value: GenericVar::Str("learn Rust"),
                 },
             ])
             .to_sql()
@@ -120,7 +120,7 @@ mod tests {
             .insert("todos", vec![
                 Clause {
                     column: "description".to_string(),
-                    value: GenericVar::Str("learn Rust".to_string()),
+                    value: GenericVar::Str("learn Rust"),
                 },
                 Clause {
                     column: "is_completed".to_string(),

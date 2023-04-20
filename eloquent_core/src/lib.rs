@@ -40,22 +40,22 @@ mod expressions;
 ///
 /// let query = Eloquent::query();
 /// ```
-pub struct Eloquent {
+pub struct Eloquent<'a> {
     pub from_clause: FromClause,
     pub select_clauses: SelectClauses,
-    pub insert_clause: InsertClauses,
-    pub update_clause: UpdateClauses,
+    pub insert_clause: InsertClauses<'a>,
+    pub update_clause: UpdateClauses<'a>,
     pub delete_clause: DeleteClause,
-    pub where_clauses: WhereClauses,
+    pub where_clauses: WhereClauses<'a>,
     pub group_clauses: GroupClauses,
     pub order_clauses: OrderClauses,
 }
 
 /// Used in where/insert/update queries to allow multiple types of variables.
 #[derive(Debug)]
-pub enum GenericVar
+pub enum GenericVar<'a>
 {
-    Str(String),
+    Str(&'a str),
     Int(u32),
     Bool(bool),
     None,
@@ -69,12 +69,12 @@ pub enum Direction {
 }
 
 /// Used to map a value to a certain column.
-pub struct Clause {
+pub struct Clause<'a> {
     pub column: String,
-    pub value: GenericVar,
+    pub value: GenericVar<'a>,
 }
 
-impl fmt::Display for GenericVar {
+impl fmt::Display for GenericVar<'_> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
             GenericVar::Str(value) => write!(f, "\"{}\"", value),
@@ -86,8 +86,8 @@ impl fmt::Display for GenericVar {
     }
 }
 
-impl Eloquent {
-    pub fn query() -> Eloquent {
+impl<'a> Eloquent<'a> {
+    pub fn query() -> Eloquent<'a> {
         Eloquent {
             from_clause: FromClause {
                 table: None,
