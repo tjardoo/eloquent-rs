@@ -1,96 +1,27 @@
 # Eloquent
 
-[![tests](https://github.com/tjardoo/eloquent-rs/workflows/test/badge.svg?event=push)](https://github.com/tjardoo/eloquent-rs/actions)
-[![crate.io](https://img.shields.io/crates/v/eloquent.svg)](https://crates.io/crates/eloquent)
-[![docs](https://docs.rs/eloquent/badge.svg)](https://docs.rs/eloquent)
-
-A Rust library for building queries in an eloquent way.
-
-- [Usage](#usage)
-- Examples
-  - [Select query](#select-query)
-  - [Insert query](#insert-query)
-  - [Update query](#update-query)
-  - [Delete query](#delete-query)
+Eloquent is a simple and easy to use SQL query builder. The query builder supports `select`, `insert`, `update`, `delete`, `where`, `join`, `group_by`, `having`, `order_by`, `limit`, `offset` and `to_sql` methods.
 
 ## Usage
 
 ```ini
 [dependencies]
-eloquent = "0.2"
+eloquent = "1.0"
 ```
 
-### Select Query
-
 ```rust
-use eloquent_core::{Direction, GenericVar};
+use eloquent_core::{Eloquent, Operator, Variable};
 
-let query = Eloquent::query()
-    .table("flights")
-    .select("id")
-    .select("flight_number")
-    .r#where("destination", GenericVar::Str("SIN"))
-    .to_sql()
-    .unwrap();
+#[test]
+fn select_test_query_1() {
+    let mut builder = Eloquent::new();
 
-    assert_eq!(query, "SELECT `id`, `flight_number` FROM flights WHERE `destination` = \"SIN\";");
-```
+    let query = builder
+        .select(vec!["id".to_string(), "name".to_string()])
+        .from("users".to_string())
+        .r#where("id".to_string(), Operator::Equal, Variable::new(1))
+        .to_sql();
 
-### Insert Query
-
-```rust
-use eloquent_core::{Direction, GenericVar, Clause};
-
-let query = Eloquent::query()
-    .insert("flights", vec![
-        Clause {
-            column: "id".to_string(),
-            value: GenericVar::Int(1),
-        },
-        Clause {
-            column: "flight_code".to_string(),
-            value: GenericVar::Str("KL0803"),
-        },
-    ])
-    .to_sql()
-    .unwrap();
-
-    assert_eq!(query, "INSERT INTO flights (`id`, `flight_code`) VALUES (1, \"KL0803\");");
-```
-
-### Update Query
-
-```rust
-use eloquent_core::{Direction, GenericVar, Clause};
-
-let query = Eloquent::query()
-    .update("flights", vec![
-        Clause {
-            column: "flight_code".to_string(),
-            value: GenericVar::Str("KL0803"),
-        },
-        Clause {
-            column: "destination".to_string(),
-            value: GenericVar::Str("Bangkok"),
-        },
-    ])
-    .r#where("id", GenericVar::Int(1))
-    .to_sql()
-    .unwrap();
-
-    assert_eq!(query, "INSERT INTO flights (`id`, `flight_code`) VALUES (1, \"KL0803\") WHERE `id` = 1;");
-```
-
-### Delete Query
-
-```rust
-use eloquent_core::{Direction, GenericVar};
-
-let query = Eloquent::query()
-    .delete("flights")
-    .r#where("id", GenericVar::Int(1))
-    .to_sql()
-    .unwrap();
-
-assert_eq!(query, "DELETE FROM flights WHERE `id` = 1;");
+    assert_eq!(query, "SELECT id, name FROM users WHERE id = 1");
+}
 ```

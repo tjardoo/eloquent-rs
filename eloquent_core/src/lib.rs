@@ -1,170 +1,88 @@
 //! # Eloquent Core
 //!
-//! Core query builder expressions and tools.
+//! `eloquent_core` is a library for building SQL queries in Rust.
 //!
-//! # Quick Start
-//!
-//! ```rust
-//! use eloquent_core::Eloquent;
-//!
-//! let query = Eloquent::query()
-//!     .table("users")
-//!     .select("first_name")
-//!     .to_sql()
-//!     .unwrap();
-//!
-//! assert_eq!(query, "SELECT `first_name` FROM users;");
-//! ```
-use std::fmt;
 
-use error::EloquentError;
-use expressions::delete_clause::DeleteClause;
-use expressions::from_clause::FromClause;
-use expressions::group_clause::GroupClauses;
-use expressions::insert_clause::InsertClauses;
-use expressions::order_clause::OrderClauses;
-use expressions::select_clause::SelectClauses;
-use expressions::update_clause::UpdateClauses;
-use expressions::where_clause::WhereClauses;
-use expressions::formattable::Formattable;
+use std::fmt::Display;
 
-mod error;
-mod expressions;
+use builder::Bindings;
 
-/// Eloquent query builder.
-///
-/// # Example
-///
-/// ```rust
-/// use eloquent_core::Eloquent;
-///
-/// let query = Eloquent::query();
-/// ```
-pub struct Eloquent<'a> {
-    pub from_clause: FromClause,
-    pub select_clauses: SelectClauses,
-    pub insert_clause: InsertClauses<'a>,
-    pub update_clause: UpdateClauses<'a>,
-    pub delete_clause: DeleteClause,
-    pub where_clauses: WhereClauses<'a>,
-    pub group_clauses: GroupClauses,
-    pub order_clauses: OrderClauses,
+mod builder;
+mod compiler;
+
+pub struct Eloquent {
+    pub bindings: Bindings,
 }
 
-/// Used in where/insert/update queries to allow multiple types of variables.
-#[derive(Debug)]
-pub enum GenericVar<'a>
-{
-    Str(&'a str),
+impl Eloquent {
+    pub fn new() -> Self {
+        Self {
+            bindings: Bindings {
+                select: vec![],
+                insert: vec![],
+                update: vec![],
+                from: None,
+                // join: vec![],
+                r#where: vec![],
+                // group_by: vec![],
+                // having: vec![],
+                // order_by: vec![],
+                is_delete: false,
+                limit: None,
+                offset: None,
+            },
+        }
+    }
+}
+
+pub enum Operator {
+    Equal,
+    NotEqual,
+    LessThan,
+    LessThanOrEqual,
+    GreaterThan,
+    GreaterThanOrEqual,
+    Like,
+    NotLike,
+}
+
+#[derive(Debug, Clone)]
+pub enum Variable {
+    String(String),
     Int(u32),
     Bool(bool),
-    None,
+    Null,
 }
 
-/// Used to indicate whether the order by query must be in ascending or descending order.
-#[derive(Debug)]
-pub enum Direction {
-    Asc,
-    Desc,
-}
-
-/// Used to map a value to a certain column.
-pub struct Clause<'a> {
+pub struct Clause {
     pub column: String,
-    pub value: GenericVar<'a>,
+    pub operator: Operator,
+    pub value: Variable,
 }
 
-impl fmt::Display for GenericVar<'_> {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+impl Display for Operator {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            GenericVar::Str(value) => write!(f, "\"{}\"", value),
-            GenericVar::Int(value) => write!(f, "{}", value),
-            GenericVar::Bool(true) => write!(f, "{}", 1),
-            GenericVar::Bool(false) => write!(f, "{}", 0),
-            GenericVar::None => write!(f, ""),
+            Operator::Equal => write!(f, "="),
+            Operator::NotEqual => write!(f, "!="),
+            Operator::LessThan => write!(f, "<"),
+            Operator::LessThanOrEqual => write!(f, "<="),
+            Operator::GreaterThan => write!(f, ">"),
+            Operator::GreaterThanOrEqual => write!(f, ">="),
+            Operator::Like => write!(f, "LIKE"),
+            Operator::NotLike => write!(f, "NOT LIKE"),
         }
     }
 }
 
-impl<'a> Eloquent<'a> {
-    pub fn query() -> Eloquent<'a> {
-        Eloquent {
-            from_clause: FromClause {
-                table: None,
-            },
-            select_clauses: SelectClauses {
-                clauses: vec![],
-            },
-            insert_clause: InsertClauses {
-                table: None,
-                clauses: vec![],
-            },
-            update_clause: UpdateClauses {
-                table: None,
-                clauses: vec![],
-            },
-            delete_clause: DeleteClause {
-                table: None,
-            },
-            where_clauses: WhereClauses {
-                clauses: vec![],
-            },
-            group_clauses: GroupClauses {
-                clauses: vec![],
-            },
-            order_clauses: OrderClauses {
-                clauses: vec![],
-            },
+impl Display for Variable {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Variable::String(s) => write!(f, "`{}`", s),
+            Variable::Int(i) => write!(f, "{}", i),
+            Variable::Bool(true) => write!(f, "{}", true),
+            Variable::Bool(false) => write!(f, "{}", false),
+            Variable::Null => write!(f, "IS NULL"),
         }
-    }
-
-    pub fn to_sql(&mut self) -> Result<String, error::EloquentError> {
-        if self.select_clauses.is_used() && self.insert_clause.is_used() {
-            return Err(EloquentError::CombinationSelectAndInsertBindingError);
-        }
-
-        if self.from_clause.table.is_some() {
-            if self.from_clause.table.is_none() {
-                return Err(EloquentError::SelectBindingWithoutTableNameError);
-            }
-
-            let select_binding = &self.select_clauses.to_query_format()?;
-            let from_binding = &self.from_clause.to_query_format()?;
-            let where_binding = &self.where_clauses.to_query_format()?;
-            let group_binding = &self.group_clauses.to_query_format()?;
-            let order_binding = &self.order_clauses.to_query_format()?;
-
-            return Ok(format!("{} {}{}{}{};",
-                select_binding,
-                from_binding,
-                where_binding,
-                group_binding,
-                order_binding,
-            ));
-        } else if self.insert_clause.is_used() {
-            let insert_binding = &self.insert_clause.to_query_format()?;
-
-            return Ok(format!("{};",
-                insert_binding,
-            ));
-        } else if self.update_clause.is_used() {
-            let update_binding = &self.update_clause.to_query_format()?;
-            let where_binding = &self.where_clauses.to_query_format()?;
-
-            return Ok(format!("{}{};",
-                update_binding,
-                where_binding,
-            ));
-        } else if self.delete_clause.is_used() {
-            let delete_binding = &self.delete_clause.to_query_format()?;
-            let where_binding = &self.where_clauses.to_query_format()?;
-
-            return Ok(format!("{}{};",
-                delete_binding,
-                where_binding,
-            ));
-        }
-
-        return Err(EloquentError::MissingSelectAndInsertBindingError);
     }
 }
