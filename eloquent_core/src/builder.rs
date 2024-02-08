@@ -7,8 +7,8 @@ pub struct Bindings {
     pub table: Option<String>,
     // pub join: Vec<String>,
     pub r#where: Vec<Clause>,
-    // pub group_by: Vec<String>,
-    // pub having: Vec<String>,
+    pub group_by: Vec<String>,
+    pub having: Vec<Clause>,
     pub order_by: Vec<String>,
     pub is_delete: bool,
     pub limit: Option<u32>,
@@ -20,6 +20,36 @@ impl Eloquent {
         for column in columns.iter() {
             self.bindings.select.push(column.to_string());
         }
+
+        self
+    }
+
+    pub fn select_count(&mut self, column: &str) -> &mut Self {
+        self.bindings.select.push(format!("COUNT({})", column));
+
+        self
+    }
+
+    pub fn select_max(&mut self, column: &str) -> &mut Self {
+        self.bindings.select.push(format!("MAX({})", column));
+
+        self
+    }
+
+    pub fn select_min(&mut self, column: &str) -> &mut Self {
+        self.bindings.select.push(format!("MIN({})", column));
+
+        self
+    }
+
+    pub fn select_sum(&mut self, column: &str) -> &mut Self {
+        self.bindings.select.push(format!("SUM({})", column));
+
+        self
+    }
+
+    pub fn select_avg(&mut self, column: &str) -> &mut Self {
+        self.bindings.select.push(format!("AVG({})", column));
 
         self
     }
@@ -56,9 +86,25 @@ impl Eloquent {
         self
     }
 
-    pub fn r#where(&mut self, column: String, operator: Operator, value: Variable) -> &mut Self {
+    pub fn r#where(&mut self, column: &str, operator: Operator, value: Variable) -> &mut Self {
         self.bindings.r#where.push(Clause {
-            column,
+            column: column.to_string(),
+            operator,
+            value,
+        });
+
+        self
+    }
+
+    pub fn group_by(&mut self, column: &str) -> &mut Self {
+        self.bindings.group_by.push(column.to_string());
+
+        self
+    }
+
+    pub fn having(&mut self, column: &str, operator: Operator, value: Variable) -> &mut Self {
+        self.bindings.having.push(Clause {
+            column: column.to_string(),
             operator,
             value,
         });

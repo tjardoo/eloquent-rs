@@ -24,8 +24,8 @@ impl Eloquent {
                 table: None,
                 // join: vec![],
                 r#where: vec![],
-                // group_by: vec![],
-                // having: vec![],
+                group_by: vec![],
+                having: vec![],
                 order_by: vec![],
                 is_delete: false,
                 limit: None,
@@ -35,6 +35,7 @@ impl Eloquent {
     }
 }
 
+#[derive(Debug, Clone)]
 pub enum Operator {
     Equal,
     NotEqual,
@@ -59,6 +60,7 @@ pub enum Direction {
     Desc,
 }
 
+#[derive(Debug, Clone)]
 pub struct Clause {
     pub column: String,
     pub operator: Operator,

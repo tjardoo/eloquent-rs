@@ -35,6 +35,25 @@ impl Eloquent {
 
         builder = self.append_where_clauses(&mut builder);
 
+        if self.bindings.group_by.is_empty() == false {
+            builder.push_str(" GROUP BY ");
+            builder.push_str(&self.bindings.group_by.join(", "));
+        }
+
+        if self.bindings.having.is_empty() == false {
+            builder.push_str(" HAVING ");
+            builder.push_str(
+                &self
+                    .bindings
+                    .having
+                    .clone()
+                    .into_iter()
+                    .map(|clause| format!("{} {} {}", clause.column, clause.operator, clause.value))
+                    .collect::<Vec<String>>()
+                    .join(", "),
+            );
+        }
+
         if self.bindings.order_by.is_empty() == false {
             builder.push_str(" ORDER BY ");
             builder.push_str(&self.bindings.order_by.join(", "));

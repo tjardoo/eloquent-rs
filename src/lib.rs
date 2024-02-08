@@ -31,7 +31,7 @@ mod tests {
 
         let query = builder
             .table("users")
-            .r#where("id".to_string(), Operator::Equal, Variable::Int(1))
+            .r#where("id", Operator::Equal, Variable::Int(1))
             .to_sql();
 
         assert_eq!(query, "SELECT * FROM users WHERE id = 1");
@@ -45,9 +45,9 @@ mod tests {
             .select(vec!["id", "name"])
             .select(vec!["email"])
             .table("users")
-            .r#where("id".to_string(), Operator::Equal, Variable::Int(1))
+            .r#where("id", Operator::Equal, Variable::Int(1))
             .r#where(
-                "name".to_string(),
+                "name",
                 Operator::Equal,
                 Variable::String("John".to_string()),
             )
@@ -94,6 +94,48 @@ mod tests {
     }
 
     #[test]
+    fn select_test_query_8() {
+        let mut builder = Eloquent::new();
+
+        let query = builder.table("users").group_by("group_id").to_sql();
+
+        assert_eq!(query, "SELECT * FROM users GROUP BY group_id");
+    }
+
+    #[test]
+    fn select_test_query_9() {
+        let mut builder = Eloquent::new();
+
+        let query = builder
+            .table("users")
+            .select_count("id")
+            .select(vec!["country_id"])
+            .group_by("country_id")
+            .to_sql();
+
+        assert_eq!(
+            query,
+            "SELECT COUNT(id), country_id FROM users GROUP BY country_id"
+        );
+    }
+
+    #[test]
+    fn select_test_query_10() {
+        let mut builder = Eloquent::new();
+
+        let query = builder
+            .table("users")
+            .having(
+                "total_purchases",
+                Operator::GreaterThanOrEqual,
+                Variable::Int(100),
+            )
+            .to_sql();
+
+        assert_eq!(query, "SELECT * FROM users HAVING total_purchases >= 100");
+    }
+
+    #[test]
     fn insert_test_query_1() {
         let mut builder = Eloquent::new();
 
@@ -125,7 +167,7 @@ mod tests {
         let query = builder
             .update(vec![("name", Variable::String("John".to_string()))])
             .table("users")
-            .r#where("id".to_string(), Operator::Equal, Variable::Int(1))
+            .r#where("id", Operator::Equal, Variable::Int(1))
             .to_sql();
 
         assert_eq!(query, "UPDATE users SET name = `John` WHERE id = 1");
@@ -142,7 +184,7 @@ mod tests {
                 Variable::String("john@example.com".to_string()),
             )])
             .table("users")
-            .r#where("id".to_string(), Operator::Equal, Variable::Int(1))
+            .r#where("id", Operator::Equal, Variable::Int(1))
             .to_sql();
 
         assert_eq!(
@@ -158,7 +200,7 @@ mod tests {
         let query = builder
             .delete()
             .table("users")
-            .r#where("id".to_string(), Operator::Equal, Variable::Int(1))
+            .r#where("id", Operator::Equal, Variable::Int(1))
             .to_sql();
 
         assert_eq!(query, "DELETE FROM users WHERE id = 1");
