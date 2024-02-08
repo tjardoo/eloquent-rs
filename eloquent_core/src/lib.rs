@@ -76,6 +76,15 @@ pub enum JoinType {
     Full,
 }
 
+#[derive(Debug, Clone, PartialEq)]
+pub enum FunctionType {
+    Count,
+    Max,
+    Min,
+    Sum,
+    Avg,
+}
+
 #[derive(Debug, Clone)]
 pub struct Clause {
     pub column: String,
@@ -158,6 +167,18 @@ impl Display for JoinType {
             JoinType::Left => write!(f, "LEFT JOIN"),
             JoinType::Right => write!(f, "RIGHT JOIN"),
             JoinType::Full => write!(f, "FULL JOIN"),
+        }
+    }
+}
+
+impl Display for FunctionType {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            FunctionType::Count => write!(f, "COUNT"),
+            FunctionType::Max => write!(f, "MAX"),
+            FunctionType::Min => write!(f, "MIN"),
+            FunctionType::Sum => write!(f, "SUM"),
+            FunctionType::Avg => write!(f, "AVG"),
         }
     }
 }

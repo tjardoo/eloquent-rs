@@ -1,6 +1,6 @@
 use crate::{
-    Clause, Direction, Eloquent, Join, JoinType, Operator, Variable, WhereClause, WhereClosure,
-    WhereOperator,
+    Clause, Direction, Eloquent, FunctionType, Join, JoinType, Operator, Variable, WhereClause,
+    WhereClosure, WhereOperator,
 };
 
 pub struct Bindings {
@@ -29,41 +29,39 @@ impl Eloquent {
     }
 
     pub fn select_count(&mut self, column: &str, alias: &str) -> &mut Self {
-        self.bindings
-            .select
-            .push(format!("COUNT({}) AS {}", column, alias.to_string()));
+        self.create_function(column, alias, FunctionType::Count);
 
         self
     }
 
     pub fn select_max(&mut self, column: &str, alias: &str) -> &mut Self {
-        self.bindings
-            .select
-            .push(format!("MAX({}) AS {}", column, alias.to_string()));
+        self.create_function(column, alias, FunctionType::Max);
 
         self
     }
 
     pub fn select_min(&mut self, column: &str, alias: &str) -> &mut Self {
-        self.bindings
-            .select
-            .push(format!("MIN({}) AS {}", column, alias.to_string()));
+        self.create_function(column, alias, FunctionType::Min);
 
         self
     }
 
     pub fn select_sum(&mut self, column: &str, alias: &str) -> &mut Self {
-        self.bindings
-            .select
-            .push(format!("SUM({}) AS {}", column, alias.to_string()));
+        self.create_function(column, alias, FunctionType::Sum);
 
         self
     }
 
     pub fn select_avg(&mut self, column: &str, alias: &str) -> &mut Self {
+        self.create_function(column, alias, FunctionType::Avg);
+
+        self
+    }
+
+    fn create_function(&mut self, column: &str, alias: &str, function: FunctionType) -> &mut Self {
         self.bindings
             .select
-            .push(format!("AVG({}) AS {}", column, alias.to_string()));
+            .push(format!("{}({}) AS {}", function, column, alias.to_string()));
 
         self
     }
@@ -142,51 +140,60 @@ impl Eloquent {
     }
 
     pub fn r#where(&mut self, column: &str, operator: Operator, value: Variable) -> &mut Self {
-        self.bindings.r#where.push(WhereClause {
-            column: column.to_string(),
-            operator,
-            value,
-            where_operator: WhereOperator::And,
-        });
+        self.create_where_clause(column, operator, value, WhereOperator::And);
 
         self
     }
 
     pub fn or_where(&mut self, column: &str, operator: Operator, value: Variable) -> &mut Self {
-        self.bindings.r#where.push(WhereClause {
-            column: column.to_string(),
-            operator,
-            value,
-            where_operator: WhereOperator::Or,
-        });
+        self.create_where_clause(column, operator, value, WhereOperator::Or);
 
         self
     }
 
     pub fn where_not(&mut self, column: &str, operator: Operator, value: Variable) -> &mut Self {
+        self.create_where_clause(column, operator, value, WhereOperator::Not);
+
+        self
+    }
+
+    fn create_where_clause(
+        &mut self,
+        column: &str,
+        operator: Operator,
+        value: Variable,
+        where_operator: WhereOperator,
+    ) -> &mut Self {
         self.bindings.r#where.push(WhereClause {
             column: column.to_string(),
             operator,
             value,
-            where_operator: WhereOperator::Not,
+            where_operator,
         });
 
         self
     }
 
     pub fn where_closure(&mut self, closure: Vec<Clause>) -> &mut Self {
-        self.bindings.where_closure.push(WhereClosure {
-            closure,
-            where_operator: WhereOperator::And,
-        });
+        self.create_where_closure(closure, WhereOperator::And);
 
         self
     }
 
     pub fn or_where_closure(&mut self, closure: Vec<Clause>) -> &mut Self {
+        self.create_where_closure(closure, WhereOperator::Or);
+
+        self
+    }
+
+    fn create_where_closure(
+        &mut self,
+        closure: Vec<Clause>,
+        where_operator: WhereOperator,
+    ) -> &mut Self {
         self.bindings.where_closure.push(WhereClosure {
             closure,
-            where_operator: WhereOperator::Or,
+            where_operator,
         });
 
         self
