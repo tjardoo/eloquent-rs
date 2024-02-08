@@ -24,6 +24,7 @@ impl Eloquent {
                 table: None,
                 join: vec![],
                 r#where: vec![],
+                where_closure: vec![],
                 group_by: vec![],
                 having: vec![],
                 order_by: vec![],
@@ -60,6 +61,21 @@ pub enum Direction {
     Desc,
 }
 
+#[derive(Debug, Clone, PartialEq)]
+pub enum WhereOperator {
+    And,
+    Or,
+    Not,
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub enum JoinType {
+    Inner,
+    Left,
+    Right,
+    Full,
+}
+
 #[derive(Debug, Clone)]
 pub struct Clause {
     pub column: String,
@@ -68,10 +84,25 @@ pub struct Clause {
 }
 
 #[derive(Debug, Clone)]
+pub struct WhereClause {
+    pub column: String,
+    pub operator: Operator,
+    pub value: Variable,
+    pub where_operator: WhereOperator,
+}
+
+#[derive(Debug, Clone)]
 pub struct Join {
     pub table: String,
     pub left_hand: String,
     pub right_hand: String,
+    pub r#type: JoinType,
+}
+
+#[derive(Debug, Clone)]
+pub struct WhereClosure {
+    pub closure: Vec<Clause>,
+    pub where_operator: WhereOperator,
 }
 
 impl Display for Operator {
@@ -106,6 +137,27 @@ impl Display for Direction {
         match self {
             Direction::Asc => write!(f, "ASC"),
             Direction::Desc => write!(f, "DESC"),
+        }
+    }
+}
+
+impl Display for WhereOperator {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            WhereOperator::And => write!(f, "AND"),
+            WhereOperator::Or => write!(f, "OR"),
+            WhereOperator::Not => write!(f, "NOT"),
+        }
+    }
+}
+
+impl Display for JoinType {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            JoinType::Inner => write!(f, "JOIN"),
+            JoinType::Left => write!(f, "LEFT JOIN"),
+            JoinType::Right => write!(f, "RIGHT JOIN"),
+            JoinType::Full => write!(f, "FULL JOIN"),
         }
     }
 }

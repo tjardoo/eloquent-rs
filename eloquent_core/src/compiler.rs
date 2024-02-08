@@ -1,4 +1,4 @@
-use crate::Eloquent;
+use crate::{Eloquent, WhereOperator};
 
 impl Eloquent {
     pub fn compile(&self) -> String {
@@ -35,8 +35,8 @@ impl Eloquent {
 
         for join in self.bindings.join.iter() {
             builder.push_str(&format!(
-                " JOIN {} ON {} = {}",
-                join.table, join.left_hand, join.right_hand
+                " {} {} ON {} = {}",
+                join.r#type, join.table, join.left_hand, join.right_hand
             ));
         }
 
@@ -149,14 +149,42 @@ impl Eloquent {
         for (index, clause) in self.bindings.r#where.iter().enumerate() {
             if index == 0 {
                 builder.push_str(" WHERE ");
-            } else {
+            } else if clause.where_operator == WhereOperator::And {
                 builder.push_str(" AND ");
+            } else {
+                builder.push_str(" OR ");
+            }
+
+            if clause.where_operator == WhereOperator::Not {
+                builder.push_str("NOT ");
             }
 
             builder.push_str(&format!(
                 "{} {} {}",
                 clause.column, clause.operator, clause.value
             ));
+        }
+
+        for (index, closure) in self.bindings.where_closure.iter().enumerate() {
+            if index == 0 {
+                builder.push_str(" WHERE ");
+            } else if closure.where_operator == WhereOperator::And {
+                builder.push_str(" AND ");
+            } else {
+                builder.push_str(" OR ");
+            }
+
+            builder.push_str("(");
+            builder.push_str(
+                &closure
+                    .closure
+                    .clone()
+                    .into_iter()
+                    .map(|clause| format!("{} {} {}", clause.column, clause.operator, clause.value))
+                    .collect::<Vec<String>>()
+                    .join(" AND "),
+            );
+            builder.push_str(")");
         }
 
         builder.to_string()

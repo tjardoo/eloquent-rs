@@ -5,7 +5,7 @@
 
 #[cfg(test)]
 mod tests {
-    use eloquent_core::{Direction, Eloquent, Operator, Variable};
+    use eloquent_core::{Clause, Direction, Eloquent, Operator, Variable};
 
     #[test]
     fn select_test_query_1() {
@@ -147,6 +147,103 @@ mod tests {
         assert_eq!(
             query,
             "SELECT * FROM users JOIN purchases ON users.id = purchase.user_id"
+        );
+    }
+
+    #[test]
+    fn select_test_query_12() {
+        let mut builder = Eloquent::new();
+
+        let query = builder
+            .table("users")
+            .r#where("age", Operator::GreaterThanOrEqual, Variable::Int(18))
+            .r#where("age", Operator::LessThan, Variable::Int(25))
+            .or_where("age", Operator::GreaterThanOrEqual, Variable::Int(30))
+            .to_sql();
+
+        assert_eq!(
+            query,
+            "SELECT * FROM users WHERE age >= 18 AND age < 25 OR age >= 30"
+        );
+    }
+
+    #[test]
+    fn select_test_query_13() {
+        let mut builder = Eloquent::new();
+
+        let query = builder
+            .table("users")
+            .r#where("age", Operator::GreaterThanOrEqual, Variable::Int(18))
+            .r#where("age", Operator::LessThan, Variable::Int(25))
+            .or_where(
+                "status",
+                Operator::Equal,
+                Variable::String("pending".to_string()),
+            )
+            .or_where(
+                "status",
+                Operator::Equal,
+                Variable::String("active".to_string()),
+            )
+            .to_sql();
+
+        assert_eq!(
+            query,
+            "SELECT * FROM users WHERE age >= 18 AND age < 25 OR status = `pending` OR status = `active`"
+        );
+    }
+
+    #[test]
+    fn select_test_query_14() {
+        let mut builder = Eloquent::new();
+
+        let query = builder
+            .table("users")
+            .where_closure(vec![
+                Clause {
+                    column: "age".to_string(),
+                    operator: Operator::GreaterThanOrEqual,
+                    value: Variable::Int(18),
+                },
+                Clause {
+                    column: "age".to_string(),
+                    operator: Operator::LessThan,
+                    value: Variable::Int(25),
+                },
+            ])
+            .or_where_closure(vec![
+                Clause {
+                    column: "status".to_string(),
+                    operator: Operator::Equal,
+                    value: Variable::String("pending".to_string()),
+                },
+                Clause {
+                    column: "status".to_string(),
+                    operator: Operator::Equal,
+                    value: Variable::String("active".to_string()),
+                },
+            ])
+            .to_sql();
+
+        assert_eq!(
+            query,
+            "SELECT * FROM users WHERE (age >= 18 AND age < 25) OR (status = `pending` AND status = `active`)"
+        );
+    }
+
+    #[test]
+    fn select_test_query_15() {
+        let mut builder = Eloquent::new();
+
+        let query = builder
+            .table("users")
+            .left_join("purchases", "users.id", "purchase.user_id")
+            .right_join("orders", "users.id", "orders.user_id")
+            .to_sql();
+
+        assert_eq!(
+            query,
+            "SELECT * FROM users LEFT JOIN purchases ON users.id = purchase.user_id RIGHT JOIN orders ON users.id = orders.user_id"
         );
     }
 
