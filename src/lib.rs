@@ -108,14 +108,14 @@ mod tests {
 
         let query = builder
             .table("users")
-            .select_count("id")
+            .select_count("id", "total_users")
             .select(vec!["country_id"])
             .group_by("country_id")
             .to_sql();
 
         assert_eq!(
             query,
-            "SELECT COUNT(id), country_id FROM users GROUP BY country_id"
+            "SELECT COUNT(id) AS total_users, country_id FROM users GROUP BY country_id"
         );
     }
 
@@ -219,5 +219,25 @@ mod tests {
             .to_sql();
 
         assert_eq!(query, "DELETE FROM users WHERE id = 1");
+    }
+
+    #[test]
+    fn select_query_example() {
+        let mut builder = Eloquent::new();
+
+        let query = builder
+            .select(vec!["user_id"])
+            .select_count("order_id", "number_of_orders")
+            .table("users")
+            .join("orders", "users.user_id", "orders.user_id")
+            .r#where("age", Operator::GreaterThan, Variable::Int(18))
+            .group_by("user_id")
+            .having("total_orders", Operator::GreaterThan, Variable::Int(5))
+            .order_by("total_orders", Direction::Desc)
+            .limit(10)
+            .offset(0)
+            .to_sql();
+
+        assert_eq!(query, "SELECT user_id, COUNT(order_id) AS number_of_orders FROM users JOIN orders ON users.user_id = orders.user_id WHERE age > 18 GROUP BY user_id HAVING total_orders > 5 ORDER BY total_orders DESC LIMIT 10 OFFSET 0");
     }
 }

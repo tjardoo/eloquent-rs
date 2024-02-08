@@ -24,32 +24,42 @@ impl Eloquent {
         self
     }
 
-    pub fn select_count(&mut self, column: &str) -> &mut Self {
-        self.bindings.select.push(format!("COUNT({})", column));
+    pub fn select_count(&mut self, column: &str, alias: &str) -> &mut Self {
+        self.bindings
+            .select
+            .push(format!("COUNT({}) AS {}", column, alias.to_string()));
 
         self
     }
 
-    pub fn select_max(&mut self, column: &str) -> &mut Self {
-        self.bindings.select.push(format!("MAX({})", column));
+    pub fn select_max(&mut self, column: &str, alias: &str) -> &mut Self {
+        self.bindings
+            .select
+            .push(format!("MAX({}) AS {}", column, alias.to_string()));
 
         self
     }
 
-    pub fn select_min(&mut self, column: &str) -> &mut Self {
-        self.bindings.select.push(format!("MIN({})", column));
+    pub fn select_min(&mut self, column: &str, alias: &str) -> &mut Self {
+        self.bindings
+            .select
+            .push(format!("MIN({}) AS {}", column, alias.to_string()));
 
         self
     }
 
-    pub fn select_sum(&mut self, column: &str) -> &mut Self {
-        self.bindings.select.push(format!("SUM({})", column));
+    pub fn select_sum(&mut self, column: &str, alias: &str) -> &mut Self {
+        self.bindings
+            .select
+            .push(format!("SUM({}) AS {}", column, alias.to_string()));
 
         self
     }
 
-    pub fn select_avg(&mut self, column: &str) -> &mut Self {
-        self.bindings.select.push(format!("AVG({})", column));
+    pub fn select_avg(&mut self, column: &str, alias: &str) -> &mut Self {
+        self.bindings
+            .select
+            .push(format!("AVG({}) AS {}", column, alias.to_string()));
 
         self
     }
