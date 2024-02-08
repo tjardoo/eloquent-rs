@@ -1,4 +1,4 @@
-use crate::{Eloquent, WhereOperator};
+use crate::{Clause, Eloquent, Operator, Variable, WhereOperator};
 
 impl Eloquent {
     pub fn compile(&self) -> String {
@@ -159,10 +159,7 @@ impl Eloquent {
                 builder.push_str("NOT ");
             }
 
-            builder.push_str(&format!(
-                "{} {} {}",
-                clause.column, clause.operator, clause.value
-            ));
+            builder.push_str(self.construct_where_clause(clause.clone().into()).as_str());
         }
 
         for (index, closure) in self.bindings.where_closure.iter().enumerate() {
@@ -180,7 +177,7 @@ impl Eloquent {
                     .closure
                     .clone()
                     .into_iter()
-                    .map(|clause| format!("{} {} {}", clause.column, clause.operator, clause.value))
+                    .map(|clause| self.construct_where_clause(clause))
                     .collect::<Vec<String>>()
                     .join(" AND "),
             );
@@ -188,5 +185,16 @@ impl Eloquent {
         }
 
         builder.to_string()
+    }
+
+    fn construct_where_clause(&self, clauses: Clause) -> String {
+        match clauses.value {
+            Variable::Null => match clauses.operator {
+                Operator::Equal => format!("{} IS NULL", clauses.column),
+                Operator::NotEqual => format!("{} IS NOT NULL", clauses.column),
+                _ => panic!("Invalid operator for NULL value in WHERE clause."),
+            },
+            _ => format!("{} {} {}", clauses.column, clauses.operator, clauses.value),
+        }
     }
 }

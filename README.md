@@ -14,14 +14,26 @@ use eloquent_core::{Eloquent, Operator, Variable};
 
 #[test]
 fn select_test_query_1() {
-    let mut builder = Eloquent::new();
-
-    let query = builder
-        .select(vec!["id".to_string(), "name".to_string()])
-        .from("users".to_string())
-        .r#where("id".to_string(), Operator::Equal, Variable::new(1))
+    let query = Eloquent::query()
+        .select(vec!["id", "name"])
+        .table("users")
+        .r#where("id", Operator::Equal, Variable::new(1))
         .to_sql();
 
     assert_eq!(query, "SELECT id, name FROM users WHERE id = 1");
+}
+```
+
+```rust
+use eloquent_core::{Eloquent, Operator, Variable};
+
+#[test]
+fn select_test_query_1() {
+    let query = Eloquent::query()
+        .table("users")
+        .r#where("email", Operator::Equal, Variable::Null)
+        .to_sql();
+
+    assert_eq!(query, "SELECT * FROM users WHERE email IS NULL");
 }
 ```

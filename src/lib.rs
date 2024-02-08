@@ -9,27 +9,21 @@ mod tests {
 
     #[test]
     fn select_test_query_1() {
-        let mut builder = Eloquent::new();
-
-        let query: String = builder.select(vec!["id"]).table("users").to_sql();
+        let query = Eloquent::query().select(vec!["id"]).table("users").to_sql();
 
         assert_eq!(query, "SELECT id FROM users");
     }
 
     #[test]
     fn select_test_query_2() {
-        let mut builder = Eloquent::new();
-
-        let query = builder.table("users").to_sql();
+        let query = Eloquent::query().table("users").to_sql();
 
         assert_eq!(query, "SELECT * FROM users");
     }
 
     #[test]
     fn select_test_query_3() {
-        let mut builder = Eloquent::new();
-
-        let query = builder
+        let query = Eloquent::query()
             .table("users")
             .r#where("id", Operator::Equal, Variable::Int(1))
             .to_sql();
@@ -39,9 +33,7 @@ mod tests {
 
     #[test]
     fn select_test_query_4() {
-        let mut builder = Eloquent::new();
-
-        let query = builder
+        let query = Eloquent::query()
             .select(vec!["id", "name"])
             .select(vec!["email"])
             .table("users")
@@ -61,18 +53,18 @@ mod tests {
 
     #[test]
     fn select_test_query_5() {
-        let mut builder = Eloquent::new();
-
-        let query = builder.table("users").limit(10).offset(20).to_sql();
+        let query = Eloquent::query()
+            .table("users")
+            .limit(10)
+            .offset(20)
+            .to_sql();
 
         assert_eq!(query, "SELECT * FROM users LIMIT 10 OFFSET 20");
     }
 
     #[test]
     fn select_test_query_6() {
-        let mut builder = Eloquent::new();
-
-        let query = builder
+        let query = Eloquent::query()
             .table("users")
             .order_by("id", Direction::Desc)
             .to_sql();
@@ -82,9 +74,7 @@ mod tests {
 
     #[test]
     fn select_test_query_7() {
-        let mut builder = Eloquent::new();
-
-        let query = builder
+        let query = Eloquent::query()
             .table("users")
             .order_by("id", Direction::Desc)
             .order_by("group_id", Direction::Asc)
@@ -95,18 +85,17 @@ mod tests {
 
     #[test]
     fn select_test_query_8() {
-        let mut builder = Eloquent::new();
-
-        let query = builder.table("users").group_by("group_id").to_sql();
+        let query = Eloquent::query()
+            .table("users")
+            .group_by("group_id")
+            .to_sql();
 
         assert_eq!(query, "SELECT * FROM users GROUP BY group_id");
     }
 
     #[test]
     fn select_test_query_9() {
-        let mut builder = Eloquent::new();
-
-        let query = builder
+        let query = Eloquent::query()
             .table("users")
             .select_count("id", "total_users")
             .select(vec!["country_id"])
@@ -121,9 +110,7 @@ mod tests {
 
     #[test]
     fn select_test_query_10() {
-        let mut builder = Eloquent::new();
-
-        let query = builder
+        let query = Eloquent::query()
             .table("users")
             .having(
                 "total_purchases",
@@ -137,9 +124,7 @@ mod tests {
 
     #[test]
     fn select_test_query_11() {
-        let mut builder = Eloquent::new();
-
-        let query = builder
+        let query = Eloquent::query()
             .table("users")
             .join("purchases", "users.id", "purchase.user_id")
             .to_sql();
@@ -152,9 +137,7 @@ mod tests {
 
     #[test]
     fn select_test_query_12() {
-        let mut builder = Eloquent::new();
-
-        let query = builder
+        let query = Eloquent::query()
             .table("users")
             .r#where("age", Operator::GreaterThanOrEqual, Variable::Int(18))
             .r#where("age", Operator::LessThan, Variable::Int(25))
@@ -169,9 +152,7 @@ mod tests {
 
     #[test]
     fn select_test_query_13() {
-        let mut builder = Eloquent::new();
-
-        let query = builder
+        let query = Eloquent::query()
             .table("users")
             .r#where("age", Operator::GreaterThanOrEqual, Variable::Int(18))
             .r#where("age", Operator::LessThan, Variable::Int(25))
@@ -195,9 +176,7 @@ mod tests {
 
     #[test]
     fn select_test_query_14() {
-        let mut builder = Eloquent::new();
-
-        let query = builder
+        let query = Eloquent::query()
             .table("users")
             .where_closure(vec![
                 Clause {
@@ -233,9 +212,7 @@ mod tests {
 
     #[test]
     fn select_test_query_15() {
-        let mut builder = Eloquent::new();
-
-        let query = builder
+        let query = Eloquent::query()
             .table("users")
             .left_join("purchases", "users.id", "purchase.user_id")
             .right_join("orders", "users.id", "orders.user_id")
@@ -249,9 +226,7 @@ mod tests {
 
     #[test]
     fn insert_test_query_1() {
-        let mut builder = Eloquent::new();
-
-        let query = builder
+        let query = Eloquent::query()
             .insert(vec![("id", Variable::Int(1))])
             .table("users")
             .to_sql();
@@ -261,9 +236,7 @@ mod tests {
 
     #[test]
     fn insert_test_query_2() {
-        let mut builder = Eloquent::new();
-
-        let query = builder
+        let query = Eloquent::query()
             .insert(vec![("id", Variable::Int(1))])
             .insert(vec![("name", Variable::String("John".to_string()))])
             .table("users")
@@ -274,9 +247,7 @@ mod tests {
 
     #[test]
     fn update_test_query_1() {
-        let mut builder = Eloquent::new();
-
-        let query = builder
+        let query = Eloquent::query()
             .update(vec![("name", Variable::String("John".to_string()))])
             .table("users")
             .r#where("id", Operator::Equal, Variable::Int(1))
@@ -287,9 +258,7 @@ mod tests {
 
     #[test]
     fn update_test_query_2() {
-        let mut builder = Eloquent::new();
-
-        let query = builder
+        let query = Eloquent::query()
             .update(vec![("name", Variable::String("John".to_string()))])
             .update(vec![(
                 "email",
@@ -307,9 +276,7 @@ mod tests {
 
     #[test]
     fn delete_test_query_1() {
-        let mut builder = Eloquent::new();
-
-        let query = builder
+        let query = Eloquent::query()
             .delete()
             .table("users")
             .r#where("id", Operator::Equal, Variable::Int(1))
@@ -320,9 +287,7 @@ mod tests {
 
     #[test]
     fn select_query_example() {
-        let mut builder = Eloquent::new();
-
-        let query = builder
+        let query = Eloquent::query()
             .select(vec!["user_id"])
             .select_count("order_id", "number_of_orders")
             .table("users")
@@ -336,5 +301,25 @@ mod tests {
             .to_sql();
 
         assert_eq!(query, "SELECT user_id, COUNT(order_id) AS number_of_orders FROM users JOIN orders ON users.user_id = orders.user_id WHERE age > 18 GROUP BY user_id HAVING total_orders > 5 ORDER BY total_orders DESC LIMIT 10 OFFSET 0");
+    }
+
+    #[test]
+    fn select_where_null_query() {
+        let query = Eloquent::query()
+            .table("users")
+            .r#where("email", Operator::Equal, Variable::Null)
+            .to_sql();
+
+        assert_eq!(query, "SELECT * FROM users WHERE email IS NULL");
+    }
+
+    #[test]
+    fn select_where_not_null_query() {
+        let query = Eloquent::query()
+            .table("users")
+            .r#where("email", Operator::NotEqual, Variable::Null)
+            .to_sql();
+
+        assert_eq!(query, "SELECT * FROM users WHERE email IS NOT NULL");
     }
 }

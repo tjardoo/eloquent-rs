@@ -11,11 +11,11 @@ mod builder;
 mod compiler;
 
 pub struct Eloquent {
-    pub bindings: Bindings,
+    bindings: Bindings,
 }
 
 impl Eloquent {
-    pub fn new() -> Self {
+    pub fn query() -> Self {
         Self {
             bindings: Bindings {
                 select: vec![],
@@ -48,7 +48,7 @@ pub enum Operator {
     NotLike,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum Variable {
     String(String),
     Int(u32),
@@ -179,6 +179,16 @@ impl Display for FunctionType {
             FunctionType::Min => write!(f, "MIN"),
             FunctionType::Sum => write!(f, "SUM"),
             FunctionType::Avg => write!(f, "AVG"),
+        }
+    }
+}
+
+impl From<WhereClause> for Clause {
+    fn from(where_clause: WhereClause) -> Self {
+        Self {
+            column: where_clause.column,
+            operator: where_clause.operator,
+            value: where_clause.value,
         }
     }
 }
