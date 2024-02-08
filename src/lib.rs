@@ -11,10 +11,7 @@ mod tests {
     fn select_test_query_1() {
         let mut builder = Eloquent::new();
 
-        let query: String = builder
-            .select(vec!["id".to_string()])
-            .from("users".to_string())
-            .to_sql();
+        let query: String = builder.select(vec!["id"]).table("users").to_sql();
 
         assert_eq!(query, "SELECT id FROM users");
     }
@@ -23,7 +20,7 @@ mod tests {
     fn select_test_query_2() {
         let mut builder = Eloquent::new();
 
-        let query = builder.from("users".to_string()).to_sql();
+        let query = builder.table("users").to_sql();
 
         assert_eq!(query, "SELECT * FROM users");
     }
@@ -33,7 +30,7 @@ mod tests {
         let mut builder = Eloquent::new();
 
         let query = builder
-            .from("users".to_string())
+            .table("users")
             .r#where("id".to_string(), Operator::Equal, Variable::Int(1))
             .to_sql();
 
@@ -45,9 +42,9 @@ mod tests {
         let mut builder = Eloquent::new();
 
         let query = builder
-            .select(vec!["id".to_string(), "name".to_string()])
-            .select(vec!["email".to_string()])
-            .from("users".to_string())
+            .select(vec!["id", "name"])
+            .select(vec!["email"])
+            .table("users")
             .r#where("id".to_string(), Operator::Equal, Variable::Int(1))
             .r#where(
                 "name".to_string(),
@@ -63,12 +60,21 @@ mod tests {
     }
 
     #[test]
+    fn select_test_query_5() {
+        let mut builder = Eloquent::new();
+
+        let query = builder.table("users").limit(10).offset(20).to_sql();
+
+        assert_eq!(query, "SELECT * FROM users LIMIT 10 OFFSET 20");
+    }
+
+    #[test]
     fn insert_test_query_1() {
         let mut builder = Eloquent::new();
 
         let query = builder
-            .insert(vec![("id".to_string(), Variable::Int(1))])
-            .from("users".to_string())
+            .insert(vec![("id", Variable::Int(1))])
+            .table("users")
             .to_sql();
 
         assert_eq!(query, "INSERT INTO users (id) VALUES (1)");
@@ -79,12 +85,9 @@ mod tests {
         let mut builder = Eloquent::new();
 
         let query = builder
-            .insert(vec![("id".to_string(), Variable::Int(1))])
-            .insert(vec![(
-                "name".to_string(),
-                Variable::String("John".to_string()),
-            )])
-            .from("users".to_string())
+            .insert(vec![("id", Variable::Int(1))])
+            .insert(vec![("name", Variable::String("John".to_string()))])
+            .table("users")
             .to_sql();
 
         assert_eq!(query, "INSERT INTO users (id, name) VALUES (1, `John`)");
@@ -95,15 +98,32 @@ mod tests {
         let mut builder = Eloquent::new();
 
         let query = builder
-            .update(vec![(
-                "name".to_string(),
-                Variable::String("John".to_string()),
-            )])
-            .from("users".to_string())
+            .update(vec![("name", Variable::String("John".to_string()))])
+            .table("users")
             .r#where("id".to_string(), Operator::Equal, Variable::Int(1))
             .to_sql();
 
         assert_eq!(query, "UPDATE users SET name = `John` WHERE id = 1");
+    }
+
+    #[test]
+    fn update_test_query_2() {
+        let mut builder = Eloquent::new();
+
+        let query = builder
+            .update(vec![("name", Variable::String("John".to_string()))])
+            .update(vec![(
+                "email",
+                Variable::String("john@example.com".to_string()),
+            )])
+            .table("users")
+            .r#where("id".to_string(), Operator::Equal, Variable::Int(1))
+            .to_sql();
+
+        assert_eq!(
+            query,
+            "UPDATE users SET name = `John`, email = `john@example.com` WHERE id = 1"
+        );
     }
 
     #[test]
@@ -112,7 +132,7 @@ mod tests {
 
         let query = builder
             .delete()
-            .from("users".to_string())
+            .table("users")
             .r#where("id".to_string(), Operator::Equal, Variable::Int(1))
             .to_sql();
 

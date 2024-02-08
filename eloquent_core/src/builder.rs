@@ -4,7 +4,7 @@ pub struct Bindings {
     pub select: Vec<String>,
     pub insert: Vec<(String, Variable)>,
     pub update: Vec<(String, Variable)>,
-    pub from: Option<String>,
+    pub table: Option<String>,
     // pub join: Vec<String>,
     pub r#where: Vec<Clause>,
     // pub group_by: Vec<String>,
@@ -16,7 +16,7 @@ pub struct Bindings {
 }
 
 impl Eloquent {
-    pub fn select(&mut self, columns: Vec<String>) -> &mut Self {
+    pub fn select(&mut self, columns: Vec<&str>) -> &mut Self {
         for column in columns.iter() {
             self.bindings.select.push(column.to_string());
         }
@@ -24,21 +24,21 @@ impl Eloquent {
         self
     }
 
-    pub fn insert(&mut self, columns: Vec<(String, Variable)>) -> &mut Self {
+    pub fn insert(&mut self, columns: Vec<(&str, Variable)>) -> &mut Self {
         for column in columns.iter() {
             self.bindings
                 .insert
-                .push((column.0.clone(), column.1.clone()));
+                .push((column.0.to_string(), column.1.clone()));
         }
 
         self
     }
 
-    pub fn update(&mut self, columns: Vec<(String, Variable)>) -> &mut Self {
+    pub fn update(&mut self, columns: Vec<(&str, Variable)>) -> &mut Self {
         for column in columns.iter() {
             self.bindings
                 .update
-                .push((column.0.clone(), column.1.clone()));
+                .push((column.0.to_string(), column.1.clone()));
         }
 
         self
@@ -50,8 +50,8 @@ impl Eloquent {
         self
     }
 
-    pub fn from(&mut self, table: String) -> &mut Self {
-        self.bindings.from = Some(table);
+    pub fn table(&mut self, table: &str) -> &mut Self {
+        self.bindings.table = Some(table.to_string());
 
         self
     }
@@ -62,6 +62,18 @@ impl Eloquent {
             operator,
             value,
         });
+
+        self
+    }
+
+    pub fn limit(&mut self, limit: u32) -> &mut Self {
+        self.bindings.limit = Some(limit);
+
+        self
+    }
+
+    pub fn offset(&mut self, offset: u32) -> &mut Self {
+        self.bindings.offset = Some(offset);
 
         self
     }

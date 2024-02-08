@@ -2,7 +2,7 @@ use crate::Eloquent;
 
 impl Eloquent {
     pub fn compile(&self) -> String {
-        if self.bindings.from.is_none() {
+        if self.bindings.table.is_none() {
             panic!("No table specified for the query.");
         }
 
@@ -31,9 +31,17 @@ impl Eloquent {
         }
 
         builder.push_str(" FROM ");
-        builder.push_str(&self.bindings.from.as_ref().unwrap());
+        builder.push_str(&self.bindings.table.as_ref().unwrap());
 
         builder = self.append_where_clauses(&mut builder);
+
+        if let Some(limit) = self.bindings.limit {
+            builder.push_str(&format!(" LIMIT {}", limit));
+        }
+
+        if let Some(offset) = self.bindings.offset {
+            builder.push_str(&format!(" OFFSET {}", offset));
+        }
 
         builder
     }
@@ -41,7 +49,7 @@ impl Eloquent {
     fn compile_insert(&self) -> String {
         let mut builder = "INSERT INTO ".to_string();
 
-        builder.push_str(&self.bindings.from.as_ref().unwrap());
+        builder.push_str(&self.bindings.table.as_ref().unwrap());
 
         builder.push_str(" (");
         builder.push_str(
@@ -77,7 +85,7 @@ impl Eloquent {
     fn compile_update(&self) -> String {
         let mut builder = "UPDATE ".to_string();
 
-        builder.push_str(&self.bindings.from.as_ref().unwrap());
+        builder.push_str(&self.bindings.table.as_ref().unwrap());
 
         builder.push_str(" SET ");
         builder.push_str(
@@ -99,7 +107,7 @@ impl Eloquent {
     fn compile_delete(&self) -> String {
         let mut builder = "DELETE FROM ".to_string();
 
-        builder.push_str(&self.bindings.from.as_ref().unwrap());
+        builder.push_str(&self.bindings.table.as_ref().unwrap());
 
         builder = self.append_where_clauses(&mut builder);
 

@@ -21,7 +21,7 @@ impl Eloquent {
                 select: vec![],
                 insert: vec![],
                 update: vec![],
-                from: None,
+                table: None,
                 // join: vec![],
                 r#where: vec![],
                 // group_by: vec![],
