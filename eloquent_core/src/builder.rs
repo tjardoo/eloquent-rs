@@ -1,6 +1,6 @@
 use crate::{
-    Clause, Direction, Eloquent, FunctionType, Join, JoinType, Operator, Variable, WhereClause,
-    WhereClosure, WhereOperator,
+    shared::WhereClauseBuilder, Clause, Direction, Eloquent, FunctionType, Join, JoinType,
+    Operator, Variable, WhereClause, WhereClosure, WhereOperator,
 };
 
 pub struct Bindings {
@@ -133,24 +133,6 @@ impl Eloquent {
         self
     }
 
-    pub fn r#where(&mut self, column: &str, operator: Operator, value: Variable) -> &mut Self {
-        self.create_where_clause(column, operator, value, WhereOperator::And);
-
-        self
-    }
-
-    pub fn or_where(&mut self, column: &str, operator: Operator, value: Variable) -> &mut Self {
-        self.create_where_clause(column, operator, value, WhereOperator::Or);
-
-        self
-    }
-
-    pub fn where_not(&mut self, column: &str, operator: Operator, value: Variable) -> &mut Self {
-        self.create_where_clause(column, operator, value, WhereOperator::Not);
-
-        self
-    }
-
     fn create_where_clause(
         &mut self,
         column: &str,
@@ -168,27 +150,28 @@ impl Eloquent {
         self
     }
 
-    pub fn where_closure(&mut self, closure: Vec<Clause>) -> &mut Self {
-        self.create_where_closure(closure, WhereOperator::And);
+    pub fn where_closure<C>(&mut self, closure: C) -> &mut Self
+    where
+        C: FnOnce(&mut WhereClosure),
+    {
+        let mut builder = WhereClosure::new(WhereOperator::And);
+
+        closure(&mut builder);
+
+        self.bindings.where_closure.push(builder);
 
         self
     }
 
-    pub fn or_where_closure(&mut self, closure: Vec<Clause>) -> &mut Self {
-        self.create_where_closure(closure, WhereOperator::Or);
+    pub fn or_where_closure<C>(&mut self, closure: C) -> &mut Self
+    where
+        C: FnOnce(&mut WhereClosure),
+    {
+        let mut builder = WhereClosure::new(WhereOperator::Or);
 
-        self
-    }
+        closure(&mut builder);
 
-    fn create_where_closure(
-        &mut self,
-        closure: Vec<Clause>,
-        where_operator: WhereOperator,
-    ) -> &mut Self {
-        self.bindings.where_closure.push(WhereClosure {
-            closure,
-            where_operator,
-        });
+        self.bindings.where_closure.push(builder);
 
         self
     }
@@ -231,5 +214,59 @@ impl Eloquent {
 
     pub fn to_sql(&mut self) -> String {
         self.compile()
+    }
+}
+
+impl WhereClauseBuilder for Eloquent {
+    fn r#where(&mut self, column: &str, operator: Operator, value: Variable) -> &mut Self {
+        self.create_where_clause(column, operator, value, WhereOperator::And);
+
+        self
+    }
+
+    fn or_where(&mut self, column: &str, operator: Operator, value: Variable) -> &mut Self {
+        self.create_where_clause(column, operator, value, WhereOperator::Or);
+
+        self
+    }
+
+    fn where_not(&mut self, column: &str, operator: Operator, value: Variable) -> &mut Self {
+        self.create_where_clause(column, operator, value, WhereOperator::Not);
+
+        self
+    }
+
+    fn where_null(&mut self, column: &str) -> &mut Self {
+        self.create_where_clause(column, Operator::Equal, Variable::Null, WhereOperator::And);
+
+        self
+    }
+
+    fn where_not_null(&mut self, column: &str) -> &mut Self {
+        self.create_where_clause(
+            column,
+            Operator::NotEqual,
+            Variable::Null,
+            WhereOperator::And,
+        );
+
+        self
+    }
+
+    fn or_where_null(&mut self, column: &str) -> &mut Self {
+        self.create_where_clause(column, Operator::Equal, Variable::Null, WhereOperator::Or);
+
+        self
+    }
+
+    fn or_where_not_null(&mut self, column: &str) -> &mut Self {
+        self.create_where_clause(
+            column,
+            Operator::NotEqual,
+            Variable::Null,
+            WhereOperator::Or,
+        );
+
+        self
     }
 }

@@ -159,7 +159,7 @@ impl Eloquent {
         }
 
         for (index, closure) in self.bindings.where_closure.iter().enumerate() {
-            if index == 0 {
+            if index == 0 && self.bindings.r#where.is_empty() {
                 builder.push_str(" WHERE ");
             } else if closure.where_operator == WhereOperator::And {
                 builder.push_str(" AND ");
@@ -168,15 +168,17 @@ impl Eloquent {
             }
 
             builder.push_str("(");
-            builder.push_str(
-                &closure
-                    .closure
-                    .clone()
-                    .into_iter()
-                    .map(|clause| self.construct_where_clause(clause))
-                    .collect::<Vec<String>>()
-                    .join(" AND "),
-            );
+            for (index, clause) in closure.closures.iter().enumerate() {
+                if index == 0 {
+                    //
+                } else if clause.where_operator == WhereOperator::And {
+                    builder.push_str(" AND ");
+                } else {
+                    builder.push_str(" OR ");
+                }
+
+                builder.push_str(self.construct_where_clause(clause.clone().into()).as_str());
+            }
             builder.push_str(")");
         }
 

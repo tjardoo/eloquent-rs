@@ -3,12 +3,15 @@
 //! `eloquent_core` is a library for building SQL queries in Rust.
 //!
 
-use std::fmt::Display;
-
 use builder::Bindings;
+use std::fmt::Display;
 
 mod builder;
 mod compiler;
+pub mod shared;
+mod where_closure;
+
+pub use shared::WhereClauseBuilder;
 
 pub struct Eloquent {
     bindings: Bindings,
@@ -110,6 +113,12 @@ pub struct WhereClause {
 }
 
 #[derive(Debug, Clone)]
+pub struct WhereClauses {
+    pub clauses: Vec<Clause>,
+    pub where_operator: WhereOperator,
+}
+
+#[derive(Debug, Clone)]
 pub struct Join {
     pub table: String,
     pub left_hand: String,
@@ -119,7 +128,7 @@ pub struct Join {
 
 #[derive(Debug, Clone)]
 pub struct WhereClosure {
-    pub closure: Vec<Clause>,
+    pub closures: Vec<WhereClause>,
     pub where_operator: WhereOperator,
 }
 

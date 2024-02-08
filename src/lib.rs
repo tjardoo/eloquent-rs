@@ -2,12 +2,14 @@
 //!
 //! Eloquent database query builder provides a convenient, fluent interface to create database queries.
 //!
+mod prelude;
+pub use prelude::*;
 
 #[cfg(test)]
 mod tests {
+    use crate::prelude::*;
+    use eloquent_core::{ArrayVariable, Direction, Eloquent, Operator, Variable};
     use std::vec;
-
-    use eloquent_core::{ArrayVariable, Clause, Direction, Eloquent, Operator, Variable};
 
     #[test]
     fn select_test_query_1() {
@@ -163,35 +165,29 @@ mod tests {
     #[test]
     fn select_test_query_14() {
         let query = Eloquent::table("users")
-            .where_closure(vec![
-                Clause {
-                    column: "age".to_string(),
-                    operator: Operator::GreaterThanOrEqual,
-                    value: Variable::Int(18),
-                },
-                Clause {
-                    column: "age".to_string(),
-                    operator: Operator::LessThan,
-                    value: Variable::Int(25),
-                },
-            ])
-            .or_where_closure(vec![
-                Clause {
-                    column: "status".to_string(),
-                    operator: Operator::Equal,
-                    value: Variable::String("pending".to_string()),
-                },
-                Clause {
-                    column: "status".to_string(),
-                    operator: Operator::Equal,
-                    value: Variable::String("active".to_string()),
-                },
-            ])
+            .where_closure(|closure| {
+                closure
+                    .r#where("age", Operator::GreaterThanOrEqual, Variable::Int(18))
+                    .r#where("age", Operator::LessThan, Variable::Int(25));
+            })
+            .where_closure(|closure| {
+                closure
+                    .r#where(
+                        "status",
+                        Operator::Equal,
+                        Variable::String("pending".to_string()),
+                    )
+                    .or_where(
+                        "status",
+                        Operator::Equal,
+                        Variable::String("active".to_string()),
+                    );
+            })
             .to_sql();
 
         assert_eq!(
             query,
-            "SELECT * FROM users WHERE (age >= 18 AND age < 25) OR (status = `pending` AND status = `active`)"
+            "SELECT * FROM users WHERE (age >= 18 AND age < 25) AND (status = `pending` OR status = `active`)"
         );
     }
 
@@ -334,6 +330,65 @@ mod tests {
         assert_eq!(
             query,
             "SELECT * FROM users WHERE continent_id NOT IN (`AF`, `SA`)"
+        );
+    }
+
+    #[test]
+    fn select_where_null_function_query() {
+        let query = Eloquent::table("users")
+            .where_null("email")
+            .or_where_null("phone")
+            .where_not_null("activated_at")
+            .to_sql();
+
+        assert_eq!(
+            query,
+            "SELECT * FROM users WHERE email IS NULL OR phone IS NULL AND activated_at IS NOT NULL"
+        );
+    }
+
+    #[test]
+    fn select_where_null_closure_query() {
+        let query = Eloquent::table("users")
+            .where_closure(|closure| {
+                closure
+                    .r#where("email", Operator::Equal, Variable::Null)
+                    .or_where("phone", Operator::Equal, Variable::Null);
+            })
+            .where_not_null("activated_at")
+            .to_sql();
+
+        assert_eq!(
+            query,
+            "SELECT * FROM users WHERE activated_at IS NOT NULL AND (email IS NULL OR phone IS NULL)"
+        );
+    }
+
+    #[test]
+    fn select_test_query_16() {
+        let query = Eloquent::table("users")
+            .where_closure(|closure| {
+                closure
+                    .r#where("age", Operator::GreaterThanOrEqual, Variable::Int(18))
+                    .r#where("age", Operator::LessThan, Variable::Int(25));
+            })
+            .or_where_closure(|closure| {
+                closure
+                    .r#where("age", Operator::GreaterThanOrEqual, Variable::Int(30))
+                    .r#where(
+                        "status",
+                        Operator::In,
+                        Variable::Array(vec![
+                            ArrayVariable::String("pending".to_string()),
+                            ArrayVariable::String("active".to_string()),
+                        ]),
+                    );
+            })
+            .to_sql();
+
+        assert_eq!(
+            query,
+            "SELECT * FROM users WHERE (age >= 18 AND age < 25) OR (age >= 30 AND status IN (`pending`, `active`))"
         );
     }
 }
