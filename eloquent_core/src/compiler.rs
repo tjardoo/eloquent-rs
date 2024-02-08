@@ -35,6 +35,11 @@ impl Eloquent {
 
         builder = self.append_where_clauses(&mut builder);
 
+        if self.bindings.order_by.is_empty() == false {
+            builder.push_str(" ORDER BY ");
+            builder.push_str(&self.bindings.order_by.join(", "));
+        }
+
         if let Some(limit) = self.bindings.limit {
             builder.push_str(&format!(" LIMIT {}", limit));
         }

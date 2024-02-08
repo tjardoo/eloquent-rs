@@ -26,7 +26,7 @@ impl Eloquent {
                 r#where: vec![],
                 // group_by: vec![],
                 // having: vec![],
-                // order_by: vec![],
+                order_by: vec![],
                 is_delete: false,
                 limit: None,
                 offset: None,
@@ -52,6 +52,11 @@ pub enum Variable {
     Int(u32),
     Bool(bool),
     Null,
+}
+
+pub enum Direction {
+    Asc,
+    Desc,
 }
 
 pub struct Clause {
@@ -83,6 +88,15 @@ impl Display for Variable {
             Variable::Bool(true) => write!(f, "{}", true),
             Variable::Bool(false) => write!(f, "{}", false),
             Variable::Null => write!(f, "IS NULL"),
+        }
+    }
+}
+
+impl Display for Direction {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Direction::Asc => write!(f, "ASC"),
+            Direction::Desc => write!(f, "DESC"),
         }
     }
 }

@@ -1,4 +1,4 @@
-use crate::{Clause, Eloquent, Operator, Variable};
+use crate::{Clause, Direction, Eloquent, Operator, Variable};
 
 pub struct Bindings {
     pub select: Vec<String>,
@@ -9,7 +9,7 @@ pub struct Bindings {
     pub r#where: Vec<Clause>,
     // pub group_by: Vec<String>,
     // pub having: Vec<String>,
-    // pub order_by: Vec<String>,
+    pub order_by: Vec<String>,
     pub is_delete: bool,
     pub limit: Option<u32>,
     pub offset: Option<u32>,
@@ -62,6 +62,14 @@ impl Eloquent {
             operator,
             value,
         });
+
+        self
+    }
+
+    pub fn order_by(&mut self, column: &str, direction: Direction) -> &mut Self {
+        self.bindings
+            .order_by
+            .push(format!("{} {}", column, direction));
 
         self
     }

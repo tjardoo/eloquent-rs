@@ -5,7 +5,7 @@
 
 #[cfg(test)]
 mod tests {
-    use eloquent_core::{Eloquent, Operator, Variable};
+    use eloquent_core::{Direction, Eloquent, Operator, Variable};
 
     #[test]
     fn select_test_query_1() {
@@ -66,6 +66,31 @@ mod tests {
         let query = builder.table("users").limit(10).offset(20).to_sql();
 
         assert_eq!(query, "SELECT * FROM users LIMIT 10 OFFSET 20");
+    }
+
+    #[test]
+    fn select_test_query_6() {
+        let mut builder = Eloquent::new();
+
+        let query = builder
+            .table("users")
+            .order_by("id", Direction::Desc)
+            .to_sql();
+
+        assert_eq!(query, "SELECT * FROM users ORDER BY id DESC");
+    }
+
+    #[test]
+    fn select_test_query_7() {
+        let mut builder = Eloquent::new();
+
+        let query = builder
+            .table("users")
+            .order_by("id", Direction::Desc)
+            .order_by("group_id", Direction::Asc)
+            .to_sql();
+
+        assert_eq!(query, "SELECT * FROM users ORDER BY id DESC, group_id ASC");
     }
 
     #[test]
