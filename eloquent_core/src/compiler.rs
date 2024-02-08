@@ -33,6 +33,13 @@ impl Eloquent {
         builder.push_str(" FROM ");
         builder.push_str(&self.bindings.table.as_ref().unwrap());
 
+        for join in self.bindings.join.iter() {
+            builder.push_str(&format!(
+                " JOIN {} ON {} = {}",
+                join.table, join.left_hand, join.right_hand
+            ));
+        }
+
         builder = self.append_where_clauses(&mut builder);
 
         if self.bindings.group_by.is_empty() == false {

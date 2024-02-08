@@ -136,6 +136,21 @@ mod tests {
     }
 
     #[test]
+    fn select_test_query_11() {
+        let mut builder = Eloquent::new();
+
+        let query = builder
+            .table("users")
+            .join("purchases", "users.id", "purchase.user_id")
+            .to_sql();
+
+        assert_eq!(
+            query,
+            "SELECT * FROM users JOIN purchases ON users.id = purchase.user_id"
+        );
+    }
+
+    #[test]
     fn insert_test_query_1() {
         let mut builder = Eloquent::new();
 

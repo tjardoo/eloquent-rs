@@ -22,7 +22,7 @@ impl Eloquent {
                 insert: vec![],
                 update: vec![],
                 table: None,
-                // join: vec![],
+                join: vec![],
                 r#where: vec![],
                 group_by: vec![],
                 having: vec![],
@@ -65,6 +65,13 @@ pub struct Clause {
     pub column: String,
     pub operator: Operator,
     pub value: Variable,
+}
+
+#[derive(Debug, Clone)]
+pub struct Join {
+    pub table: String,
+    pub left_hand: String,
+    pub right_hand: String,
 }
 
 impl Display for Operator {

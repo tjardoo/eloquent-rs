@@ -1,11 +1,11 @@
-use crate::{Clause, Direction, Eloquent, Operator, Variable};
+use crate::{Clause, Direction, Eloquent, Join, Operator, Variable};
 
 pub struct Bindings {
     pub select: Vec<String>,
     pub insert: Vec<(String, Variable)>,
     pub update: Vec<(String, Variable)>,
     pub table: Option<String>,
-    // pub join: Vec<String>,
+    pub join: Vec<Join>,
     pub r#where: Vec<Clause>,
     pub group_by: Vec<String>,
     pub having: Vec<Clause>,
@@ -82,6 +82,16 @@ impl Eloquent {
 
     pub fn table(&mut self, table: &str) -> &mut Self {
         self.bindings.table = Some(table.to_string());
+
+        self
+    }
+
+    pub fn join(&mut self, table: &str, left_hand: &str, right_hand: &str) -> &mut Self {
+        self.bindings.join.push(Join {
+            table: table.to_string(),
+            left_hand: left_hand.to_string(),
+            right_hand: right_hand.to_string(),
+        });
 
         self
     }
