@@ -15,13 +15,13 @@ pub struct Eloquent {
 }
 
 impl Eloquent {
-    pub fn query() -> Self {
+    pub fn table(name: &str) -> Self {
         Self {
             bindings: Bindings {
                 select: vec![],
                 insert: vec![],
                 update: vec![],
-                table: None,
+                table: name.to_string(),
                 join: vec![],
                 r#where: vec![],
                 where_closure: vec![],

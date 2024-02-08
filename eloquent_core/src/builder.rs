@@ -7,7 +7,7 @@ pub struct Bindings {
     pub select: Vec<String>,
     pub insert: Vec<(String, Variable)>,
     pub update: Vec<(String, Variable)>,
-    pub table: Option<String>,
+    pub table: String,
     pub join: Vec<Join>,
     pub r#where: Vec<WhereClause>,
     pub where_closure: Vec<WhereClosure>,
@@ -88,12 +88,6 @@ impl Eloquent {
 
     pub fn delete(&mut self) -> &mut Self {
         self.bindings.is_delete = true;
-
-        self
-    }
-
-    pub fn table(&mut self, table: &str) -> &mut Self {
-        self.bindings.table = Some(table.to_string());
 
         self
     }

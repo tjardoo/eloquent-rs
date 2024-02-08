@@ -11,22 +11,21 @@ mod tests {
 
     #[test]
     fn select_test_query_1() {
-        let query = Eloquent::query().select(vec!["id"]).table("users").to_sql();
+        let query = Eloquent::table("users").select(vec!["id"]).to_sql();
 
         assert_eq!(query, "SELECT id FROM users");
     }
 
     #[test]
     fn select_test_query_2() {
-        let query = Eloquent::query().table("users").to_sql();
+        let query = Eloquent::table("users").to_sql();
 
         assert_eq!(query, "SELECT * FROM users");
     }
 
     #[test]
     fn select_test_query_3() {
-        let query = Eloquent::query()
-            .table("users")
+        let query = Eloquent::table("users")
             .r#where("id", Operator::Equal, Variable::Int(1))
             .to_sql();
 
@@ -35,10 +34,9 @@ mod tests {
 
     #[test]
     fn select_test_query_4() {
-        let query = Eloquent::query()
+        let query = Eloquent::table("users")
             .select(vec!["id", "name"])
             .select(vec!["email"])
-            .table("users")
             .r#where("id", Operator::Equal, Variable::Int(1))
             .r#where(
                 "name",
@@ -55,19 +53,14 @@ mod tests {
 
     #[test]
     fn select_test_query_5() {
-        let query = Eloquent::query()
-            .table("users")
-            .limit(10)
-            .offset(20)
-            .to_sql();
+        let query = Eloquent::table("users").limit(10).offset(20).to_sql();
 
         assert_eq!(query, "SELECT * FROM users LIMIT 10 OFFSET 20");
     }
 
     #[test]
     fn select_test_query_6() {
-        let query = Eloquent::query()
-            .table("users")
+        let query = Eloquent::table("users")
             .order_by("id", Direction::Desc)
             .to_sql();
 
@@ -76,8 +69,7 @@ mod tests {
 
     #[test]
     fn select_test_query_7() {
-        let query = Eloquent::query()
-            .table("users")
+        let query = Eloquent::table("users")
             .order_by("id", Direction::Desc)
             .order_by("group_id", Direction::Asc)
             .to_sql();
@@ -87,18 +79,14 @@ mod tests {
 
     #[test]
     fn select_test_query_8() {
-        let query = Eloquent::query()
-            .table("users")
-            .group_by("group_id")
-            .to_sql();
+        let query = Eloquent::table("users").group_by("group_id").to_sql();
 
         assert_eq!(query, "SELECT * FROM users GROUP BY group_id");
     }
 
     #[test]
     fn select_test_query_9() {
-        let query = Eloquent::query()
-            .table("users")
+        let query = Eloquent::table("users")
             .select_count("id", "total_users")
             .select(vec!["country_id"])
             .group_by("country_id")
@@ -112,8 +100,7 @@ mod tests {
 
     #[test]
     fn select_test_query_10() {
-        let query = Eloquent::query()
-            .table("users")
+        let query = Eloquent::table("users")
             .having(
                 "total_purchases",
                 Operator::GreaterThanOrEqual,
@@ -126,8 +113,7 @@ mod tests {
 
     #[test]
     fn select_test_query_11() {
-        let query = Eloquent::query()
-            .table("users")
+        let query = Eloquent::table("users")
             .join("purchases", "users.id", "purchase.user_id")
             .to_sql();
 
@@ -139,8 +125,7 @@ mod tests {
 
     #[test]
     fn select_test_query_12() {
-        let query = Eloquent::query()
-            .table("users")
+        let query = Eloquent::table("users")
             .r#where("age", Operator::GreaterThanOrEqual, Variable::Int(18))
             .r#where("age", Operator::LessThan, Variable::Int(25))
             .or_where("age", Operator::GreaterThanOrEqual, Variable::Int(30))
@@ -154,8 +139,7 @@ mod tests {
 
     #[test]
     fn select_test_query_13() {
-        let query = Eloquent::query()
-            .table("users")
+        let query = Eloquent::table("users")
             .r#where("age", Operator::GreaterThanOrEqual, Variable::Int(18))
             .r#where("age", Operator::LessThan, Variable::Int(25))
             .or_where(
@@ -178,8 +162,7 @@ mod tests {
 
     #[test]
     fn select_test_query_14() {
-        let query = Eloquent::query()
-            .table("users")
+        let query = Eloquent::table("users")
             .where_closure(vec![
                 Clause {
                     column: "age".to_string(),
@@ -214,8 +197,7 @@ mod tests {
 
     #[test]
     fn select_test_query_15() {
-        let query = Eloquent::query()
-            .table("users")
+        let query = Eloquent::table("users")
             .left_join("purchases", "users.id", "purchase.user_id")
             .right_join("orders", "users.id", "orders.user_id")
             .to_sql();
@@ -228,9 +210,8 @@ mod tests {
 
     #[test]
     fn insert_test_query_1() {
-        let query = Eloquent::query()
+        let query = Eloquent::table("users")
             .insert(vec![("id", Variable::Int(1))])
-            .table("users")
             .to_sql();
 
         assert_eq!(query, "INSERT INTO users (id) VALUES (1)");
@@ -238,10 +219,9 @@ mod tests {
 
     #[test]
     fn insert_test_query_2() {
-        let query = Eloquent::query()
+        let query = Eloquent::table("users")
             .insert(vec![("id", Variable::Int(1))])
             .insert(vec![("name", Variable::String("John".to_string()))])
-            .table("users")
             .to_sql();
 
         assert_eq!(query, "INSERT INTO users (id, name) VALUES (1, `John`)");
@@ -249,9 +229,8 @@ mod tests {
 
     #[test]
     fn update_test_query_1() {
-        let query = Eloquent::query()
+        let query = Eloquent::table("users")
             .update(vec![("name", Variable::String("John".to_string()))])
-            .table("users")
             .r#where("id", Operator::Equal, Variable::Int(1))
             .to_sql();
 
@@ -260,13 +239,12 @@ mod tests {
 
     #[test]
     fn update_test_query_2() {
-        let query = Eloquent::query()
+        let query = Eloquent::table("users")
             .update(vec![("name", Variable::String("John".to_string()))])
             .update(vec![(
                 "email",
                 Variable::String("john@example.com".to_string()),
             )])
-            .table("users")
             .r#where("id", Operator::Equal, Variable::Int(1))
             .to_sql();
 
@@ -278,9 +256,8 @@ mod tests {
 
     #[test]
     fn delete_test_query_1() {
-        let query = Eloquent::query()
+        let query = Eloquent::table("users")
             .delete()
-            .table("users")
             .r#where("id", Operator::Equal, Variable::Int(1))
             .to_sql();
 
@@ -289,10 +266,9 @@ mod tests {
 
     #[test]
     fn select_query_example() {
-        let query = Eloquent::query()
+        let query = Eloquent::table("users")
             .select(vec!["user_id"])
             .select_count("order_id", "number_of_orders")
-            .table("users")
             .join("orders", "users.user_id", "orders.user_id")
             .r#where("age", Operator::GreaterThan, Variable::Int(18))
             .group_by("user_id")
@@ -307,8 +283,7 @@ mod tests {
 
     #[test]
     fn select_where_null_query() {
-        let query = Eloquent::query()
-            .table("users")
+        let query = Eloquent::table("users")
             .r#where("email", Operator::Equal, Variable::Null)
             .to_sql();
 
@@ -317,8 +292,7 @@ mod tests {
 
     #[test]
     fn select_where_not_null_query() {
-        let query = Eloquent::query()
-            .table("users")
+        let query = Eloquent::table("users")
             .r#where("email", Operator::NotEqual, Variable::Null)
             .to_sql();
 
@@ -327,8 +301,7 @@ mod tests {
 
     #[test]
     fn select_where_in_query() {
-        let query = Eloquent::query()
-            .table("users")
+        let query = Eloquent::table("users")
             .r#where(
                 "country_id",
                 Operator::In,
@@ -347,8 +320,7 @@ mod tests {
 
     #[test]
     fn select_where_not_in_query() {
-        let query = Eloquent::query()
-            .table("users")
+        let query = Eloquent::table("users")
             .r#where(
                 "continent_id",
                 Operator::NotIn,

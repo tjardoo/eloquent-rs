@@ -12,11 +12,9 @@ eloquent = "1.0"
 ```rust
 use eloquent_core::{Eloquent, Operator, Variable};
 
-#[test]
 fn select_test_query_1() {
-    let query = Eloquent::query()
+    let query = Eloquent::table("users")
         .select(vec!["id", "name"])
-        .table("users")
         .r#where("id", Operator::Equal, Variable::new(1))
         .to_sql();
 
@@ -27,10 +25,8 @@ fn select_test_query_1() {
 ```rust
 use eloquent_core::{Eloquent, Operator, Variable};
 
-#[test]
 fn select_test_query_1() {
-    let query = Eloquent::query()
-        .table("users")
+    let query = Eloquent::table("users")
         .r#where("email", Operator::Equal, Variable::Null)
         .to_sql();
 

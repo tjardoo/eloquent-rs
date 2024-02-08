@@ -2,10 +2,6 @@ use crate::{Clause, Eloquent, Operator, Variable, WhereOperator};
 
 impl Eloquent {
     pub fn compile(&self) -> String {
-        if self.bindings.table.is_none() {
-            panic!("No table specified for the query.");
-        }
-
         if self.bindings.insert.is_empty() == false {
             return self.compile_insert();
         }
@@ -31,7 +27,7 @@ impl Eloquent {
         }
 
         builder.push_str(" FROM ");
-        builder.push_str(&self.bindings.table.as_ref().unwrap());
+        builder.push_str(&self.bindings.table);
 
         for join in self.bindings.join.iter() {
             builder.push_str(&format!(
@@ -80,7 +76,7 @@ impl Eloquent {
     fn compile_insert(&self) -> String {
         let mut builder = "INSERT INTO ".to_string();
 
-        builder.push_str(&self.bindings.table.as_ref().unwrap());
+        builder.push_str(&self.bindings.table);
 
         builder.push_str(" (");
         builder.push_str(
@@ -116,7 +112,7 @@ impl Eloquent {
     fn compile_update(&self) -> String {
         let mut builder = "UPDATE ".to_string();
 
-        builder.push_str(&self.bindings.table.as_ref().unwrap());
+        builder.push_str(&self.bindings.table);
 
         builder.push_str(" SET ");
         builder.push_str(
@@ -138,7 +134,7 @@ impl Eloquent {
     fn compile_delete(&self) -> String {
         let mut builder = "DELETE FROM ".to_string();
 
-        builder.push_str(&self.bindings.table.as_ref().unwrap());
+        builder.push_str(&self.bindings.table);
 
         builder = self.append_where_clauses(&mut builder);
 
