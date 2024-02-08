@@ -5,7 +5,9 @@
 
 #[cfg(test)]
 mod tests {
-    use eloquent_core::{Clause, Direction, Eloquent, Operator, Variable};
+    use std::vec;
+
+    use eloquent_core::{ArrayVariable, Clause, Direction, Eloquent, Operator, Variable};
 
     #[test]
     fn select_test_query_1() {
@@ -321,5 +323,45 @@ mod tests {
             .to_sql();
 
         assert_eq!(query, "SELECT * FROM users WHERE email IS NOT NULL");
+    }
+
+    #[test]
+    fn select_where_in_query() {
+        let query = Eloquent::query()
+            .table("users")
+            .r#where(
+                "country_id",
+                Operator::In,
+                Variable::Array(vec![
+                    ArrayVariable::String("NL".to_string()),
+                    ArrayVariable::String("DE".to_string()),
+                ]),
+            )
+            .to_sql();
+
+        assert_eq!(
+            query,
+            "SELECT * FROM users WHERE country_id IN (`NL`, `DE`)"
+        );
+    }
+
+    #[test]
+    fn select_where_not_in_query() {
+        let query = Eloquent::query()
+            .table("users")
+            .r#where(
+                "continent_id",
+                Operator::NotIn,
+                Variable::Array(vec![
+                    ArrayVariable::String("AF".to_string()),
+                    ArrayVariable::String("SA".to_string()),
+                ]),
+            )
+            .to_sql();
+
+        assert_eq!(
+            query,
+            "SELECT * FROM users WHERE continent_id NOT IN (`AF`, `SA`)"
+        );
     }
 }

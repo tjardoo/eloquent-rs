@@ -46,6 +46,8 @@ pub enum Operator {
     GreaterThanOrEqual,
     Like,
     NotLike,
+    In,
+    NotIn,
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -54,6 +56,13 @@ pub enum Variable {
     Int(u32),
     Bool(bool),
     Null,
+    Array(Vec<ArrayVariable>),
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub enum ArrayVariable {
+    String(String),
+    Int(u32),
 }
 
 pub enum Direction {
@@ -125,6 +134,8 @@ impl Display for Operator {
             Operator::GreaterThanOrEqual => write!(f, ">="),
             Operator::Like => write!(f, "LIKE"),
             Operator::NotLike => write!(f, "NOT LIKE"),
+            Operator::In => write!(f, "IN"),
+            Operator::NotIn => write!(f, "NOT IN"),
         }
     }
 }
@@ -137,6 +148,17 @@ impl Display for Variable {
             Variable::Bool(true) => write!(f, "{}", true),
             Variable::Bool(false) => write!(f, "{}", false),
             Variable::Null => write!(f, "IS NULL"),
+            Variable::Array(a) => write!(
+                f,
+                "({})",
+                a.iter()
+                    .map(|v| match v {
+                        ArrayVariable::String(s) => format!("`{}`", s),
+                        ArrayVariable::Int(i) => format!("{}", i),
+                    })
+                    .collect::<Vec<String>>()
+                    .join(", ")
+            ),
         }
     }
 }
