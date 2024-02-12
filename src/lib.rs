@@ -12,10 +12,27 @@ mod tests {
     use std::vec;
 
     #[test]
-    fn select_test_query_1() {
-        let query = Eloquent::table("users").select(vec!["id"]).to_sql();
+    fn select_test_query_1_all_columns() {
+        let query = Eloquent::table("users").to_sql();
 
-        assert_eq!(query, "SELECT id FROM users");
+        assert_eq!(query, "SELECT * FROM users");
+    }
+
+    #[test]
+    fn select_test_query_1_single_columns() {
+        let query = Eloquent::table("users")
+            .select("id")
+            .select("name")
+            .to_sql();
+
+        assert_eq!(query, "SELECT id, name FROM users");
+    }
+
+    #[test]
+    fn select_test_query_1_multiple_columns() {
+        let query = Eloquent::table("users").select(vec!["id", "name"]).to_sql();
+
+        assert_eq!(query, "SELECT id, name FROM users");
     }
 
     #[test]
@@ -38,7 +55,7 @@ mod tests {
     fn select_test_query_4() {
         let query = Eloquent::table("users")
             .select(vec!["id", "name"])
-            .select(vec!["email"])
+            .select("email")
             .r#where("id", Operator::Equal, Variable::Int(1))
             .r#where(
                 "name",
@@ -90,7 +107,7 @@ mod tests {
     fn select_test_query_9() {
         let query = Eloquent::table("users")
             .select_count("id", "total_users")
-            .select(vec!["country_id"])
+            .select("country_id")
             .group_by("country_id")
             .to_sql();
 
@@ -263,7 +280,7 @@ mod tests {
     #[test]
     fn select_query_example() {
         let query = Eloquent::table("users")
-            .select(vec!["user_id"])
+            .select("user_id")
             .select_count("order_id", "number_of_orders")
             .join("orders", "users.user_id", "orders.user_id")
             .r#where("age", Operator::GreaterThan, Variable::Int(18))

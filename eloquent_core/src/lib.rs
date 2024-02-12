@@ -8,6 +8,7 @@ use std::fmt::Display;
 
 mod builder;
 mod compiler;
+mod select_columns;
 pub mod shared;
 mod where_closure;
 

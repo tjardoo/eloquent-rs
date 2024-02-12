@@ -1,6 +1,6 @@
 use crate::{
-    shared::WhereClauseBuilder, Clause, Direction, Eloquent, FunctionType, Join, JoinType,
-    Operator, Variable, WhereClause, WhereClosure, WhereOperator,
+    select_columns::SelectColumns, shared::WhereClauseBuilder, Clause, Direction, Eloquent,
+    FunctionType, Join, JoinType, Operator, Variable, WhereClause, WhereClosure, WhereOperator,
 };
 
 pub struct Bindings {
@@ -20,7 +20,12 @@ pub struct Bindings {
 }
 
 impl Eloquent {
-    pub fn select(&mut self, columns: Vec<&str>) -> &mut Self {
+    pub fn select<T>(&mut self, columns: T) -> &mut Self
+    where
+        T: SelectColumns,
+    {
+        let columns = columns.to_columns();
+
         for column in columns.iter() {
             self.bindings.select.push(column.to_string());
         }
