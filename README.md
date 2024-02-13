@@ -1,96 +1,51 @@
 # Eloquent
 
-[![tests](https://github.com/tjardoo/eloquent-rs/workflows/test/badge.svg?event=push)](https://github.com/tjardoo/eloquent-rs/actions)
-[![crate.io](https://img.shields.io/crates/v/eloquent.svg)](https://crates.io/crates/eloquent)
-[![docs](https://docs.rs/eloquent/badge.svg)](https://docs.rs/eloquent)
+> [!WARNING]
+>
+> This package is developed for learning purposes and is not intended for production use.
 
-A Rust library for building queries in an eloquent way.
+Eloquent is a SQL query builder to easily build complex SQL queries in Rust. It is inspired by Laravel's Query Builder and is designed to be simple and easy to use. This is not an ORM, in contrast to Laravel's Eloquent ORM. This libary is designed to be used with any SQL database and does not have any database specific features.
 
-- [Usage](#usage)
-- Examples
-  - [Select query](#select-query)
-  - [Insert query](#insert-query)
-  - [Update query](#update-query)
-  - [Delete query](#delete-query)
+The query builder supports `select`, `insert`, `update`, `delete`, `where`, `join`, `group_by`, `having`, `order_by`, `limit`, `offset` and `to_sql` methods and support where clause closures.
+
+See [Available Methods](./docs/available-methods.md) for more details.
 
 ## Usage
 
 ```ini
 [dependencies]
-eloquent = "0.2"
+eloquent = "1.0"
 ```
 
-### Select Query
-
 ```rust
-use eloquent_core::{Direction, GenericVar};
+use eloquent_core::{Eloquent, Operator, Variable};
 
-let query = Eloquent::query()
-    .table("flights")
-    .select("id")
-    .select("flight_number")
-    .r#where("destination", GenericVar::Str("SIN"))
-    .to_sql()
-    .unwrap();
+fn select_test_query_1() {
+    let query = Eloquent::table("users")
+        .r#where("created_at", Operator::GreaterThanOrEqual, Variable::String("2024-01-01".to_string()))
+        .where_null("deleted_at")
+        .where_closure(|closure| {
+            closure
+                .r#where("age", Operator::GreaterThanOrEqual, Variable::Int(18))
+                .r#where("age", Operator::LessThan, Variable::Int(25));
+        })
+        .or_where_closure(|closure| {
+            closure
+                .r#where("age", Operator::GreaterThanOrEqual, Variable::Int(30))
+                .r#where(
+                    "status",
+                    Operator::In,
+                    Variable::Array(vec![
+                        ArrayVariable::String("pending".to_string()),
+                        ArrayVariable::String("active".to_string()),
+                    ]),
+                );
+        })
+        .to_sql();
 
-    assert_eq!(query, "SELECT `id`, `flight_number` FROM flights WHERE `destination` = \"SIN\";");
-```
-
-### Insert Query
-
-```rust
-use eloquent_core::{Direction, GenericVar, Clause};
-
-let query = Eloquent::query()
-    .insert("flights", vec![
-        Clause {
-            column: "id".to_string(),
-            value: GenericVar::Int(1),
-        },
-        Clause {
-            column: "flight_code".to_string(),
-            value: GenericVar::Str("KL0803"),
-        },
-    ])
-    .to_sql()
-    .unwrap();
-
-    assert_eq!(query, "INSERT INTO flights (`id`, `flight_code`) VALUES (1, \"KL0803\");");
-```
-
-### Update Query
-
-```rust
-use eloquent_core::{Direction, GenericVar, Clause};
-
-let query = Eloquent::query()
-    .update("flights", vec![
-        Clause {
-            column: "flight_code".to_string(),
-            value: GenericVar::Str("KL0803"),
-        },
-        Clause {
-            column: "destination".to_string(),
-            value: GenericVar::Str("Bangkok"),
-        },
-    ])
-    .r#where("id", GenericVar::Int(1))
-    .to_sql()
-    .unwrap();
-
-    assert_eq!(query, "INSERT INTO flights (`id`, `flight_code`) VALUES (1, \"KL0803\") WHERE `id` = 1;");
-```
-
-### Delete Query
-
-```rust
-use eloquent_core::{Direction, GenericVar};
-
-let query = Eloquent::query()
-    .delete("flights")
-    .r#where("id", GenericVar::Int(1))
-    .to_sql()
-    .unwrap();
-
-assert_eq!(query, "DELETE FROM flights WHERE `id` = 1;");
+    assert_eq!(
+        query,
+        "SELECT * FROM users WHERE created_at >= `2024-01-01` AND deleted_at IS NULL AND (age >= 18 AND age < 25) OR (age >= 30 AND status IN (`pending`, `active`))"
+    );
+}
 ```
