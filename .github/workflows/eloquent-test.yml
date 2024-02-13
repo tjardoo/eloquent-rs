@@ -1,4 +1,4 @@
-name: Cargo test
+name: Eloquent Test
 
 on:
   push:

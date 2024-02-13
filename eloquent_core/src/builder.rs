@@ -21,6 +21,25 @@ pub struct Bindings {
 }
 
 impl Eloquent {
+    /// Select columns to be retrieved from the database. If no columns are selected, all columns will be retrieved.
+    ///
+    /// ```rust
+    /// use eloquent_core::Eloquent;
+    ///
+    /// let mut eloquent = Eloquent::table("users");
+    /// eloquent.select("id");
+    ///
+    /// assert_eq!(eloquent.to_sql(), "SELECT id FROM users");
+    /// ```
+    ///
+    /// ```rust
+    /// use eloquent_core::Eloquent;
+    ///
+    /// let mut eloquent = Eloquent::table("users");
+    /// eloquent.select(vec!["name", "email"]);
+    ///
+    /// assert_eq!(eloquent.to_sql(), "SELECT name, email FROM users");
+    /// ```
     pub fn select<T>(&mut self, columns: T) -> &mut Self
     where
         T: SelectColumns,
@@ -256,9 +275,9 @@ impl Eloquent {
     /// use eloquent_core::{Eloquent, Operator, Variable};
     ///
     /// let mut eloquent = Eloquent::table("users");
-    /// eloquent.r#where_not("country_id", Operator::Equal, Variable::String("NL".to_string()));
+    /// eloquent.r#where_not("country_code", Operator::Equal, Variable::String("NL".to_string()));
     ///
-    /// assert_eq!(eloquent.to_sql(), "SELECT * FROM users WHERE NOT country_id = `NL`");
+    /// assert_eq!(eloquent.to_sql(), "SELECT * FROM users WHERE NOT country_code = `NL`");
     /// ```
     pub fn where_not(&mut self, column: &str, operator: Operator, value: Variable) -> &mut Self {
         self.create_where_clause(column, operator, value, WhereOperator::Not);
@@ -309,9 +328,9 @@ impl Eloquent {
     /// use eloquent_core::{Eloquent, Operator, Variable};
     ///
     /// let mut eloquent = Eloquent::table("users");
-    /// eloquent.r#where("country_id", Operator::Equal, Variable::String("NL".to_string())).or_where_null("country_id");
+    /// eloquent.r#where("country_code", Operator::Equal, Variable::String("NL".to_string())).or_where_null("country_code");
     ///
-    /// assert_eq!(eloquent.to_sql(), "SELECT * FROM users WHERE country_id = `NL` OR country_id IS NULL");
+    /// assert_eq!(eloquent.to_sql(), "SELECT * FROM users WHERE country_code = `NL` OR country_code IS NULL");
     /// ```
     pub fn or_where_null(&mut self, column: &str) -> &mut Self {
         self.create_where_clause(column, Operator::Equal, Variable::Null, WhereOperator::Or);

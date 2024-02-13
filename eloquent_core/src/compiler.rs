@@ -170,6 +170,10 @@ impl Eloquent {
                 builder.push_str(" OR ");
             }
 
+            if closure.closures[0].where_operator == WhereOperator::Not {
+                builder.push_str("NOT ");
+            }
+
             builder.push_str("(");
             for (index, clause) in closure.closures.iter().enumerate() {
                 if index == 0 {
