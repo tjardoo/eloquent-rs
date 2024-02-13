@@ -17,6 +17,6 @@ jobs:
     steps:
     - uses: actions/checkout@v3
     - name: Build
-      run: cd .\eloquent_core\ && cargo build --verbose
+      run: cd eloquent_core && cargo build --verbose
     - name: Run tests
-      run: cd .\eloquent_core\ && cargo test --verbose
+      run: cd eloquent_core && cargo test --verbose
