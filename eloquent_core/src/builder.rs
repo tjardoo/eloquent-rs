@@ -1,9 +1,6 @@
 use crate::{
-    select_columns::SelectColumns,
-    shared::{
-        Clause, FunctionType, Join, JoinType, WhereClause, WhereClauseBuilder, WhereClosure,
-        WhereOperator,
-    },
+    shared::{Clause, Closures, FunctionType, Join, JoinType, WhereClause, WhereOperator},
+    traits::select_column::SelectColumns,
     Direction, Eloquent, Operator, Variable,
 };
 
@@ -14,7 +11,7 @@ pub struct Bindings {
     pub table: String,
     pub join: Vec<Join>,
     pub r#where: Vec<WhereClause>,
-    pub where_closure: Vec<WhereClosure>,
+    pub where_closure: Vec<Closures>,
     pub group_by: Vec<String>,
     pub having: Vec<Clause>,
     pub order_by: Vec<String>,
@@ -221,6 +218,145 @@ impl Eloquent {
         self
     }
 
+    /// Add a "where" clause to the query.
+    ///
+    /// ```rust
+    /// use eloquent_core::{Eloquent, Operator, Variable};
+    ///
+    /// let mut eloquent = Eloquent::table("users");
+    /// eloquent.r#where("id", Operator::Equal, Variable::Int(100));
+    ///
+    /// assert_eq!(eloquent.to_sql(), "SELECT * FROM users WHERE id = 100");
+    /// ```
+    pub fn r#where(&mut self, column: &str, operator: Operator, value: Variable) -> &mut Self {
+        self.create_where_clause(column, operator, value, WhereOperator::And);
+
+        self
+    }
+
+    /// Add an "or where" clause to the query.
+    ///
+    /// ```rust
+    /// use eloquent_core::{Eloquent, Operator, Variable};
+    ///
+    /// let mut eloquent = Eloquent::table("users");
+    /// eloquent.r#where("id", Operator::Equal, Variable::Int(100)).or_where("id", Operator::Equal, Variable::Int(200));
+    ///
+    /// assert_eq!(eloquent.to_sql(), "SELECT * FROM users WHERE id = 100 OR id = 200");
+    /// ```
+    pub fn or_where(&mut self, column: &str, operator: Operator, value: Variable) -> &mut Self {
+        self.create_where_clause(column, operator, value, WhereOperator::Or);
+
+        self
+    }
+
+    /// Add a "where not" clause to the query.
+    ///
+    /// ```rust
+    /// use eloquent_core::{Eloquent, Operator, Variable};
+    ///
+    /// let mut eloquent = Eloquent::table("users");
+    /// eloquent.r#where_not("country_id", Operator::Equal, Variable::String("NL".to_string()));
+    ///
+    /// assert_eq!(eloquent.to_sql(), "SELECT * FROM users WHERE NOT country_id = `NL`");
+    /// ```
+    pub fn where_not(&mut self, column: &str, operator: Operator, value: Variable) -> &mut Self {
+        self.create_where_clause(column, operator, value, WhereOperator::Not);
+
+        self
+    }
+
+    /// Add a "where null" clause to the query.
+    ///
+    /// ```rust
+    /// use eloquent_core::{Eloquent, Operator, Variable};
+    ///
+    /// let mut eloquent = Eloquent::table("users");
+    /// eloquent.where_null("country_id");
+    ///
+    /// assert_eq!(eloquent.to_sql(), "SELECT * FROM users WHERE country_id IS NULL");
+    /// ```
+    pub fn where_null(&mut self, column: &str) -> &mut Self {
+        self.create_where_clause(column, Operator::Equal, Variable::Null, WhereOperator::And);
+
+        self
+    }
+
+    /// Add a "where not null" clause to the query.
+    ///
+    /// ```rust
+    /// use eloquent_core::{Eloquent, Operator, Variable};
+    ///
+    /// let mut eloquent = Eloquent::table("users");
+    /// eloquent.where_not_null("country_id");
+    ///
+    /// assert_eq!(eloquent.to_sql(), "SELECT * FROM users WHERE country_id IS NOT NULL");
+    /// ```
+    pub fn where_not_null(&mut self, column: &str) -> &mut Self {
+        self.create_where_clause(
+            column,
+            Operator::NotEqual,
+            Variable::Null,
+            WhereOperator::And,
+        );
+
+        self
+    }
+
+    /// Add an "or where null" clause to the query.
+    ///
+    /// ```rust
+    /// use eloquent_core::{Eloquent, Operator, Variable};
+    ///
+    /// let mut eloquent = Eloquent::table("users");
+    /// eloquent.r#where("country_id", Operator::Equal, Variable::String("NL".to_string())).or_where_null("country_id");
+    ///
+    /// assert_eq!(eloquent.to_sql(), "SELECT * FROM users WHERE country_id = `NL` OR country_id IS NULL");
+    /// ```
+    pub fn or_where_null(&mut self, column: &str) -> &mut Self {
+        self.create_where_clause(column, Operator::Equal, Variable::Null, WhereOperator::Or);
+
+        self
+    }
+
+    /// Add an "or where not null" clause to the query.
+    ///
+    /// ```rust
+    /// use eloquent_core::{Eloquent, Operator, Variable};
+    ///
+    /// let mut eloquent = Eloquent::table("users");
+    /// eloquent.where_null("country_id").or_where_not_null("verified_at");
+    ///
+    /// assert_eq!(eloquent.to_sql(), "SELECT * FROM users WHERE country_id IS NULL OR verified_at IS NOT NULL");
+    /// ```
+    pub fn or_where_not_null(&mut self, column: &str) -> &mut Self {
+        self.create_where_clause(
+            column,
+            Operator::NotEqual,
+            Variable::Null,
+            WhereOperator::Or,
+        );
+
+        self
+    }
+
+    fn create_where_clause(
+        &mut self,
+        column: &str,
+        operator: Operator,
+        value: Variable,
+        where_operator: WhereOperator,
+    ) -> &mut Self {
+        self.bindings.r#where.push(WhereClause {
+            column: column.to_string(),
+            operator,
+            value,
+            where_operator,
+        });
+
+        self
+    }
+
     /// Add a join clause to the query.
     ///
     /// ```rust
@@ -302,28 +438,11 @@ impl Eloquent {
         self
     }
 
-    fn create_where_clause(
-        &mut self,
-        column: &str,
-        operator: Operator,
-        value: Variable,
-        where_operator: WhereOperator,
-    ) -> &mut Self {
-        self.bindings.r#where.push(WhereClause {
-            column: column.to_string(),
-            operator,
-            value,
-            where_operator,
-        });
-
-        self
-    }
-
     pub fn where_closure<C>(&mut self, closure: C) -> &mut Self
     where
-        C: FnOnce(&mut WhereClosure),
+        C: FnOnce(&mut Closures),
     {
-        let mut builder = WhereClosure::new(WhereOperator::And);
+        let mut builder = Closures::new(WhereOperator::And);
 
         closure(&mut builder);
 
@@ -334,9 +453,9 @@ impl Eloquent {
 
     pub fn or_where_closure<C>(&mut self, closure: C) -> &mut Self
     where
-        C: FnOnce(&mut WhereClosure),
+        C: FnOnce(&mut Closures),
     {
-        let mut builder = WhereClosure::new(WhereOperator::Or);
+        let mut builder = Closures::new(WhereOperator::Or);
 
         closure(&mut builder);
 
@@ -442,59 +561,5 @@ impl Eloquent {
     /// ```
     pub fn to_sql(&mut self) -> String {
         self.compile()
-    }
-}
-
-impl WhereClauseBuilder for Eloquent {
-    fn r#where(&mut self, column: &str, operator: Operator, value: Variable) -> &mut Self {
-        self.create_where_clause(column, operator, value, WhereOperator::And);
-
-        self
-    }
-
-    fn or_where(&mut self, column: &str, operator: Operator, value: Variable) -> &mut Self {
-        self.create_where_clause(column, operator, value, WhereOperator::Or);
-
-        self
-    }
-
-    fn where_not(&mut self, column: &str, operator: Operator, value: Variable) -> &mut Self {
-        self.create_where_clause(column, operator, value, WhereOperator::Not);
-
-        self
-    }
-
-    fn where_null(&mut self, column: &str) -> &mut Self {
-        self.create_where_clause(column, Operator::Equal, Variable::Null, WhereOperator::And);
-
-        self
-    }
-
-    fn where_not_null(&mut self, column: &str) -> &mut Self {
-        self.create_where_clause(
-            column,
-            Operator::NotEqual,
-            Variable::Null,
-            WhereOperator::And,
-        );
-
-        self
-    }
-
-    fn or_where_null(&mut self, column: &str) -> &mut Self {
-        self.create_where_clause(column, Operator::Equal, Variable::Null, WhereOperator::Or);
-
-        self
-    }
-
-    fn or_where_not_null(&mut self, column: &str) -> &mut Self {
-        self.create_where_clause(
-            column,
-            Operator::NotEqual,
-            Variable::Null,
-            WhereOperator::Or,
-        );
-
-        self
     }
 }

@@ -2,12 +2,9 @@
 //!
 //! Eloquent database query builder provides a convenient, fluent interface to create database queries.
 //!
-mod prelude;
-pub use prelude::*;
 
 #[cfg(test)]
 mod tests {
-    use crate::prelude::*;
     use eloquent_core::{ArrayVariable, Direction, Eloquent, Operator, Variable};
     use std::vec;
 

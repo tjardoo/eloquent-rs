@@ -66,7 +66,7 @@ pub struct Join {
 }
 
 #[derive(Debug, Clone)]
-pub struct WhereClosure {
+pub struct Closures {
     pub closures: Vec<WhereClause>,
     pub where_operator: WhereOperator,
 }

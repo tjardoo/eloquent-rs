@@ -6,10 +6,10 @@
 use builder::Bindings;
 
 mod builder;
+mod closures;
 mod compiler;
-mod select_columns;
 pub mod shared;
-mod where_closure;
+mod traits;
 
 pub use shared::WhereClauseBuilder;
 

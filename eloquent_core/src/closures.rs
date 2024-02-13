@@ -1,9 +1,9 @@
 use crate::{
-    shared::{WhereClause, WhereClauseBuilder, WhereClosure, WhereOperator},
+    shared::{Closures, WhereClause, WhereOperator},
     Operator, Variable,
 };
 
-impl WhereClosure {
+impl Closures {
     pub fn new(where_operator: WhereOperator) -> Self {
         Self {
             closures: Vec::new(),
@@ -27,34 +27,32 @@ impl WhereClosure {
 
         self
     }
-}
 
-impl WhereClauseBuilder for WhereClosure {
-    fn r#where(&mut self, column: &str, operator: Operator, value: Variable) -> &mut Self {
+    pub fn r#where(&mut self, column: &str, operator: Operator, value: Variable) -> &mut Self {
         self.create_where_clause(column, operator, value, WhereOperator::And);
 
         self
     }
 
-    fn or_where(&mut self, column: &str, operator: Operator, value: Variable) -> &mut Self {
+    pub fn or_where(&mut self, column: &str, operator: Operator, value: Variable) -> &mut Self {
         self.create_where_clause(column, operator, value, WhereOperator::Or);
 
         self
     }
 
-    fn where_not(&mut self, column: &str, operator: Operator, value: Variable) -> &mut Self {
+    pub fn where_not(&mut self, column: &str, operator: Operator, value: Variable) -> &mut Self {
         self.create_where_clause(column, operator, value, WhereOperator::Not);
 
         self
     }
 
-    fn where_null(&mut self, column: &str) -> &mut Self {
+    pub fn where_null(&mut self, column: &str) -> &mut Self {
         self.create_where_clause(column, Operator::Equal, Variable::Null, WhereOperator::And);
 
         self
     }
 
-    fn where_not_null(&mut self, column: &str) -> &mut Self {
+    pub fn where_not_null(&mut self, column: &str) -> &mut Self {
         self.create_where_clause(
             column,
             Operator::NotEqual,
@@ -65,13 +63,13 @@ impl WhereClauseBuilder for WhereClosure {
         self
     }
 
-    fn or_where_null(&mut self, column: &str) -> &mut Self {
+    pub fn or_where_null(&mut self, column: &str) -> &mut Self {
         self.create_where_clause(column, Operator::Equal, Variable::Null, WhereOperator::Or);
 
         self
     }
 
-    fn or_where_not_null(&mut self, column: &str) -> &mut Self {
+    pub fn or_where_not_null(&mut self, column: &str) -> &mut Self {
         self.create_where_clause(
             column,
             Operator::NotEqual,
