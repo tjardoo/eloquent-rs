@@ -1,8 +1,14 @@
 # Eloquent
 
-Eloquent is a SQL query builder to easily build complex SQL queries in Rust. It is inspired by Laravel's Eloquent ORM and is designed to be simple and easy to use.
+> [!WARNING]
+>
+> This package is developed for learning purposes and is not intended for production use.
 
-The query builder supports `select`, `insert`, `update`, `delete`, `where`, `join`, `group_by`, `having`, `order_by`, `limit`, `offset` and `to_sql` methods. See [Available Methods](./docs/available-methods.md) for more details. Also closures can be used to build complex where clauses.
+Eloquent is a SQL query builder to easily build complex SQL queries in Rust. It is inspired by Laravel's Query Builder and is designed to be simple and easy to use. This is not an ORM, in contrast to Laravel's Eloquent ORM. This libary is designed to be used with any SQL database and does not have any database specific features.
+
+The query builder supports `select`, `insert`, `update`, `delete`, `where`, `join`, `group_by`, `having`, `order_by`, `limit`, `offset` and `to_sql` methods and support where clause closures.
+
+See [Available Methods](./docs/available-methods.md) for more details.
 
 ## Usage
 

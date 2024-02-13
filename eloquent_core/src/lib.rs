@@ -1,6 +1,6 @@
 //! # Eloquent Core
 //!
-//! `eloquent_core` is a library for building SQL queries in Rust.
+//! Eloquent Core is the core library for the Eloquent libary. It provides the core functionality for building SQL queries.
 //!
 
 use builder::Bindings;

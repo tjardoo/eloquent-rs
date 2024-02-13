@@ -1,6 +1,6 @@
 //! # Eloquent
 //!
-//! Eloquent database query builder provides a convenient, fluent interface to create database queries.
+//! Eloquent is a SQL query builder to easily build complex SQL queries in Rust. It is inspired by Laravel's Query Builder and is designed to be simple and easy to use.
 //!
 
 #[cfg(test)]
