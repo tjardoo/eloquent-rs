@@ -1,4 +1,7 @@
-use crate::{Clause, Eloquent, Operator, Variable, WhereOperator};
+use crate::{
+    shared::{Clause, WhereOperator},
+    Eloquent, Operator, Variable,
+};
 
 impl Eloquent {
     pub fn compile(&self) -> String {

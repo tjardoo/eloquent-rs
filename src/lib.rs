@@ -222,19 +222,31 @@ mod tests {
     }
 
     #[test]
-    fn insert_test_query_1() {
+    fn insert_test_query_1_single_value() {
         let query = Eloquent::table("users")
-            .insert(vec![("id", Variable::Int(1))])
+            .insert("id", Variable::Int(1))
             .to_sql();
 
         assert_eq!(query, "INSERT INTO users (id) VALUES (1)");
     }
 
     #[test]
+    fn insert_test_query_1_multiple_value() {
+        let query = Eloquent::table("users")
+            .insert_many(vec![
+                ("id", Variable::Int(1)),
+                ("name", Variable::String("John".to_string())),
+            ])
+            .to_sql();
+
+        assert_eq!(query, "INSERT INTO users (id, name) VALUES (1, `John`)");
+    }
+
+    #[test]
     fn insert_test_query_2() {
         let query = Eloquent::table("users")
-            .insert(vec![("id", Variable::Int(1))])
-            .insert(vec![("name", Variable::String("John".to_string()))])
+            .insert("id", Variable::Int(1))
+            .insert("name", Variable::String("John".to_string()))
             .to_sql();
 
         assert_eq!(query, "INSERT INTO users (id, name) VALUES (1, `John`)");
@@ -243,7 +255,7 @@ mod tests {
     #[test]
     fn update_test_query_1() {
         let query = Eloquent::table("users")
-            .update(vec![("name", Variable::String("John".to_string()))])
+            .update("name", Variable::String("John".to_string()))
             .r#where("id", Operator::Equal, Variable::Int(1))
             .to_sql();
 
@@ -253,8 +265,8 @@ mod tests {
     #[test]
     fn update_test_query_2() {
         let query = Eloquent::table("users")
-            .update(vec![("name", Variable::String("John".to_string()))])
-            .update(vec![(
+            .update("name", Variable::String("John".to_string()))
+            .update_many(vec![(
                 "email",
                 Variable::String("john@example.com".to_string()),
             )])
@@ -384,6 +396,12 @@ mod tests {
     #[test]
     fn select_test_query_16() {
         let query = Eloquent::table("users")
+            .r#where(
+                "created_at",
+                Operator::GreaterThanOrEqual,
+                Variable::String("2024-01-01".to_string()),
+            )
+            .where_null("deleted_at")
             .where_closure(|closure| {
                 closure
                     .r#where("age", Operator::GreaterThanOrEqual, Variable::Int(18))
@@ -405,7 +423,7 @@ mod tests {
 
         assert_eq!(
             query,
-            "SELECT * FROM users WHERE (age >= 18 AND age < 25) OR (age >= 30 AND status IN (`pending`, `active`))"
+            "SELECT * FROM users WHERE created_at >= `2024-01-01` AND deleted_at IS NULL AND (age >= 18 AND age < 25) OR (age >= 30 AND status IN (`pending`, `active`))"
         );
     }
 }

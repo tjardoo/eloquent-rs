@@ -1,5 +1,6 @@
 use crate::{
-    shared::WhereClauseBuilder, Operator, Variable, WhereClause, WhereClosure, WhereOperator,
+    shared::{WhereClause, WhereClauseBuilder, WhereClosure, WhereOperator},
+    Operator, Variable,
 };
 
 impl WhereClosure {
