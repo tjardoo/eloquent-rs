@@ -301,7 +301,7 @@ impl Eloquent {
     /// use eloquent_core::{Eloquent, Operator, Variable};
     ///
     /// let mut eloquent = Eloquent::table("users");
-    /// eloquent.r#where_not("country_code", Operator::Equal, Variable::String("NL".to_string()));
+    /// eloquent.where_not("country_code", Operator::Equal, Variable::String("NL".to_string()));
     ///
     /// assert_eq!(eloquent.to_sql(), "SELECT * FROM users WHERE NOT country_code = `NL`");
     /// ```
@@ -577,9 +577,9 @@ impl Eloquent {
     /// use eloquent_core::{Eloquent, Operator, Variable};
     ///
     /// let mut eloquent = Eloquent::table("users");
-    /// eloquent.having("created_at", Operator::GreaterThanOrEqual, Variable::String("2024-01-01".to_string()));
+    /// eloquent.having("total_orders", Operator::GreaterThanOrEqual, Variable::Int(5));
     ///
-    /// assert_eq!(eloquent.to_sql(), "SELECT * FROM users HAVING created_at >= `2024-01-01`");
+    /// assert_eq!(eloquent.to_sql(), "SELECT * FROM users HAVING total_orders >= 5");
     /// ```
     pub fn having(&mut self, column: &str, operator: Operator, value: Variable) -> &mut Self {
         self.bindings.having.push(Clause {
