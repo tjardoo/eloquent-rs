@@ -1,10 +1,10 @@
 use crate::{
-    shared::{Closures, WhereClause, WhereOperator},
+    shared::{Closure, WhereClause, WhereOperator},
     Operator, Variable,
 };
 
-impl Closures {
-    pub fn new(where_operator: WhereOperator) -> Self {
+impl Closure {
+    pub(crate) fn new(where_operator: WhereOperator) -> Self {
         Self {
             closures: Vec::new(),
             where_operator,

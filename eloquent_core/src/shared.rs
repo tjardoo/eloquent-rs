@@ -2,25 +2,15 @@ use std::fmt::Display;
 
 use crate::{ArrayVariable, Direction, Operator, Variable};
 
-pub trait WhereClauseBuilder {
-    fn r#where(&mut self, column: &str, operator: Operator, value: Variable) -> &mut Self;
-    fn or_where(&mut self, column: &str, operator: Operator, value: Variable) -> &mut Self;
-    fn where_not(&mut self, column: &str, operator: Operator, value: Variable) -> &mut Self;
-    fn where_null(&mut self, column: &str) -> &mut Self;
-    fn where_not_null(&mut self, column: &str) -> &mut Self;
-    fn or_where_null(&mut self, column: &str) -> &mut Self;
-    fn or_where_not_null(&mut self, column: &str) -> &mut Self;
-}
-
 #[derive(Debug, Clone, PartialEq)]
-pub enum WhereOperator {
+pub(crate) enum WhereOperator {
     And,
     Or,
     Not,
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub enum JoinType {
+pub(crate) enum JoinType {
     Inner,
     Left,
     Right,
@@ -28,7 +18,7 @@ pub enum JoinType {
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub enum FunctionType {
+pub(crate) enum FunctionType {
     Count,
     Max,
     Min,
@@ -37,14 +27,14 @@ pub enum FunctionType {
 }
 
 #[derive(Debug, Clone)]
-pub struct Clause {
+pub(crate) struct Clause {
     pub column: String,
     pub operator: Operator,
     pub value: Variable,
 }
 
 #[derive(Debug, Clone)]
-pub struct WhereClause {
+pub(crate) struct WhereClause {
     pub column: String,
     pub operator: Operator,
     pub value: Variable,
@@ -52,13 +42,7 @@ pub struct WhereClause {
 }
 
 #[derive(Debug, Clone)]
-pub struct WhereClauses {
-    pub clauses: Vec<Clause>,
-    pub where_operator: WhereOperator,
-}
-
-#[derive(Debug, Clone)]
-pub struct Join {
+pub(crate) struct Join {
     pub table: String,
     pub left_hand: String,
     pub right_hand: String,
@@ -66,7 +50,8 @@ pub struct Join {
 }
 
 #[derive(Debug, Clone)]
-pub struct Closures {
+#[allow(warnings)]
+pub struct Closure {
     pub closures: Vec<WhereClause>,
     pub where_operator: WhereOperator,
 }

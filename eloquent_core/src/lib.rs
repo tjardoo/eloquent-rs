@@ -8,11 +8,10 @@ use builder::Bindings;
 mod builder;
 mod closures;
 mod compiler;
-pub mod shared;
+mod shared;
 mod traits;
 
-pub use shared::WhereClauseBuilder;
-
+/// The main struct for Eloquent to build SQL queries.
 pub struct Eloquent {
     bindings: Bindings,
 }
@@ -49,6 +48,7 @@ impl Eloquent {
     }
 }
 
+/// The operator to use in a "where" clause.
 #[derive(Debug, Clone)]
 pub enum Operator {
     Equal,
@@ -63,6 +63,7 @@ pub enum Operator {
     NotIn,
 }
 
+/// The value to use in a "where" clause.
 #[derive(Debug, Clone, PartialEq)]
 pub enum Variable {
     String(String),
@@ -72,12 +73,14 @@ pub enum Variable {
     Array(Vec<ArrayVariable>),
 }
 
+/// The array value to use in a "where" clause.
 #[derive(Debug, Clone, PartialEq)]
 pub enum ArrayVariable {
     String(String),
     Int(u32),
 }
 
+/// The direction to use in an "order by" clause.
 pub enum Direction {
     Asc,
     Desc,
