@@ -1,6 +1,6 @@
 use crate::{
-    shared::{Clause, Closures, FunctionType, Join, JoinType, WhereClause, WhereOperator},
-    traits::select_column::SelectColumns,
+    shared::{Clause, Closure, FunctionType, Join, JoinType, WhereClause, WhereOperator},
+    traits::multi_columns::MultiColumns,
     Direction, Eloquent, Operator, Variable,
 };
 
@@ -11,7 +11,7 @@ pub struct Bindings {
     pub table: String,
     pub join: Vec<Join>,
     pub r#where: Vec<WhereClause>,
-    pub where_closure: Vec<Closures>,
+    pub where_closure: Vec<Closure>,
     pub group_by: Vec<String>,
     pub having: Vec<Clause>,
     pub order_by: Vec<String>,
@@ -40,15 +40,41 @@ impl Eloquent {
     ///
     /// assert_eq!(eloquent.to_sql(), "SELECT name, email FROM users");
     /// ```
+    ///
+    /// ```rust
+    /// use eloquent_core::Eloquent;
+    ///
+    /// let mut eloquent = Eloquent::table("users");
+    ///
+    /// assert_eq!(eloquent.to_sql(), "SELECT * FROM users");
+    /// ```
     pub fn select<T>(&mut self, columns: T) -> &mut Self
     where
-        T: SelectColumns,
+        T: MultiColumns,
     {
         let columns = columns.to_columns();
 
         for column in columns.iter() {
             self.bindings.select.push(column.to_string());
         }
+
+        self
+    }
+
+    /// Select columns to be retrieved from the database. If no columns are selected, all columns will be retrieved.
+    ///
+    /// ```rust
+    /// use eloquent_core::Eloquent;
+    ///
+    /// let mut eloquent = Eloquent::table("users");
+    /// eloquent.select_as("address.country", "address_country");
+    ///
+    /// assert_eq!(eloquent.to_sql(), "SELECT address.country AS address_country FROM users");
+    /// ```
+    pub fn select_as(&mut self, column: &str, alias: &str) -> &mut Self {
+        self.bindings
+            .select
+            .push(format!("{} AS {}", column, alias.to_string()));
 
         self
     }
@@ -440,7 +466,7 @@ impl Eloquent {
         self
     }
 
-    pub fn create_join(
+    fn create_join(
         &mut self,
         table: &str,
         left_hand: &str,
@@ -457,11 +483,25 @@ impl Eloquent {
         self
     }
 
+    /// Add a where closure to the query.
+    ///
+    /// ```rust
+    /// use eloquent_core::{Eloquent, Operator, Variable};
+    ///
+    /// let mut eloquent = Eloquent::table("users");
+    /// eloquent.where_closure(|closure| {
+    ///   closure
+    ///     .r#where("age", Operator::GreaterThanOrEqual, Variable::Int(18))
+    ///     .r#where("age", Operator::LessThan, Variable::Int(25));
+    /// });
+    ///
+    /// assert_eq!(eloquent.to_sql(), "SELECT * FROM users WHERE (age >= 18 AND age < 25)");
+    /// ```
     pub fn where_closure<C>(&mut self, closure: C) -> &mut Self
     where
-        C: FnOnce(&mut Closures),
+        C: FnOnce(&mut Closure),
     {
-        let mut builder = Closures::new(WhereOperator::And);
+        let mut builder = Closure::new(WhereOperator::And);
 
         closure(&mut builder);
 
@@ -470,11 +510,27 @@ impl Eloquent {
         self
     }
 
+    /// Add a where closure to the query.
+    ///
+    /// ```rust
+    /// use eloquent_core::{Eloquent, Operator, Variable};
+    ///
+    /// let mut eloquent = Eloquent::table("users");
+    /// eloquent
+    ///   .r#where("age", Operator::GreaterThanOrEqual, Variable::Int(30))
+    ///   .or_where_closure(|closure| {
+    ///     closure
+    ///       .r#where("age", Operator::GreaterThanOrEqual, Variable::Int(18))
+    ///       .r#where("age", Operator::LessThan, Variable::Int(25));
+    ///   });
+    ///
+    /// assert_eq!(eloquent.to_sql(), "SELECT * FROM users WHERE age >= 30 OR (age >= 18 AND age < 25)");
+    /// ```
     pub fn or_where_closure<C>(&mut self, closure: C) -> &mut Self
     where
-        C: FnOnce(&mut Closures),
+        C: FnOnce(&mut Closure),
     {
-        let mut builder = Closures::new(WhereOperator::Or);
+        let mut builder = Closure::new(WhereOperator::Or);
 
         closure(&mut builder);
 
@@ -493,8 +549,24 @@ impl Eloquent {
     ///
     /// assert_eq!(eloquent.to_sql(), "SELECT * FROM users GROUP BY country_id");
     /// ```
-    pub fn group_by(&mut self, column: &str) -> &mut Self {
-        self.bindings.group_by.push(column.to_string());
+    ///
+    /// ```rust
+    /// use eloquent_core::Eloquent;
+    ///
+    /// let mut eloquent = Eloquent::table("users");
+    /// eloquent.group_by(vec!["country_id", "city_id"]);
+    ///
+    /// assert_eq!(eloquent.to_sql(), "SELECT * FROM users GROUP BY country_id, city_id");
+    /// ```
+    pub fn group_by<T>(&mut self, columns: T) -> &mut Self
+    where
+        T: MultiColumns,
+    {
+        let columns = columns.to_columns();
+
+        for column in columns.iter() {
+            self.bindings.group_by.push(column.to_string());
+        }
 
         self
     }
