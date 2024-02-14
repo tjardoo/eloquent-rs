@@ -56,7 +56,7 @@
 ## Where Closure
 
 - ``where_closure(|closure| { closure.r#where("age", Operator::GreaterThanOrEqual, Variable::Int(18)).r#where("age", Operator::LessThan, Variable::Int(25)); });``
-- ``or_where_closure(|closure| { closure .r#where("age", Operator::GreaterThanOrEqual, Variable::Int(18)).r#where("age", Operator::LessThan, Variable::Int(25)); })``
+- ``or_where_closure(|closure| { closure.r#where("age", Operator::GreaterThanOrEqual, Variable::Int(18)).r#where("age", Operator::LessThan, Variable::Int(25)); })``
 
 ## Join
 
@@ -72,7 +72,7 @@
 
 ## Having
 
-- ``having("created_at", Operator::GreaterThanOrEqual, Variable::String("2024-01-01".to_string()))``
+- ``having("total_orders", Operator::GreaterThanOrEqual, Variable::Int(5))``
 
 ## Order By
 
