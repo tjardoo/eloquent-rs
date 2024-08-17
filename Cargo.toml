@@ -1,15 +1,11 @@
 [package]
-name = "eloquent"
-version = "1.0.0"
+name = "eloquent-demo"
+version = "0.1.0"
 edition = "2021"
-license = "MIT"
-description = "Eloquent is a SQL query builder to easily build complex queries in Rust."
-repository = "https://github.com/tjardoo/eloquent-rs"
-documentation = "https://docs.rs/eloquent"
-keywords = ["database", "query", "sql"]
+publish = false
 
 [workspace]
-members = ["eloquent_core"]
+members = ["eloquent", "eloquent_core"]
 
 [dependencies]
-eloquent_core = { path = "eloquent_core", version = "1.0" }
+eloquent = { path = "eloquent", version = "2.0.0" }

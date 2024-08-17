@@ -1,656 +1,311 @@
-use crate::{
-    shared::{Clause, Closure, FunctionType, Join, JoinType, WhereClause, WhereOperator},
-    traits::multi_columns::MultiColumns,
-    Direction, Eloquent, Operator, Variable,
-};
+use crate::{Condition, Logic, Operator, ToSql};
 
-pub struct Bindings {
-    pub select: Vec<String>,
-    pub insert: Vec<(String, Variable)>,
-    pub update: Vec<(String, Variable)>,
-    pub table: String,
-    pub join: Vec<Join>,
-    pub r#where: Vec<WhereClause>,
-    pub where_closure: Vec<Closure>,
-    pub group_by: Vec<String>,
-    pub having: Vec<Clause>,
-    pub order_by: Vec<String>,
-    pub is_delete: bool,
-    pub limit: Option<u32>,
-    pub offset: Option<u32>,
+pub struct QueryBuilder {
+    table: String,
+    conditions: Vec<Condition>,
+    closures: Vec<(Logic, Vec<Condition>)>,
 }
 
-impl Eloquent {
-    /// Select columns to be retrieved from the database. If no columns are selected, all columns will be retrieved.
-    ///
-    /// ```rust
-    /// use eloquent_core::Eloquent;
-    ///
-    /// let mut eloquent = Eloquent::table("users");
-    /// eloquent.select("id");
-    ///
-    /// assert_eq!(eloquent.to_sql(), "SELECT id FROM users");
-    /// ```
-    ///
-    /// ```rust
-    /// use eloquent_core::Eloquent;
-    ///
-    /// let mut eloquent = Eloquent::table("users");
-    /// eloquent.select(vec!["name", "email"]);
-    ///
-    /// assert_eq!(eloquent.to_sql(), "SELECT name, email FROM users");
-    /// ```
-    ///
-    /// ```rust
-    /// use eloquent_core::Eloquent;
-    ///
-    /// let mut eloquent = Eloquent::table("users");
-    ///
-    /// assert_eq!(eloquent.to_sql(), "SELECT * FROM users");
-    /// ```
-    pub fn select<T>(&mut self, columns: T) -> &mut Self
-    where
-        T: MultiColumns,
-    {
-        let columns = columns.to_columns();
-
-        for column in columns.iter() {
-            self.bindings.select.push(column.to_string());
+impl QueryBuilder {
+    pub fn new() -> Self {
+        Self {
+            table: String::new(),
+            conditions: Vec::new(),
+            closures: Vec::new(),
         }
+    }
+
+    pub fn table(mut self, table: &str) -> Self {
+        self.table = table.to_string();
 
         self
     }
 
-    /// Select columns to be retrieved from the database. If no columns are selected, all columns will be retrieved.
-    ///
-    /// ```rust
-    /// use eloquent_core::Eloquent;
-    ///
-    /// let mut eloquent = Eloquent::table("users");
-    /// eloquent.select_as("address.country", "address_country");
-    ///
-    /// assert_eq!(eloquent.to_sql(), "SELECT address.country AS address_country FROM users");
-    /// ```
-    pub fn select_as(&mut self, column: &str, alias: &str) -> &mut Self {
-        self.bindings
-            .select
-            .push(format!("{} AS {}", column, alias.to_string()));
-
-        self
-    }
-
-    /// Select a count of the given column and give it an alias.
-    ///
-    /// ```rust
-    /// use eloquent_core::Eloquent;
-    ///
-    /// let mut eloquent = Eloquent::table("users");
-    /// eloquent.select_count("id", "total_users");
-    ///
-    /// assert_eq!(eloquent.to_sql(), "SELECT COUNT(id) AS total_users FROM users");
-    /// ```
-    pub fn select_count(&mut self, column: &str, alias: &str) -> &mut Self {
-        self.create_function(column, alias, FunctionType::Count);
-
-        self
-    }
-
-    /// Select the max of the given column and give it an alias.
-    ///
-    /// ```rust
-    /// use eloquent_core::Eloquent;
-    ///
-    /// let mut eloquent = Eloquent::table("users");
-    /// eloquent.select_max("id", "max_id");
-    ///
-    /// assert_eq!(eloquent.to_sql(), "SELECT MAX(id) AS max_id FROM users");
-    /// ```
-    pub fn select_max(&mut self, column: &str, alias: &str) -> &mut Self {
-        self.create_function(column, alias, FunctionType::Max);
-
-        self
-    }
-
-    /// Select the min of the given column and give it an alias.
-    ///
-    /// ```rust
-    /// use eloquent_core::Eloquent;
-    ///
-    /// let mut eloquent = Eloquent::table("users");
-    /// eloquent.select_min("id", "min_id");
-    ///
-    /// assert_eq!(eloquent.to_sql(), "SELECT MIN(id) AS min_id FROM users");
-    /// ```
-    pub fn select_min(&mut self, column: &str, alias: &str) -> &mut Self {
-        self.create_function(column, alias, FunctionType::Min);
-
-        self
-    }
-
-    /// Select the sum of the given column and give it an alias.
-    ///
-    /// ```rust
-    /// use eloquent_core::Eloquent;
-    ///
-    /// let mut eloquent = Eloquent::table("users");
-    /// eloquent.select_sum("id", "sum_id");
-    ///
-    /// assert_eq!(eloquent.to_sql(), "SELECT SUM(id) AS sum_id FROM users");
-    /// ```
-    pub fn select_sum(&mut self, column: &str, alias: &str) -> &mut Self {
-        self.create_function(column, alias, FunctionType::Sum);
-
-        self
-    }
-
-    /// Select the avg of the given column and give it an alias.
-    ///
-    /// ```rust
-    /// use eloquent_core::Eloquent;
-    ///
-    /// let mut eloquent = Eloquent::table("users");
-    /// eloquent.select_avg("id", "avg_id");
-    ///
-    /// assert_eq!(eloquent.to_sql(), "SELECT AVG(id) AS avg_id FROM users");
-    /// ```
-    pub fn select_avg(&mut self, column: &str, alias: &str) -> &mut Self {
-        self.create_function(column, alias, FunctionType::Avg);
-
-        self
-    }
-
-    fn create_function(&mut self, column: &str, alias: &str, function: FunctionType) -> &mut Self {
-        self.bindings
-            .select
-            .push(format!("{}({}) AS {}", function, column, alias.to_string()));
-
-        self
-    }
-
-    /// Insert a new column and value into the query.
-    ///
-    /// ```rust
-    /// use eloquent_core::{Eloquent, Variable};
-    ///
-    /// let mut eloquent = Eloquent::table("users");
-    /// eloquent.insert("name", Variable::String("John Doe".to_string()));
-    ///
-    /// assert_eq!(eloquent.to_sql(), "INSERT INTO users (name) VALUES (`John Doe`)");
-    /// ```
-    pub fn insert(&mut self, column: &str, value: Variable) -> &mut Self {
-        self.bindings.insert.push((column.to_string(), value));
-
-        self
-    }
-
-    /// Insert multiple columns and values into the query.
-    ///
-    /// ```rust
-    /// use eloquent_core::{Eloquent, Variable};
-    ///
-    /// let mut eloquent = Eloquent::table("users");
-    /// eloquent.insert_many(vec![
-    ///     ("first_name", Variable::String("John".to_string())),
-    ///     ("last_name", Variable::String("Doe".to_string())),
-    /// ]);
-    ///
-    /// assert_eq!(eloquent.to_sql(), "INSERT INTO users (first_name, last_name) VALUES (`John`, `Doe`)");
-    /// ```
-    pub fn insert_many(&mut self, columns: Vec<(&str, Variable)>) -> &mut Self {
-        for column in columns.iter() {
-            self.bindings
-                .insert
-                .push((column.0.to_string(), column.1.clone()));
-        }
-
-        self
-    }
-
-    /// Update a column with a new value in the query.
-    ///
-    /// ```rust
-    /// use eloquent_core::{Eloquent, Variable};
-    ///
-    /// let mut eloquent = Eloquent::table("users");
-    /// eloquent.update("name", Variable::String("John Doe".to_string()));
-    ///
-    /// assert_eq!(eloquent.to_sql(), "UPDATE users SET name = `John Doe`");
-    /// ```
-    pub fn update(&mut self, column: &str, value: Variable) -> &mut Self {
-        self.bindings
-            .update
-            .push((column.to_string(), value.clone()));
-
-        self
-    }
-
-    /// Update multiple columns with new values in the query.
-    ///
-    /// ```rust
-    /// use eloquent_core::{Eloquent, Variable};
-    ///
-    /// let mut eloquent = Eloquent::table("users");
-    /// eloquent.update_many(vec![
-    ///     ("first_name", Variable::String("John".to_string())),
-    ///     ("last_name", Variable::String("Doe".to_string())),
-    /// ]);
-    ///
-    /// assert_eq!(eloquent.to_sql(), "UPDATE users SET first_name = `John`, last_name = `Doe`");
-    /// ```
-    pub fn update_many(&mut self, columns: Vec<(&str, Variable)>) -> &mut Self {
-        for (column, value) in columns.iter() {
-            self.bindings
-                .update
-                .push((column.to_string(), value.clone()));
-        }
-
-        self
-    }
-
-    /// Deletes records from the table.
-    ///
-    /// ```rust
-    /// use eloquent_core::{Eloquent};
-    ///
-    /// let mut eloquent = Eloquent::table("users");
-    /// eloquent.delete();
-    ///
-    /// assert_eq!(eloquent.to_sql(), "DELETE FROM users");
-    /// ```
-    pub fn delete(&mut self) -> &mut Self {
-        self.bindings.is_delete = true;
-
-        self
-    }
-
-    /// Add a "where" clause to the query.
-    ///
-    /// ```rust
-    /// use eloquent_core::{Eloquent, Operator, Variable};
-    ///
-    /// let mut eloquent = Eloquent::table("users");
-    /// eloquent.r#where("id", Operator::Equal, Variable::Int(100));
-    ///
-    /// assert_eq!(eloquent.to_sql(), "SELECT * FROM users WHERE id = 100");
-    /// ```
-    pub fn r#where(&mut self, column: &str, operator: Operator, value: Variable) -> &mut Self {
-        self.create_where_clause(column, operator, value, WhereOperator::And);
-
-        self
-    }
-
-    /// Add an "or where" clause to the query.
-    ///
-    /// ```rust
-    /// use eloquent_core::{Eloquent, Operator, Variable};
-    ///
-    /// let mut eloquent = Eloquent::table("users");
-    /// eloquent.r#where("id", Operator::Equal, Variable::Int(100)).or_where("id", Operator::Equal, Variable::Int(200));
-    ///
-    /// assert_eq!(eloquent.to_sql(), "SELECT * FROM users WHERE id = 100 OR id = 200");
-    /// ```
-    pub fn or_where(&mut self, column: &str, operator: Operator, value: Variable) -> &mut Self {
-        self.create_where_clause(column, operator, value, WhereOperator::Or);
-
-        self
-    }
-
-    /// Add a "where not" clause to the query.
-    ///
-    /// ```rust
-    /// use eloquent_core::{Eloquent, Operator, Variable};
-    ///
-    /// let mut eloquent = Eloquent::table("users");
-    /// eloquent.where_not("country_code", Operator::Equal, Variable::String("NL".to_string()));
-    ///
-    /// assert_eq!(eloquent.to_sql(), "SELECT * FROM users WHERE NOT country_code = `NL`");
-    /// ```
-    pub fn where_not(&mut self, column: &str, operator: Operator, value: Variable) -> &mut Self {
-        self.create_where_clause(column, operator, value, WhereOperator::Not);
-
-        self
-    }
-
-    /// Add a "where null" clause to the query.
-    ///
-    /// ```rust
-    /// use eloquent_core::{Eloquent, Operator, Variable};
-    ///
-    /// let mut eloquent = Eloquent::table("users");
-    /// eloquent.where_null("country_id");
-    ///
-    /// assert_eq!(eloquent.to_sql(), "SELECT * FROM users WHERE country_id IS NULL");
-    /// ```
-    pub fn where_null(&mut self, column: &str) -> &mut Self {
-        self.create_where_clause(column, Operator::Equal, Variable::Null, WhereOperator::And);
-
-        self
-    }
-
-    /// Add a "where not null" clause to the query.
-    ///
-    /// ```rust
-    /// use eloquent_core::{Eloquent, Operator, Variable};
-    ///
-    /// let mut eloquent = Eloquent::table("users");
-    /// eloquent.where_not_null("country_id");
-    ///
-    /// assert_eq!(eloquent.to_sql(), "SELECT * FROM users WHERE country_id IS NOT NULL");
-    /// ```
-    pub fn where_not_null(&mut self, column: &str) -> &mut Self {
-        self.create_where_clause(
-            column,
-            Operator::NotEqual,
-            Variable::Null,
-            WhereOperator::And,
-        );
-
-        self
-    }
-
-    /// Add an "or where null" clause to the query.
-    ///
-    /// ```rust
-    /// use eloquent_core::{Eloquent, Operator, Variable};
-    ///
-    /// let mut eloquent = Eloquent::table("users");
-    /// eloquent.r#where("country_code", Operator::Equal, Variable::String("NL".to_string())).or_where_null("country_code");
-    ///
-    /// assert_eq!(eloquent.to_sql(), "SELECT * FROM users WHERE country_code = `NL` OR country_code IS NULL");
-    /// ```
-    pub fn or_where_null(&mut self, column: &str) -> &mut Self {
-        self.create_where_clause(column, Operator::Equal, Variable::Null, WhereOperator::Or);
-
-        self
-    }
-
-    /// Add an "or where not null" clause to the query.
-    ///
-    /// ```rust
-    /// use eloquent_core::{Eloquent, Operator, Variable};
-    ///
-    /// let mut eloquent = Eloquent::table("users");
-    /// eloquent.where_null("country_id").or_where_not_null("verified_at");
-    ///
-    /// assert_eq!(eloquent.to_sql(), "SELECT * FROM users WHERE country_id IS NULL OR verified_at IS NOT NULL");
-    /// ```
-    pub fn or_where_not_null(&mut self, column: &str) -> &mut Self {
-        self.create_where_clause(
-            column,
-            Operator::NotEqual,
-            Variable::Null,
-            WhereOperator::Or,
-        );
-
-        self
-    }
-
-    fn create_where_clause(
-        &mut self,
-        column: &str,
+    fn add_condition(
+        mut self,
+        field: &str,
         operator: Operator,
-        value: Variable,
-        where_operator: WhereOperator,
-    ) -> &mut Self {
-        self.bindings.r#where.push(WhereClause {
-            column: column.to_string(),
-            operator,
-            value,
-            where_operator,
-        });
-
+        logic: Logic,
+        values: Vec<Box<dyn ToSql>>,
+    ) -> Self {
+        self.conditions
+            .push(Condition::new(field, operator, logic, values));
         self
     }
 
-    /// Add a join clause to the query.
-    ///
-    /// ```rust
-    /// use eloquent_core::{Eloquent};
-    ///
-    /// let mut eloquent = Eloquent::table("users");
-    /// eloquent.join("addresses", "users.id", "addresses.user_id");
-    ///
-    /// assert_eq!(eloquent.to_sql(), "SELECT * FROM users JOIN addresses ON users.id = addresses.user_id");
-    /// ```
-    pub fn join(&mut self, table: &str, left_hand: &str, right_hand: &str) -> &mut Self {
-        self.create_join(table, left_hand, right_hand, JoinType::Inner);
-
-        self
+    pub fn r#where(self, field: &str, value: impl ToSql + 'static) -> Self {
+        self.add_condition(field, Operator::Equal, Logic::And, vec![Box::new(value)])
     }
 
-    /// Add a left join clause to the query.
-    ///
-    /// ```rust
-    /// use eloquent_core::{Eloquent};
-    ///
-    /// let mut eloquent = Eloquent::table("users");
-    /// eloquent.left_join("addresses", "users.id", "addresses.user_id");
-    ///
-    /// assert_eq!(eloquent.to_sql(), "SELECT * FROM users LEFT JOIN addresses ON users.id = addresses.user_id");
-    /// ```
-    pub fn left_join(&mut self, table: &str, left_hand: &str, right_hand: &str) -> &mut Self {
-        self.create_join(table, left_hand, right_hand, JoinType::Left);
-
-        self
+    pub fn or_where(self, field: &str, value: impl ToSql + 'static) -> Self {
+        self.add_condition(field, Operator::Equal, Logic::Or, vec![Box::new(value)])
     }
 
-    /// Add a right join clause to the query.
-    ///
-    /// ```rust
-    /// use eloquent_core::{Eloquent};
-    ///
-    /// let mut eloquent = Eloquent::table("users");
-    /// eloquent.right_join("addresses", "users.id", "addresses.user_id");
-    ///
-    /// assert_eq!(eloquent.to_sql(), "SELECT * FROM users RIGHT JOIN addresses ON users.id = addresses.user_id");
-    /// ```
-    pub fn right_join(&mut self, table: &str, left_hand: &str, right_hand: &str) -> &mut Self {
-        self.create_join(table, left_hand, right_hand, JoinType::Right);
-
-        self
+    pub fn where_not(self, field: &str, value: impl ToSql + 'static) -> Self {
+        self.add_condition(field, Operator::NotEqual, Logic::And, vec![Box::new(value)])
     }
 
-    /// Add a full join clause to the query.
-    ///
-    /// ```rust
-    /// use eloquent_core::{Eloquent};
-    ///
-    /// let mut eloquent = Eloquent::table("users");
-    /// eloquent.full_join("addresses", "users.id", "addresses.user_id");
-    ///
-    /// assert_eq!(eloquent.to_sql(), "SELECT * FROM users FULL JOIN addresses ON users.id = addresses.user_id");
-    /// ```
-    pub fn full_join(&mut self, table: &str, left_hand: &str, right_hand: &str) -> &mut Self {
-        self.create_join(table, left_hand, right_hand, JoinType::Full);
-
-        self
+    pub fn or_where_not(self, field: &str, value: impl ToSql + 'static) -> Self {
+        self.add_condition(field, Operator::NotEqual, Logic::Or, vec![Box::new(value)])
     }
 
-    fn create_join(
-        &mut self,
-        table: &str,
-        left_hand: &str,
-        right_hand: &str,
-        r#type: JoinType,
-    ) -> &mut Self {
-        self.bindings.join.push(Join {
-            table: table.to_string(),
-            left_hand: left_hand.to_string(),
-            right_hand: right_hand.to_string(),
-            r#type,
-        });
-
-        self
+    pub fn where_gt(self, field: &str, value: impl ToSql + 'static) -> Self {
+        self.add_condition(
+            field,
+            Operator::GreaterThan,
+            Logic::And,
+            vec![Box::new(value)],
+        )
     }
 
-    /// Add a where closure to the query.
-    ///
-    /// ```rust
-    /// use eloquent_core::{Eloquent, Operator, Variable};
-    ///
-    /// let mut eloquent = Eloquent::table("users");
-    /// eloquent.where_closure(|closure| {
-    ///   closure
-    ///     .r#where("age", Operator::GreaterThanOrEqual, Variable::Int(18))
-    ///     .r#where("age", Operator::LessThan, Variable::Int(25));
-    /// });
-    ///
-    /// assert_eq!(eloquent.to_sql(), "SELECT * FROM users WHERE (age >= 18 AND age < 25)");
-    /// ```
-    pub fn where_closure<C>(&mut self, closure: C) -> &mut Self
+    pub fn or_where_gt(self, field: &str, value: impl ToSql + 'static) -> Self {
+        self.add_condition(
+            field,
+            Operator::GreaterThan,
+            Logic::Or,
+            vec![Box::new(value)],
+        )
+    }
+
+    pub fn where_gte(self, field: &str, value: impl ToSql + 'static) -> Self {
+        self.add_condition(
+            field,
+            Operator::GreaterThanOrEqual,
+            Logic::And,
+            vec![Box::new(value)],
+        )
+    }
+
+    pub fn or_where_gte(self, field: &str, value: impl ToSql + 'static) -> Self {
+        self.add_condition(
+            field,
+            Operator::GreaterThanOrEqual,
+            Logic::Or,
+            vec![Box::new(value)],
+        )
+    }
+
+    pub fn where_lt(self, field: &str, value: impl ToSql + 'static) -> Self {
+        self.add_condition(field, Operator::LessThan, Logic::And, vec![Box::new(value)])
+    }
+
+    pub fn or_where_lt(self, field: &str, value: impl ToSql + 'static) -> Self {
+        self.add_condition(field, Operator::LessThan, Logic::Or, vec![Box::new(value)])
+    }
+
+    pub fn where_lte(self, field: &str, value: impl ToSql + 'static) -> Self {
+        self.add_condition(
+            field,
+            Operator::LessThanOrEqual,
+            Logic::And,
+            vec![Box::new(value)],
+        )
+    }
+
+    pub fn or_where_lte(self, field: &str, value: impl ToSql + 'static) -> Self {
+        self.add_condition(
+            field,
+            Operator::LessThanOrEqual,
+            Logic::Or,
+            vec![Box::new(value)],
+        )
+    }
+
+    pub fn where_like(self, field: &str, value: impl ToSql + 'static) -> Self {
+        self.add_condition(field, Operator::Like, Logic::And, vec![Box::new(value)])
+    }
+
+    pub fn or_where_like(self, field: &str, value: impl ToSql + 'static) -> Self {
+        self.add_condition(field, Operator::Like, Logic::Or, vec![Box::new(value)])
+    }
+
+    pub fn where_in(self, field: &str, values: Vec<impl ToSql + 'static>) -> Self {
+        let boxed_values = values
+            .into_iter()
+            .map(|v| Box::new(v) as Box<dyn ToSql>)
+            .collect();
+
+        self.add_condition(field, Operator::In, Logic::And, boxed_values)
+    }
+
+    pub fn or_where_in(self, field: &str, values: Vec<impl ToSql + 'static>) -> Self {
+        let boxed_values = values
+            .into_iter()
+            .map(|v| Box::new(v) as Box<dyn ToSql>)
+            .collect();
+
+        self.add_condition(field, Operator::In, Logic::Or, boxed_values)
+    }
+
+    pub fn where_not_in(self, field: &str, values: Vec<impl ToSql + 'static>) -> Self {
+        let boxed_values = values
+            .into_iter()
+            .map(|v| Box::new(v) as Box<dyn ToSql>)
+            .collect();
+
+        self.add_condition(field, Operator::NotIn, Logic::And, boxed_values)
+    }
+
+    pub fn or_where_not_in(self, field: &str, values: Vec<impl ToSql + 'static>) -> Self {
+        let boxed_values = values
+            .into_iter()
+            .map(|v| Box::new(v) as Box<dyn ToSql>)
+            .collect();
+
+        self.add_condition(field, Operator::NotIn, Logic::Or, boxed_values)
+    }
+
+    pub fn where_null(self, field: &str) -> Self {
+        self.add_condition(field, Operator::IsNull, Logic::And, vec![])
+    }
+
+    pub fn or_where_null(self, field: &str) -> Self {
+        self.add_condition(field, Operator::IsNull, Logic::Or, vec![])
+    }
+
+    pub fn where_not_null(self, field: &str) -> Self {
+        self.add_condition(field, Operator::IsNotNull, Logic::And, vec![])
+    }
+
+    pub fn or_where_not_null(self, field: &str) -> Self {
+        self.add_condition(field, Operator::IsNotNull, Logic::Or, vec![])
+    }
+
+    pub fn where_closure<F>(mut self, closure: F) -> Self
     where
-        C: FnOnce(&mut Closure),
+        F: FnOnce(Self) -> Self,
     {
-        let mut builder = Closure::new(WhereOperator::And);
+        let mut nested_builder = QueryBuilder::new();
 
-        closure(&mut builder);
+        nested_builder = closure(nested_builder);
 
-        self.bindings.where_closure.push(builder);
+        self.closures.push((Logic::And, nested_builder.conditions));
 
         self
     }
 
-    /// Add a where closure to the query.
-    ///
-    /// ```rust
-    /// use eloquent_core::{Eloquent, Operator, Variable};
-    ///
-    /// let mut eloquent = Eloquent::table("users");
-    /// eloquent
-    ///   .r#where("age", Operator::GreaterThanOrEqual, Variable::Int(30))
-    ///   .or_where_closure(|closure| {
-    ///     closure
-    ///       .r#where("age", Operator::GreaterThanOrEqual, Variable::Int(18))
-    ///       .r#where("age", Operator::LessThan, Variable::Int(25));
-    ///   });
-    ///
-    /// assert_eq!(eloquent.to_sql(), "SELECT * FROM users WHERE age >= 30 OR (age >= 18 AND age < 25)");
-    /// ```
-    pub fn or_where_closure<C>(&mut self, closure: C) -> &mut Self
+    pub fn or_where_closure<F>(mut self, closure: F) -> Self
     where
-        C: FnOnce(&mut Closure),
+        F: FnOnce(Self) -> Self,
     {
-        let mut builder = Closure::new(WhereOperator::Or);
+        let mut nested_builder = QueryBuilder::new();
 
-        closure(&mut builder);
+        nested_builder = closure(nested_builder);
 
-        self.bindings.where_closure.push(builder);
+        self.closures.push((Logic::Or, nested_builder.conditions));
 
         self
     }
 
-    /// Add a "group by" clause to the query.
-    ///
-    /// ```rust
-    /// use eloquent_core::{Eloquent};
-    ///
-    /// let mut eloquent = Eloquent::table("users");
-    /// eloquent.group_by("country_id");
-    ///
-    /// assert_eq!(eloquent.to_sql(), "SELECT * FROM users GROUP BY country_id");
-    /// ```
-    ///
-    /// ```rust
-    /// use eloquent_core::Eloquent;
-    ///
-    /// let mut eloquent = Eloquent::table("users");
-    /// eloquent.group_by(vec!["country_id", "city_id"]);
-    ///
-    /// assert_eq!(eloquent.to_sql(), "SELECT * FROM users GROUP BY country_id, city_id");
-    /// ```
-    pub fn group_by<T>(&mut self, columns: T) -> &mut Self
-    where
-        T: MultiColumns,
-    {
-        let columns = columns.to_columns();
+    pub fn build_statement(self) -> String {
+        let mut sql = format!("SELECT * FROM {}", self.table);
 
-        for column in columns.iter() {
-            self.bindings.group_by.push(column.to_string());
+        let mut params: Vec<&Box<dyn ToSql>> = Vec::new();
+
+        if !self.conditions.is_empty() || !self.closures.is_empty() {
+            sql.push_str(" WHERE ");
+
+            let mut conditions_str = String::new();
+            let mut first_condition = true;
+
+            for (i, condition) in self.conditions.iter().enumerate() {
+                if i > 0 {
+                    conditions_str.push_str(match condition.logic {
+                        Logic::And => " AND ",
+                        Logic::Or => " OR ",
+                    });
+                }
+
+                let condition_sql = match &condition.operator {
+                    Operator::Equal => format!("{} = ?", condition.field),
+                    Operator::NotEqual => format!("{} != ?", condition.field),
+                    Operator::GreaterThan => format!("{} > ?", condition.field),
+                    Operator::GreaterThanOrEqual => format!("{} >= ?", condition.field),
+                    Operator::LessThan => format!("{} < ?", condition.field),
+                    Operator::LessThanOrEqual => format!("{} <= ?", condition.field),
+                    Operator::Like => format!("{} LIKE ?", condition.field),
+                    Operator::In | Operator::NotIn => {
+                        let placeholders = vec!["?"; condition.values.len()].join(", ");
+                        if condition.operator == Operator::In {
+                            format!("{}IN ({})", condition.field, placeholders)
+                        } else {
+                            format!("{}NOT IN ({})", condition.field, placeholders)
+                        }
+                    }
+                    Operator::IsNull => format!("{} IS NULL", condition.field),
+                    Operator::IsNotNull => format!("{} IS NOT NULL", condition.field),
+                };
+
+                conditions_str.push_str(&condition_sql);
+                if !matches!(condition.operator, Operator::IsNull | Operator::IsNotNull) {
+                    params.extend(condition.values.iter());
+                }
+
+                first_condition = false;
+            }
+
+            for (logic, closure) in self.closures.iter() {
+                if !first_condition {
+                    match logic {
+                        Logic::And => conditions_str.push_str(" AND "),
+                        Logic::Or => conditions_str.push_str(" OR "),
+                    }
+                }
+
+                conditions_str.push('(');
+                for (i, condition) in closure.iter().enumerate() {
+                    if i > 0 {
+                        conditions_str.push_str(match condition.logic {
+                            Logic::And => " AND ",
+                            Logic::Or => " OR ",
+                        });
+                    }
+
+                    let condition_sql = match &condition.operator {
+                        Operator::Equal => format!("{} = ?", condition.field),
+                        Operator::NotEqual => format!("{} != ?", condition.field),
+                        Operator::GreaterThan => format!("{} > ?", condition.field),
+                        Operator::GreaterThanOrEqual => format!("{} >= ?", condition.field),
+                        Operator::LessThan => format!("{} < ?", condition.field),
+                        Operator::LessThanOrEqual => format!("{} <= ?", condition.field),
+                        Operator::Like => format!("{} LIKE ?", condition.field),
+                        Operator::In | Operator::NotIn => {
+                            let placeholders = vec!["?"; condition.values.len()].join(", ");
+                            if condition.operator == Operator::In {
+                                format!("{} IN ({})", condition.field, placeholders)
+                            } else {
+                                format!("{} NOT IN ({})", condition.field, placeholders)
+                            }
+                        }
+                        Operator::IsNull => format!("{} IS NULL", condition.field),
+                        Operator::IsNotNull => format!("{} IS NOT NULL", condition.field),
+                    };
+
+                    conditions_str.push_str(&condition_sql);
+                    if !matches!(condition.operator, Operator::IsNull | Operator::IsNotNull) {
+                        params.extend(condition.values.iter());
+                    }
+                }
+                conditions_str.push(')');
+                first_condition = false;
+            }
+
+            sql.push_str(&conditions_str);
         }
 
-        self
+        let formatted_sql = sql.replace('?', "{}");
+
+        let formatted_sql = params
+            .iter()
+            .map(|p| p.as_ref().to_sql())
+            .fold(formatted_sql, |acc, val| acc.replacen("{}", &val, 1));
+
+        formatted_sql
     }
+}
 
-    /// Add a "having" clause to the query.
-    ///
-    /// ```rust
-    /// use eloquent_core::{Eloquent, Operator, Variable};
-    ///
-    /// let mut eloquent = Eloquent::table("users");
-    /// eloquent.having("total_orders", Operator::GreaterThanOrEqual, Variable::Int(5));
-    ///
-    /// assert_eq!(eloquent.to_sql(), "SELECT * FROM users HAVING total_orders >= 5");
-    /// ```
-    pub fn having(&mut self, column: &str, operator: Operator, value: Variable) -> &mut Self {
-        self.bindings.having.push(Clause {
-            column: column.to_string(),
-            operator,
-            value,
-        });
-
-        self
-    }
-
-    /// Add an "order by" clause to the query.
-    ///
-    /// ```rust
-    /// use eloquent_core::{Eloquent, Direction};
-    ///
-    /// let mut eloquent = Eloquent::table("users");
-    /// eloquent.order_by("country_id", Direction::Asc);
-    ///
-    /// assert_eq!(eloquent.to_sql(), "SELECT * FROM users ORDER BY country_id ASC");
-    /// ```
-    pub fn order_by(&mut self, column: &str, direction: Direction) -> &mut Self {
-        self.bindings
-            .order_by
-            .push(format!("{} {}", column, direction));
-
-        self
-    }
-
-    /// Add a "limit" clause to the query.
-    ///
-    /// ```rust
-    /// use eloquent_core::{Eloquent};
-    ///
-    /// let mut eloquent = Eloquent::table("users");
-    /// eloquent.limit(100);
-    ///
-    /// assert_eq!(eloquent.to_sql(), "SELECT * FROM users LIMIT 100");
-    /// ```
-    pub fn limit(&mut self, limit: u32) -> &mut Self {
-        self.bindings.limit = Some(limit);
-
-        self
-    }
-
-    /// Add a "offset" clause to the query.
-    ///
-    /// ```rust
-    /// use eloquent_core::{Eloquent};
-    ///
-    /// let mut eloquent = Eloquent::table("users");
-    /// eloquent.offset(1000);
-    ///
-    /// assert_eq!(eloquent.to_sql(), "SELECT * FROM users OFFSET 1000");
-    /// ```
-    pub fn offset(&mut self, offset: u32) -> &mut Self {
-        self.bindings.offset = Some(offset);
-
-        self
-    }
-
-    /// Compile the query into a SQL string.
-    ///
-    /// ```rust
-    /// use eloquent_core::{Eloquent};
-    ///
-    /// let mut eloquent = Eloquent::table("users");
-    ///
-    /// assert_eq!(eloquent.to_sql(), "SELECT * FROM users");
-    /// ```
-    pub fn to_sql(&mut self) -> String {
-        self.compile()
+impl Default for QueryBuilder {
+    fn default() -> Self {
+        Self::new()
     }
 }
