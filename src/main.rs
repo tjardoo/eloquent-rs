@@ -23,7 +23,7 @@ fn test_example_query_1() {
         });
 
     assert_eq!(
-        result.build_statement(),
+        result.build(),
         "SELECT * FROM flights WHERE origin = 'AMS' AND destination != 'BKK' AND flight_duration > 8 AND number_of_passengers >= 250 AND number_of_stops <= 1 AND gate_number IS NOT NULL AND (status IN ('scheduled', 'delayed') AND aircraft_code LIKE 'KLM%')"
     );
 }
@@ -38,7 +38,7 @@ fn test_example_query_2() {
         });
 
     assert_eq!(
-        result.build_statement(),
+        result.build(),
         "SELECT * FROM flights WHERE origin = 'AMS' AND (destination IN ('BKK', 'DMK') OR aircraft_code LIKE 'THA%')"
     );
 }

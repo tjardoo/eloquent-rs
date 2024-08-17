@@ -1,15 +1,17 @@
-use crate::{Condition, Logic, Operator, ToSql};
+use crate::{compiler::build_statement, Columnable, Condition, Logic, Operator, ToSql};
 
 pub struct QueryBuilder {
-    table: String,
-    conditions: Vec<Condition>,
-    closures: Vec<(Logic, Vec<Condition>)>,
+    pub table: String,
+    pub selects: Vec<String>,
+    pub conditions: Vec<Condition>,
+    pub closures: Vec<(Logic, Vec<Condition>)>,
 }
 
 impl QueryBuilder {
     pub fn new() -> Self {
         Self {
             table: String::new(),
+            selects: Vec::new(),
             conditions: Vec::new(),
             closures: Vec::new(),
         }
@@ -184,6 +186,55 @@ impl QueryBuilder {
         self
     }
 
+    pub fn select<T>(mut self, columns: T) -> Self
+    where
+        T: Columnable,
+    {
+        let columns = columns.to_columns();
+
+        for column in columns.iter() {
+            self.selects.push(column.to_string());
+        }
+
+        self
+    }
+
+    pub fn select_as(mut self, column: &str, alias: &str) -> Self {
+        self.selects.push(format!("{} AS {}", column, alias));
+
+        self
+    }
+
+    pub fn select_count(mut self, column: &str) -> Self {
+        self.selects.push(format!("COUNT({})", column));
+
+        self
+    }
+
+    pub fn select_min(mut self, column: &str) -> Self {
+        self.selects.push(format!("MIN({})", column));
+
+        self
+    }
+
+    pub fn select_max(mut self, column: &str) -> Self {
+        self.selects.push(format!("MAX({})", column));
+
+        self
+    }
+
+    pub fn select_avg(mut self, column: &str) -> Self {
+        self.selects.push(format!("AVG({})", column));
+
+        self
+    }
+
+    pub fn select_sum(mut self, column: &str) -> Self {
+        self.selects.push(format!("SUM({})", column));
+
+        self
+    }
+
     pub fn or_where_closure<F>(mut self, closure: F) -> Self
     where
         F: FnOnce(Self) -> Self,
@@ -197,110 +248,8 @@ impl QueryBuilder {
         self
     }
 
-    pub fn build_statement(self) -> String {
-        let mut sql = format!("SELECT * FROM {}", self.table);
-
-        let mut params: Vec<&Box<dyn ToSql>> = Vec::new();
-
-        if !self.conditions.is_empty() || !self.closures.is_empty() {
-            sql.push_str(" WHERE ");
-
-            let mut conditions_str = String::new();
-            let mut first_condition = true;
-
-            for (i, condition) in self.conditions.iter().enumerate() {
-                if i > 0 {
-                    conditions_str.push_str(match condition.logic {
-                        Logic::And => " AND ",
-                        Logic::Or => " OR ",
-                    });
-                }
-
-                let condition_sql = match &condition.operator {
-                    Operator::Equal => format!("{} = ?", condition.field),
-                    Operator::NotEqual => format!("{} != ?", condition.field),
-                    Operator::GreaterThan => format!("{} > ?", condition.field),
-                    Operator::GreaterThanOrEqual => format!("{} >= ?", condition.field),
-                    Operator::LessThan => format!("{} < ?", condition.field),
-                    Operator::LessThanOrEqual => format!("{} <= ?", condition.field),
-                    Operator::Like => format!("{} LIKE ?", condition.field),
-                    Operator::In | Operator::NotIn => {
-                        let placeholders = vec!["?"; condition.values.len()].join(", ");
-                        if condition.operator == Operator::In {
-                            format!("{}IN ({})", condition.field, placeholders)
-                        } else {
-                            format!("{}NOT IN ({})", condition.field, placeholders)
-                        }
-                    }
-                    Operator::IsNull => format!("{} IS NULL", condition.field),
-                    Operator::IsNotNull => format!("{} IS NOT NULL", condition.field),
-                };
-
-                conditions_str.push_str(&condition_sql);
-                if !matches!(condition.operator, Operator::IsNull | Operator::IsNotNull) {
-                    params.extend(condition.values.iter());
-                }
-
-                first_condition = false;
-            }
-
-            for (logic, closure) in self.closures.iter() {
-                if !first_condition {
-                    match logic {
-                        Logic::And => conditions_str.push_str(" AND "),
-                        Logic::Or => conditions_str.push_str(" OR "),
-                    }
-                }
-
-                conditions_str.push('(');
-                for (i, condition) in closure.iter().enumerate() {
-                    if i > 0 {
-                        conditions_str.push_str(match condition.logic {
-                            Logic::And => " AND ",
-                            Logic::Or => " OR ",
-                        });
-                    }
-
-                    let condition_sql = match &condition.operator {
-                        Operator::Equal => format!("{} = ?", condition.field),
-                        Operator::NotEqual => format!("{} != ?", condition.field),
-                        Operator::GreaterThan => format!("{} > ?", condition.field),
-                        Operator::GreaterThanOrEqual => format!("{} >= ?", condition.field),
-                        Operator::LessThan => format!("{} < ?", condition.field),
-                        Operator::LessThanOrEqual => format!("{} <= ?", condition.field),
-                        Operator::Like => format!("{} LIKE ?", condition.field),
-                        Operator::In | Operator::NotIn => {
-                            let placeholders = vec!["?"; condition.values.len()].join(", ");
-                            if condition.operator == Operator::In {
-                                format!("{} IN ({})", condition.field, placeholders)
-                            } else {
-                                format!("{} NOT IN ({})", condition.field, placeholders)
-                            }
-                        }
-                        Operator::IsNull => format!("{} IS NULL", condition.field),
-                        Operator::IsNotNull => format!("{} IS NOT NULL", condition.field),
-                    };
-
-                    conditions_str.push_str(&condition_sql);
-                    if !matches!(condition.operator, Operator::IsNull | Operator::IsNotNull) {
-                        params.extend(condition.values.iter());
-                    }
-                }
-                conditions_str.push(')');
-                first_condition = false;
-            }
-
-            sql.push_str(&conditions_str);
-        }
-
-        let formatted_sql = sql.replace('?', "{}");
-
-        let formatted_sql = params
-            .iter()
-            .map(|p| p.as_ref().to_sql())
-            .fold(formatted_sql, |acc, val| acc.replacen("{}", &val, 1));
-
-        formatted_sql
+    pub fn build(self) -> String {
+        build_statement(self)
     }
 }
 

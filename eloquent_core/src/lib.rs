@@ -1,10 +1,18 @@
 pub mod builder;
+pub mod compiler;
+
+// export query builder
+pub use builder::QueryBuilder;
 
 pub trait ToSql {
     fn to_sql(&self) -> String;
 }
 
-struct Condition {
+pub trait Columnable {
+    fn to_columns(&self) -> Vec<String>;
+}
+
+pub struct Condition {
     field: String,
     operator: Operator,
     logic: Logic,
@@ -27,7 +35,7 @@ enum Operator {
 }
 
 #[derive(Debug, PartialEq)]
-enum Logic {
+pub enum Logic {
     And,
     Or,
 }
@@ -52,5 +60,17 @@ impl ToSql for &str {
 impl ToSql for i32 {
     fn to_sql(&self) -> String {
         self.to_string()
+    }
+}
+
+impl Columnable for &str {
+    fn to_columns(&self) -> Vec<String> {
+        vec![self.to_string()]
+    }
+}
+
+impl Columnable for Vec<&str> {
+    fn to_columns(&self) -> Vec<String> {
+        self.iter().map(|&s| s.to_string()).collect()
     }
 }

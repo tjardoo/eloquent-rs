@@ -1,5 +1,3 @@
-use builder::QueryBuilder;
-
 pub use eloquent_core::*;
 
 pub struct Eloquent;
@@ -15,13 +13,82 @@ mod tests {
     use super::*;
 
     #[test]
+    fn test_select_single_column() {
+        let result = Eloquent::query().table("flights").select("origin");
+
+        assert_eq!(result.build(), "SELECT origin FROM flights");
+    }
+
+    #[test]
+    fn test_select_multiple_columns() {
+        let result = Eloquent::query()
+            .table("flights")
+            .select(vec!["origin", "destination"]);
+
+        assert_eq!(result.build(), "SELECT origin, destination FROM flights");
+    }
+
+    #[test]
+    fn test_select_as() {
+        let result = Eloquent::query()
+            .table("flights")
+            .select_as("origin", "from")
+            .select_as("destination", "to");
+
+        assert_eq!(
+            result.build(),
+            "SELECT origin AS from, destination AS to FROM flights"
+        );
+    }
+
+    #[test]
+    fn test_select_count() {
+        let result = Eloquent::query().table("flights").select_count("id");
+
+        assert_eq!(result.build(), "SELECT COUNT(id) FROM flights");
+    }
+
+    #[test]
+    fn test_select_min() {
+        let result = Eloquent::query()
+            .table("flights")
+            .select_min("flight_duration");
+
+        assert_eq!(result.build(), "SELECT MIN(flight_duration) FROM flights");
+    }
+
+    #[test]
+    fn test_select_max() {
+        let result = Eloquent::query()
+            .table("flights")
+            .select_max("flight_duration");
+
+        assert_eq!(result.build(), "SELECT MAX(flight_duration) FROM flights");
+    }
+
+    #[test]
+    fn test_select_avg() {
+        let result = Eloquent::query()
+            .table("flights")
+            .select_avg("flight_duration");
+
+        assert_eq!(result.build(), "SELECT AVG(flight_duration) FROM flights");
+    }
+
+    #[test]
+    fn test_select_sum() {
+        let result = Eloquent::query()
+            .table("flights")
+            .select_sum("flight_duration");
+
+        assert_eq!(result.build(), "SELECT SUM(flight_duration) FROM flights");
+    }
+
+    #[test]
     fn test_where() {
         let result = Eloquent::query().table("flights").r#where("origin", "AMS");
 
-        assert_eq!(
-            result.build_statement(),
-            "SELECT * FROM flights WHERE origin = 'AMS'"
-        );
+        assert_eq!(result.build(), "SELECT * FROM flights WHERE origin = 'AMS'");
     }
 
     #[test]
@@ -32,7 +99,7 @@ mod tests {
             .or_where("origin", "FRA");
 
         assert_eq!(
-            result.build_statement(),
+            result.build(),
             "SELECT * FROM flights WHERE origin = 'AMS' OR origin = 'FRA'"
         );
     }
@@ -44,7 +111,7 @@ mod tests {
             .where_not("origin", "AMS");
 
         assert_eq!(
-            result.build_statement(),
+            result.build(),
             "SELECT * FROM flights WHERE origin != 'AMS'"
         );
     }
@@ -57,7 +124,7 @@ mod tests {
             .or_where_not("destination", "AMS");
 
         assert_eq!(
-            result.build_statement(),
+            result.build(),
             "SELECT * FROM flights WHERE origin != 'AMS' OR destination != 'AMS'"
         );
     }
@@ -69,7 +136,7 @@ mod tests {
             .where_gt("flight_duration", 120);
 
         assert_eq!(
-            result.build_statement(),
+            result.build(),
             "SELECT * FROM flights WHERE flight_duration > 120"
         );
     }
@@ -82,7 +149,7 @@ mod tests {
             .or_where_gt("number_of_passengers ", 200);
 
         assert_eq!(
-            result.build_statement(),
+            result.build(),
             "SELECT * FROM flights WHERE flight_duration > 120 OR number_of_passengers  > 200"
         );
     }
@@ -94,7 +161,7 @@ mod tests {
             .where_gte("flight_duration", 120);
 
         assert_eq!(
-            result.build_statement(),
+            result.build(),
             "SELECT * FROM flights WHERE flight_duration >= 120"
         );
     }
@@ -107,7 +174,7 @@ mod tests {
             .or_where_gte("number_of_passengers ", 200);
 
         assert_eq!(
-            result.build_statement(),
+            result.build(),
             "SELECT * FROM flights WHERE flight_duration >= 120 OR number_of_passengers  >= 200"
         );
     }
@@ -119,7 +186,7 @@ mod tests {
             .where_lt("flight_duration", 120);
 
         assert_eq!(
-            result.build_statement(),
+            result.build(),
             "SELECT * FROM flights WHERE flight_duration < 120"
         );
     }
@@ -132,7 +199,7 @@ mod tests {
             .or_where_lt("number_of_passengers ", 200);
 
         assert_eq!(
-            result.build_statement(),
+            result.build(),
             "SELECT * FROM flights WHERE flight_duration < 120 OR number_of_passengers  < 200"
         );
     }
@@ -144,7 +211,7 @@ mod tests {
             .where_lte("flight_duration", 120);
 
         assert_eq!(
-            result.build_statement(),
+            result.build(),
             "SELECT * FROM flights WHERE flight_duration <= 120"
         );
     }
@@ -157,7 +224,7 @@ mod tests {
             .or_where_lte("number_of_passengers ", 200);
 
         assert_eq!(
-            result.build_statement(),
+            result.build(),
             "SELECT * FROM flights WHERE flight_duration <= 120 OR number_of_passengers  <= 200"
         );
     }
@@ -169,7 +236,7 @@ mod tests {
             .where_like("airplane_type", "Airbus%");
 
         assert_eq!(
-            result.build_statement(),
+            result.build(),
             "SELECT * FROM flights WHERE airplane_type LIKE 'Airbus%'"
         );
     }
@@ -182,7 +249,7 @@ mod tests {
             .or_where_like("airplane_type", "Boeing%");
 
         assert_eq!(
-            result.build_statement(),
+            result.build(),
             "SELECT * FROM flights WHERE airplane_type LIKE 'Airbus%' OR airplane_type LIKE 'Boeing%'"
         );
     }
@@ -194,7 +261,7 @@ mod tests {
             .where_in("origin_airport ", vec!["AMS", "FRA"]);
 
         assert_eq!(
-            result.build_statement(),
+            result.build(),
             "SELECT * FROM flights WHERE origin_airport IN ('AMS', 'FRA')"
         );
     }
@@ -207,7 +274,7 @@ mod tests {
             .or_where_in("destination_airport ", vec!["AMS", "FRA"]);
 
         assert_eq!(
-            result.build_statement(),
+            result.build(),
             "SELECT * FROM flights WHERE origin_airport IN ('AMS', 'FRA') OR destination_airport IN ('AMS', 'FRA')"
         );
     }
@@ -219,7 +286,7 @@ mod tests {
             .where_not_in("origin_airport ", vec!["AMS", "FRA"]);
 
         assert_eq!(
-            result.build_statement(),
+            result.build(),
             "SELECT * FROM flights WHERE origin_airport NOT IN ('AMS', 'FRA')"
         );
     }
@@ -232,7 +299,7 @@ mod tests {
             .or_where_not_in("destination_airport ", vec!["AMS", "FRA"]);
 
         assert_eq!(
-            result.build_statement(),
+            result.build(),
             "SELECT * FROM flights WHERE origin_airport NOT IN ('AMS', 'FRA') OR destination_airport NOT IN ('AMS', 'FRA')"
         );
     }
@@ -244,7 +311,7 @@ mod tests {
             .where_null("departure_time");
 
         assert_eq!(
-            result.build_statement(),
+            result.build(),
             "SELECT * FROM flights WHERE departure_time IS NULL"
         );
     }
@@ -257,7 +324,7 @@ mod tests {
             .or_where_null("arrival_time");
 
         assert_eq!(
-            result.build_statement(),
+            result.build(),
             "SELECT * FROM flights WHERE departure_time IS NULL OR arrival_time IS NULL"
         );
     }
@@ -269,7 +336,7 @@ mod tests {
             .where_not_null("departure_time");
 
         assert_eq!(
-            result.build_statement(),
+            result.build(),
             "SELECT * FROM flights WHERE departure_time IS NOT NULL"
         );
     }
@@ -282,7 +349,7 @@ mod tests {
             .or_where_not_null("arrival_time");
 
         assert_eq!(
-            result.build_statement(),
+            result.build(),
             "SELECT * FROM flights WHERE departure_time IS NOT NULL OR arrival_time IS NOT NULL"
         );
     }
@@ -295,7 +362,7 @@ mod tests {
             .where_closure(|query| query.r#where("origin", "AMS").or_where("origin", "FRA"));
 
         assert_eq!(
-            result.build_statement(),
+            result.build(),
             "SELECT * FROM flights WHERE departure_time IS NOT NULL AND (origin = 'AMS' OR origin = 'FRA')"
         );
     }
@@ -308,24 +375,8 @@ mod tests {
             .or_where_closure(|query| query.r#where("origin", "AMS").r#where("destination", "FRA"));
 
         assert_eq!(
-            result.build_statement(),
+            result.build(),
             "SELECT * FROM flights WHERE departure_time IS NOT NULL OR (origin = 'AMS' AND destination = 'FRA')"
-        );
-    }
-
-    #[test]
-    fn test_where_closure_in_closure() {
-        let result = Eloquent::query()
-            .table("flights")
-            .r#where("origin", "AMS")
-            .where_closure(|q| {
-                q.where_closure(|q| q.where_in("destination", vec!["BKK", "DMK"]))
-                    .or_where_closure(|q| q.where_like("aircraft_code", "THA%"))
-            });
-
-        assert_eq!(
-            result.build_statement(),
-            "SELECT * FROM flights WHERE origin = 'AMS' AND (destination IN ('BKK', 'DMK') OR aircraft_code LIKE 'THA%')"
         );
     }
 }
