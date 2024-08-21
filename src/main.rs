@@ -3,42 +3,44 @@ use eloquent::Eloquent;
 fn main() {
     println!("Hello, world!");
 
-    test_example_query_1();
-
-    test_example_query_2();
-}
-
-fn test_example_query_1() {
     let result = Eloquent::query()
         .table("flights")
-        .r#where("origin", "AMS")
-        .where_not("destination", "BKK")
-        .where_gt("flight_duration", 8)
-        .where_gte("number_of_passengers", 250)
-        .where_lte("number_of_stops", 1)
+        .select("origin_airport")
+        .select_avg("startup_time_in_minutes")
+        .select_as("airports.city", "destination_city")
+        .join(
+            "airports",
+            "flights.destination_airport",
+            "airports.iata_code",
+        )
+        .r#where("origin_airport", "AMS")
+        .where_not_in("flight_number", vec!["KL123", "KL456"])
         .where_not_null("gate_number")
         .where_closure(|q| {
-            q.where_in("status", vec!["scheduled", "delayed"])
-                .where_like("aircraft_code", "KLM%")
-        });
+            q.where_gte("flight_duration", 120)
+                .or_where_like("airports.city", "%NY%")
+        })
+        .group_by(vec!["origin_airport", "airports.city"])
+        // .having_gt("AVG(startup_time_in_minutes)", 120)
+        // .order_by_asc("AVG(startup_time_in_minutes)")
+        .limit(20);
 
-    assert_eq!(
-        result.build(),
-        "SELECT * FROM flights WHERE origin = 'AMS' AND destination != 'BKK' AND flight_duration > 8 AND number_of_passengers >= 250 AND number_of_stops <= 1 AND gate_number IS NOT NULL AND (status IN ('scheduled', 'delayed') AND aircraft_code LIKE 'KLM%')"
-    );
-}
+    println!("{}", result.sql().unwrap());
 
-fn test_example_query_2() {
-    let result = Eloquent::query()
-        .table("flights")
-        .r#where("origin", "AMS")
-        .where_closure(|q| {
-            q.where_closure(|q| q.where_in("destination", vec!["BKK", "DMK"]))
-                .or_where_closure(|q| q.where_like("aircraft_code", "THA%"))
-        });
-
-    assert_eq!(
-        result.build(),
-        "SELECT * FROM flights WHERE origin = 'AMS' AND (destination IN ('BKK', 'DMK') OR aircraft_code LIKE 'THA%')"
-    );
+    // SELECT
+    //     origin_airport,
+    //     AVG(startup_time_in_minutes) AS startup_time_in_minutes_avg,
+    //     airports.city AS destination_city
+    // FROM flights
+    // JOIN airports
+    //     ON flights.destination_airport = airports.iata_code
+    // WHERE
+    //     origin_airport = 'AMS'
+    //     AND flight_number NOT IN ('KL123', 'KL456')
+    //     AND gate_number IS NOT NULL
+    //     AND (flight_duration >= 120 OR airports.city LIKE '%NY%')
+    // GROUP BY origin_airport, airports.city
+    // HAVING startup_time_in_minutes_avg > 120
+    // ORDER BY avg_startup_time ASC
+    // LIMIT 20;
 }

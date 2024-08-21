@@ -1,0 +1,5 @@
+pub mod duplicated_columns;
+pub mod duplicated_conditions;
+pub mod group_by_without_selected_or_aggregate_function;
+pub mod having_clause_without_aggregate_function;
+pub mod order_by_without_selected_or_aggregate_function;

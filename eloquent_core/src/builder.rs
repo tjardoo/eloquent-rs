@@ -1,11 +1,7 @@
-use crate::{compiler::build_statement, Columnable, Condition, Logic, Operator, ToSql};
-
-pub struct QueryBuilder {
-    pub table: String,
-    pub selects: Vec<String>,
-    pub conditions: Vec<Condition>,
-    pub closures: Vec<(Logic, Vec<Condition>)>,
-}
+use crate::{
+    compiler::build_statement, error::EloquentError, Columnable, Condition, Function, Having, Join,
+    JoinType, Logic, Operator, Order, QueryBuilder, Select, ToSql,
+};
 
 impl QueryBuilder {
     pub fn new() -> Self {
@@ -14,6 +10,12 @@ impl QueryBuilder {
             selects: Vec::new(),
             conditions: Vec::new(),
             closures: Vec::new(),
+            joins: Vec::new(),
+            havings: Vec::new(),
+            group_by: Vec::new(),
+            order_by: Vec::new(),
+            limit: None,
+            offset: None,
         }
     }
 
@@ -157,16 +159,40 @@ impl QueryBuilder {
         self.add_condition(field, Operator::NotIn, Logic::Or, boxed_values)
     }
 
-    pub fn where_null(self, field: &str) -> Self {
-        self.add_condition(field, Operator::IsNull, Logic::And, vec![])
+    pub fn where_null<T>(mut self, columns: T) -> Self
+    where
+        T: Columnable,
+    {
+        let columns = columns.to_columns();
+
+        for column in columns.iter() {
+            self.conditions
+                .push(Condition::new(column, Operator::IsNull, Logic::And, vec![]));
+        }
+
+        self
     }
 
     pub fn or_where_null(self, field: &str) -> Self {
         self.add_condition(field, Operator::IsNull, Logic::Or, vec![])
     }
 
-    pub fn where_not_null(self, field: &str) -> Self {
-        self.add_condition(field, Operator::IsNotNull, Logic::And, vec![])
+    pub fn where_not_null<T>(mut self, columns: T) -> Self
+    where
+        T: Columnable,
+    {
+        let columns = columns.to_columns();
+
+        for column in columns.iter() {
+            self.conditions.push(Condition::new(
+                column,
+                Operator::IsNotNull,
+                Logic::And,
+                vec![],
+            ));
+        }
+
+        self
     }
 
     pub fn or_where_not_null(self, field: &str) -> Self {
@@ -193,44 +219,82 @@ impl QueryBuilder {
         let columns = columns.to_columns();
 
         for column in columns.iter() {
-            self.selects.push(column.to_string());
+            self.selects.push(Select {
+                function: None,
+                column: column.to_string(),
+                alias: None,
+            });
         }
 
         self
     }
 
     pub fn select_as(mut self, column: &str, alias: &str) -> Self {
-        self.selects.push(format!("{} AS {}", column, alias));
+        self.selects.push(Select {
+            function: None,
+            column: column.to_string(),
+            alias: Some(alias.to_string()),
+        });
 
         self
     }
 
     pub fn select_count(mut self, column: &str) -> Self {
-        self.selects.push(format!("COUNT({})", column));
+        self.selects.push(Select {
+            function: Some(Function::Count),
+            column: column.to_string(),
+            alias: None,
+        });
 
         self
     }
 
     pub fn select_min(mut self, column: &str) -> Self {
-        self.selects.push(format!("MIN({})", column));
+        self.selects.push(Select {
+            function: Some(Function::Min),
+            column: column.to_string(),
+            alias: None,
+        });
 
         self
     }
 
     pub fn select_max(mut self, column: &str) -> Self {
-        self.selects.push(format!("MAX({})", column));
+        self.selects.push(Select {
+            function: Some(Function::Max),
+            column: column.to_string(),
+            alias: None,
+        });
 
         self
     }
 
     pub fn select_avg(mut self, column: &str) -> Self {
-        self.selects.push(format!("AVG({})", column));
+        self.selects.push(Select {
+            function: Some(Function::Avg),
+            column: column.to_string(),
+            alias: None,
+        });
 
         self
     }
 
     pub fn select_sum(mut self, column: &str) -> Self {
-        self.selects.push(format!("SUM({})", column));
+        self.selects.push(Select {
+            function: Some(Function::Sum),
+            column: column.to_string(),
+            alias: None,
+        });
+
+        self
+    }
+
+    pub fn select_distinct(mut self, column: &str) -> Self {
+        self.selects.push(Select {
+            function: Some(Function::Distinct),
+            column: column.to_string(),
+            alias: None,
+        });
 
         self
     }
@@ -248,7 +312,111 @@ impl QueryBuilder {
         self
     }
 
-    pub fn build(self) -> String {
+    pub fn join(self, table: &str, left_hand: &str, right_hand: &str) -> Self {
+        self.add_join(table, left_hand, right_hand, JoinType::Inner)
+    }
+
+    pub fn left_join(self, table: &str, left_hand: &str, right_hand: &str) -> Self {
+        self.add_join(table, left_hand, right_hand, JoinType::Left)
+    }
+
+    pub fn right_join(self, table: &str, left_hand: &str, right_hand: &str) -> Self {
+        self.add_join(table, left_hand, right_hand, JoinType::Right)
+    }
+
+    pub fn full_join(self, table: &str, left_hand: &str, right_hand: &str) -> Self {
+        self.add_join(table, left_hand, right_hand, JoinType::Full)
+    }
+
+    fn add_join(
+        mut self,
+        table: &str,
+        left_hand: &str,
+        right_hand: &str,
+        join_type: JoinType,
+    ) -> Self {
+        self.joins.push(Join {
+            table: table.to_string(),
+            left_hand: left_hand.to_string(),
+            join_type,
+            right_hand: right_hand.to_string(),
+        });
+
+        self
+    }
+
+    pub fn having(self, column: &str, value: i64) -> Self {
+        self.add_having(column, value, Operator::Equal)
+    }
+
+    pub fn having_not(self, column: &str, value: i64) -> Self {
+        self.add_having(column, value, Operator::NotEqual)
+    }
+
+    pub fn having_gt(self, column: &str, value: i64) -> Self {
+        self.add_having(column, value, Operator::GreaterThan)
+    }
+
+    pub fn having_gte(self, column: &str, value: i64) -> Self {
+        self.add_having(column, value, Operator::GreaterThanOrEqual)
+    }
+
+    pub fn having_lt(self, column: &str, value: i64) -> Self {
+        self.add_having(column, value, Operator::LessThan)
+    }
+
+    pub fn having_lte(self, column: &str, value: i64) -> Self {
+        self.add_having(column, value, Operator::LessThanOrEqual)
+    }
+
+    fn add_having(mut self, column: &str, value: i64, operator: Operator) -> Self {
+        self.havings.push(Having {
+            column: column.to_string(),
+            value,
+            operator,
+        });
+
+        self
+    }
+
+    pub fn group_by<T>(mut self, columns: T) -> Self
+    where
+        T: Columnable,
+    {
+        let columns = columns.to_columns();
+
+        for column in columns.iter() {
+            self.group_by.push(column.to_string());
+        }
+
+        self
+    }
+
+    pub fn order_by_asc(mut self, column: &str) -> Self {
+        self.order_by.push(format!("{} {}", column, Order::Asc));
+
+        self
+    }
+
+    pub fn order_by_desc(mut self, column: &str) -> Self {
+        self.order_by.push(format!("{} {}", column, Order::Desc));
+
+        self
+    }
+
+    pub fn limit(mut self, limit: u64) -> Self {
+        self.limit = Some(limit);
+
+        self
+    }
+
+    pub fn offset(mut self, offset: u64) -> Self {
+        self.offset = Some(offset);
+
+        self
+    }
+
+    pub fn sql(self) -> Result<String, EloquentError> {
         build_statement(self)
     }
 }
