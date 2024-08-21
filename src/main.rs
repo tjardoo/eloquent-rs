@@ -29,18 +29,25 @@ fn main() {
 
     // SELECT
     //     origin_airport,
-    //     AVG(startup_time_in_minutes) AS startup_time_in_minutes_avg,
+    //     AVG(startup_time_in_minutes),
     //     airports.city AS destination_city
-    // FROM flights
-    // JOIN airports
+    // FROM
+    //     flights
+    // JOIN
+    //     airports
     //     ON flights.destination_airport = airports.iata_code
     // WHERE
     //     origin_airport = 'AMS'
     //     AND flight_number NOT IN ('KL123', 'KL456')
     //     AND gate_number IS NOT NULL
     //     AND (flight_duration >= 120 OR airports.city LIKE '%NY%')
-    // GROUP BY origin_airport, airports.city
-    // HAVING startup_time_in_minutes_avg > 120
-    // ORDER BY avg_startup_time ASC
-    // LIMIT 20;
+    // GROUP BY
+    //     origin_airport,
+    //     airports.city
+    // HAVING
+    //     AVG(startup_time_in_minutes) > 120
+    // ORDER BY
+    //     AVG(startup_time_in_minutes) ASC
+    // LIMIT
+    //     20;
 }

@@ -3,8 +3,30 @@ use crate::{error::EloquentError, JoinType, Logic, Operator, QueryBuilder, ToSql
 pub fn build_statement(builder: QueryBuilder) -> Result<String, EloquentError> {
     builder.perform_checks()?;
 
-    let mut sql = "SELECT ".to_string();
+    let mut sql = String::new();
     let mut params: Vec<&Box<dyn ToSql>> = Vec::new();
+
+    add_selects(&builder, &mut sql);
+    add_table(&builder, &mut sql);
+    add_joins(&builder, &mut sql);
+    add_conditions(&builder, &mut sql, &mut params)?;
+    add_group_by(&builder, &mut sql);
+    add_havings(&builder, &mut sql)?;
+    add_order_by(&builder, &mut sql);
+    add_limit_offset(&builder, &mut sql);
+
+    let formatted_sql = sql.replace('?', "{}");
+
+    let formatted_sql = params
+        .iter()
+        .map(|p| p.as_ref().to_sql())
+        .fold(formatted_sql, |acc, val| acc.replacen("{}", &val, 1));
+
+    Ok(formatted_sql)
+}
+
+fn add_selects(builder: &QueryBuilder, sql: &mut String) -> String {
+    sql.push_str("SELECT ");
 
     if builder.selects.is_empty() {
         sql.push('*');
@@ -19,9 +41,17 @@ pub fn build_statement(builder: QueryBuilder) -> Result<String, EloquentError> {
         );
     }
 
+    sql.to_string()
+}
+
+fn add_table(builder: &QueryBuilder, sql: &mut String) -> String {
     sql.push_str(&format!(" FROM {}", builder.table));
 
-    for join in builder.joins {
+    sql.to_string()
+}
+
+fn add_joins(builder: &QueryBuilder, sql: &mut String) -> String {
+    for join in &builder.joins {
         sql.push(' ');
 
         sql.push_str(match join.join_type {
@@ -39,6 +69,15 @@ pub fn build_statement(builder: QueryBuilder) -> Result<String, EloquentError> {
         sql.push_str(&join.right_hand);
     }
 
+    sql.to_string()
+}
+
+#[allow(clippy::borrowed_box)]
+fn add_conditions<'a>(
+    builder: &'a QueryBuilder,
+    sql: &mut String,
+    params: &mut Vec<&'a Box<(dyn ToSql + 'static)>>,
+) -> Result<String, EloquentError> {
     if !builder.conditions.is_empty() || !builder.closures.is_empty() {
         sql.push_str(" WHERE ");
 
@@ -112,24 +151,37 @@ pub fn build_statement(builder: QueryBuilder) -> Result<String, EloquentError> {
         sql.push_str(&conditions_str);
     }
 
+    Ok(sql.to_string())
+}
+
+fn add_group_by(builder: &QueryBuilder, sql: &mut String) -> String {
     if !builder.group_by.is_empty() {
         sql.push_str(" GROUP BY ");
         sql.push_str(&builder.group_by.join(", "));
     }
 
+    sql.to_string()
+}
+
+fn add_havings(builder: &QueryBuilder, sql: &mut String) -> Result<String, EloquentError> {
     if !builder.havings.is_empty() {
         sql.push_str(" HAVING ");
 
+        let havings = &builder.havings;
+
         sql.push_str(
-            &builder
-                .havings
-                .into_iter()
+            &havings
+                .iter()
                 .map(|clause| format!("{} {} {}", clause.column, clause.operator, clause.value))
                 .collect::<Vec<String>>()
                 .join(", "),
         );
     }
 
+    Ok(sql.to_string())
+}
+
+fn add_order_by(builder: &QueryBuilder, sql: &mut String) -> String {
     if !builder.order_by.is_empty() {
         sql.push_str(" ORDER BY ");
         builder.order_by.iter().for_each(|order| {
@@ -146,6 +198,10 @@ pub fn build_statement(builder: QueryBuilder) -> Result<String, EloquentError> {
         });
     }
 
+    sql.to_string()
+}
+
+fn add_limit_offset(builder: &QueryBuilder, sql: &mut String) -> String {
     if let Some(limit) = &builder.limit {
         sql.push_str(&format!(" LIMIT {}", limit));
     }
@@ -154,12 +210,5 @@ pub fn build_statement(builder: QueryBuilder) -> Result<String, EloquentError> {
         sql.push_str(&format!(" OFFSET {}", offset));
     }
 
-    let formatted_sql = sql.replace('?', "{}");
-
-    let formatted_sql = params
-        .iter()
-        .map(|p| p.as_ref().to_sql())
-        .fold(formatted_sql, |acc, val| acc.replacen("{}", &val, 1));
-
-    Ok(formatted_sql)
+    sql.to_string()
 }
