@@ -1,6 +1,6 @@
 use crate::{
     compiler::build_statement, error::EloquentError, Columnable, Condition, Function, Having, Join,
-    JoinType, Logic, Operator, Order, QueryBuilder, Select, ToSql,
+    JoinType, Logic, Operator, Order, OrderColumn, QueryBuilder, Select, ToSql,
 };
 
 impl QueryBuilder {
@@ -393,13 +393,19 @@ impl QueryBuilder {
     }
 
     pub fn order_by_asc(mut self, column: &str) -> Self {
-        self.order_by.push(format!("{} {}", column, Order::Asc));
+        self.order_by.push(OrderColumn {
+            column: column.to_string(),
+            order: Order::Asc,
+        });
 
         self
     }
 
     pub fn order_by_desc(mut self, column: &str) -> Self {
-        self.order_by.push(format!("{} {}", column, Order::Desc));
+        self.order_by.push(OrderColumn {
+            column: column.to_string(),
+            order: Order::Desc,
+        });
 
         self
     }

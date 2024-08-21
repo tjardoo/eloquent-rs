@@ -8,7 +8,7 @@ impl PerformChecks for HavingClauseWithoutAggregateFunction {
             let column = &having.column;
 
             if !builder.selects.iter().any(|select| {
-                (&select.column == column && select.function.is_some())
+                (&select.format_column_name_without_alias() == column && select.function.is_some())
                     || select.alias == Some(column.to_string())
             }) {
                 return Err(EloquentError::HavingClauseWithoutAggregateFunction(

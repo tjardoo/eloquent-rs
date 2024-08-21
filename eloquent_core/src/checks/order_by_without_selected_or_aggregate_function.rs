@@ -10,15 +10,15 @@ impl PerformChecks for OrderByWithoutSelectedOrAggregateFunction {
 
         for order_by in &builder.order_by {
             if !builder.selects.iter().any(|select| {
-                &select.column == order_by
+                select.format_column_name_without_alias() == order_by.column
                     || select
                         .alias
                         .as_ref()
-                        .map(|alias| alias == order_by)
+                        .map(|alias| alias == &order_by.column)
                         .unwrap_or(false)
             }) {
                 return Err(EloquentError::OrderByWithNonSelectedOrAggregateFunction(
-                    order_by.clone(),
+                    order_by.column.clone(),
                 ));
             }
         }

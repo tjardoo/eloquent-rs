@@ -16,7 +16,7 @@ pub struct QueryBuilder {
     joins: Vec<Join>,
     havings: Vec<Having>,
     group_by: Vec<String>,
-    order_by: Vec<String>,
+    order_by: Vec<OrderColumn>,
     limit: Option<u64>,
     offset: Option<u64>,
 }
@@ -36,10 +36,17 @@ struct Condition {
     values: Vec<Box<dyn ToSql>>,
 }
 
+#[derive(Debug, PartialEq)]
 struct Select {
     column: String,
     function: Option<Function>,
     alias: Option<String>,
+}
+
+#[derive(Debug, PartialEq)]
+struct OrderColumn {
+    column: String,
+    order: Order,
 }
 
 impl Select {
@@ -56,6 +63,16 @@ impl Select {
             format!("{} AS {}", column, alias)
         } else {
             column
+        }
+    }
+
+    fn format_column_name_without_alias(&self) -> String {
+        match &self.function {
+            Some(function) => match function {
+                Function::Distinct => format!("{} {}", function, self.column),
+                _ => format!("{}({})", function, self.column),
+            },
+            None => self.column.clone(),
         }
     }
 }

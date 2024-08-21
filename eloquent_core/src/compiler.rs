@@ -132,7 +132,18 @@ pub fn build_statement(builder: QueryBuilder) -> Result<String, EloquentError> {
 
     if !builder.order_by.is_empty() {
         sql.push_str(" ORDER BY ");
-        sql.push_str(&builder.order_by.join(", "));
+        builder.order_by.iter().for_each(|order| {
+            sql.push_str(&order.column);
+            sql.push(' ');
+            sql.push_str(match order.order {
+                crate::Order::Asc => "ASC",
+                crate::Order::Desc => "DESC",
+            });
+
+            if order != builder.order_by.last().unwrap() {
+                sql.push_str(", ");
+            }
+        });
     }
 
     if let Some(limit) = &builder.limit {

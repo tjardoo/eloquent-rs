@@ -21,8 +21,8 @@ fn main() {
                 .or_where_like("airports.city", "%NY%")
         })
         .group_by(vec!["origin_airport", "airports.city"])
-        // .having_gt("AVG(startup_time_in_minutes)", 120)
-        // .order_by_asc("AVG(startup_time_in_minutes)")
+        .having_gt("AVG(startup_time_in_minutes)", 120)
+        .order_by_asc("AVG(startup_time_in_minutes)")
         .limit(20);
 
     println!("{}", result.sql().unwrap());
