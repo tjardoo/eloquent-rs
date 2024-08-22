@@ -1,10 +1,16 @@
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum EloquentError {
+    MissingTable,
     DuplicatedColumnNames(String),
     DuplicatedConditions(String),
     HavingClauseWithoutAggregateFunction(String),
     GroupByWithNonSelectedOrAggregateFunction(String),
     OrderByWithNonSelectedOrAggregateFunction(String),
+    MultipleCrudActions,
+    MissingPlaceholders,
+    CannotApplyClauseOnInsert(String),
+    CannotApplyClauseOnUpdate(String),
+    CannotApplyClauseOnDelete(String),
 }
 
 impl std::error::Error for EloquentError {}
@@ -12,6 +18,7 @@ impl std::error::Error for EloquentError {}
 impl std::fmt::Display for EloquentError {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         match self {
+            EloquentError::MissingTable => write!(f, "Missing table"),
             EloquentError::DuplicatedColumnNames(column) => {
                 write!(f, "Duplicated column name '{}'", column)
             }
@@ -34,6 +41,17 @@ impl std::fmt::Display for EloquentError {
                     "ORDER BY without selected or aggregate function '{}'",
                     column
                 )
+            }
+            EloquentError::MultipleCrudActions => write!(f, "Multiple CRUD actions"),
+            EloquentError::MissingPlaceholders => write!(f, "Missing placeholders"),
+            EloquentError::CannotApplyClauseOnInsert(clause) => {
+                write!(f, "Cannot apply clause '{}' on INSERT", clause)
+            }
+            EloquentError::CannotApplyClauseOnUpdate(clause) => {
+                write!(f, "Cannot apply clause '{}' on UPDATE", clause)
+            }
+            EloquentError::CannotApplyClauseOnDelete(clause) => {
+                write!(f, "Cannot apply clause '{}' on DELETE", clause)
             }
         }
     }

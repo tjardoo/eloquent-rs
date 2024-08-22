@@ -3,7 +3,7 @@ use crate::{error::EloquentError, PerformChecks, QueryBuilder};
 pub struct HavingClauseWithoutAggregateFunction;
 
 impl PerformChecks for HavingClauseWithoutAggregateFunction {
-    fn perform_checks(builder: &QueryBuilder) -> Result<(), EloquentError> {
+    fn check(builder: &QueryBuilder) -> Result<(), EloquentError> {
         for having in &builder.havings {
             let column = &having.column;
 

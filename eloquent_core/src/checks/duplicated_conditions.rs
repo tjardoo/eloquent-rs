@@ -5,7 +5,7 @@ use crate::{error::EloquentError, Logic, PerformChecks, QueryBuilder};
 pub struct DuplicatedConditions;
 
 impl PerformChecks for DuplicatedConditions {
-    fn perform_checks(builder: &QueryBuilder) -> Result<(), EloquentError> {
+    fn check(builder: &QueryBuilder) -> Result<(), EloquentError> {
         let mut seen = HashSet::new();
 
         for condition in &builder.conditions {

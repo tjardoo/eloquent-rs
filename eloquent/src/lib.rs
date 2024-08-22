@@ -12,6 +12,8 @@ impl Eloquent {
 mod tests {
     use std::vec;
 
+    use error::EloquentError;
+
     use super::*;
 
     #[test]
@@ -43,6 +45,31 @@ mod tests {
         assert_eq!(
             result.sql().unwrap(),
             "SELECT origin AS from, destination AS to FROM flights"
+        );
+    }
+
+    #[test]
+    fn test_select_raw() {
+        let result = Eloquent::query()
+            .table("flights")
+            .select_raw("flight_duration * ? as delay_in_min", vec![5]);
+
+        assert_eq!(
+            result.sql().unwrap(),
+            "SELECT flight_duration * 5 as delay_in_min FROM flights"
+        );
+    }
+
+    #[test]
+    fn test_select_raw_multiple() {
+        let result = Eloquent::query().table("flights").select_raw(
+            "flight_duration * ? as delay_in_min, delay_in_min * ? as delay_in_hr",
+            vec![5, 60],
+        );
+
+        assert_eq!(
+            result.sql().unwrap(),
+            "SELECT flight_duration * 5 as delay_in_min, delay_in_min * 60 as delay_in_hr FROM flights"
         );
     }
 
@@ -106,6 +133,79 @@ mod tests {
         let result = Eloquent::query().table("flights").select_distinct("origin");
 
         assert_eq!(result.sql().unwrap(), "SELECT DISTINCT origin FROM flights");
+    }
+
+    #[test]
+    fn test_insert() {
+        let result = Eloquent::query()
+            .table("flights")
+            .insert("origin_airport", "AMS")
+            .insert("destination_airport", "FRA");
+
+        assert_eq!(
+            result.sql().unwrap(),
+            "INSERT INTO flights (origin_airport, destination_airport) VALUES ('AMS', 'FRA')"
+        );
+    }
+
+    #[test]
+    fn test_insert_with_condition() {
+        let result = Eloquent::query()
+            .table("flights")
+            .insert("origin_airport", "AMS")
+            .insert("destination_airport", "FRA");
+
+        assert_eq!(
+            result.sql().unwrap(),
+            "INSERT INTO flights (origin_airport, destination_airport) VALUES ('AMS', 'FRA')"
+        );
+    }
+
+    #[test]
+    fn test_update() {
+        let result = Eloquent::query()
+            .table("flights")
+            .update("origin_airport", "AMS")
+            .update("destination_airport", "FRA");
+
+        assert_eq!(
+            result.sql().unwrap(),
+            "UPDATE flights SET origin_airport = 'AMS', destination_airport = 'FRA'"
+        );
+    }
+
+    #[test]
+    fn test_update_with_condition() {
+        let result = Eloquent::query()
+            .table("flights")
+            .update("origin_airport", "AMS")
+            .update("destination_airport", "FRA")
+            .r#where("id", 1);
+
+        assert_eq!(
+            result.sql().unwrap(),
+            "UPDATE flights SET origin_airport = 'AMS', destination_airport = 'FRA' WHERE id = 1"
+        );
+    }
+
+    #[test]
+    fn test_delete() {
+        let result = Eloquent::query().table("flights").delete();
+
+        assert_eq!(result.sql().unwrap(), "DELETE FROM flights");
+    }
+
+    #[test]
+    fn test_delete_with_condition() {
+        let result = Eloquent::query()
+            .table("flights")
+            .r#where("origin", "AMS")
+            .delete();
+
+        assert_eq!(
+            result.sql().unwrap(),
+            "DELETE FROM flights WHERE origin = 'AMS'"
+        );
     }
 
     #[test]
@@ -637,44 +737,149 @@ mod tests {
     }
 
     #[test]
-    #[should_panic]
-    fn test_duplicated_column_names() {
-        let _result = Eloquent::query()
-            .table("flights")
-            .select("origin")
-            .select("origin")
-            .sql()
-            .unwrap();
+    fn test_missing_table() {
+        let result = Eloquent::query().sql();
+
+        match result {
+            Err(EloquentError::MissingTable) => (),
+            Err(_error) => panic!(),
+            Ok(_value) => panic!(),
+        }
     }
 
     #[test]
-    #[should_panic]
+    fn test_duplicated_column_names() {
+        let result = Eloquent::query()
+            .table("flights")
+            .select("origin")
+            .select("origin")
+            .sql();
+
+        match result {
+            Err(EloquentError::DuplicatedColumnNames(column)) => assert_eq!(column, "origin"),
+            Err(_error) => panic!(),
+            Ok(_value) => panic!(),
+        }
+    }
+
+    #[test]
     fn test_having_clause_without_aggregate_function() {
-        let _result = Eloquent::query()
+        let result = Eloquent::query()
             .table("flights")
             .having("origin", 300)
-            .sql()
-            .unwrap();
+            .sql();
+
+        match result {
+            Err(EloquentError::HavingClauseWithoutAggregateFunction(column)) => {
+                assert_eq!(column, "origin")
+            }
+            Err(_error) => panic!(),
+            Ok(_value) => panic!(),
+        }
     }
 
     #[test]
-    #[should_panic]
     fn test_group_by_without_selected_or_aggregate_function() {
-        let _result = Eloquent::query()
-            .table("flights")
-            .group_by("origin")
-            .sql()
-            .unwrap();
+        let result = Eloquent::query().table("flights").group_by("origin").sql();
+
+        match result {
+            Err(EloquentError::GroupByWithNonSelectedOrAggregateFunction(column)) => {
+                assert_eq!(column, "origin")
+            }
+            Err(_error) => panic!(),
+            Ok(_value) => panic!(),
+        }
     }
 
     #[test]
-    #[should_panic]
     fn test_order_by_without_selected_or_aggregate_function() {
-        let _result = Eloquent::query()
+        let result = Eloquent::query()
             .table("flights")
             .select("destination")
             .order_by_asc("origin")
-            .sql()
-            .unwrap();
+            .sql();
+
+        match result {
+            Err(EloquentError::OrderByWithNonSelectedOrAggregateFunction(column)) => {
+                assert_eq!(column, "origin")
+            }
+            Err(_error) => panic!(),
+            Ok(_value) => panic!(),
+        }
+    }
+
+    #[test]
+    fn test_missing_placeholder() {
+        let result = Eloquent::query()
+            .select_raw(
+                "flight_duration * ? as delay_in_min, delay_in_min * ? as delay_in_hr",
+                vec![5],
+            )
+            .table("flights")
+            .sql();
+
+        match result {
+            Err(EloquentError::MissingPlaceholders) => (),
+            Err(_error) => panic!(),
+            Ok(_value) => panic!(),
+        }
+    }
+
+    #[test]
+    fn test_disabled_checks() {
+        let result = Eloquent::query().table("flights").disable_checks().sql();
+
+        assert_eq!(result.unwrap(), "SELECT * FROM flights");
+    }
+
+    #[test]
+    fn test_cannot_apply_clause_on_insert() {
+        let result = Eloquent::query()
+            .table("flights")
+            .insert("origin_airport", "AMS")
+            .r#where("origin_airport", "FRA")
+            .sql();
+
+        match result {
+            Err(EloquentError::CannotApplyClauseOnInsert(clause)) => {
+                assert_eq!(clause, "WHERE")
+            }
+            Err(_error) => panic!(),
+            Ok(_value) => panic!(),
+        }
+    }
+
+    #[test]
+    fn test_cannot_apply_clause_on_update() {
+        let result = Eloquent::query()
+            .table("flights")
+            .join("airports", "flights.origin_airport", "airports.code")
+            .update("origin_airport", "AMS")
+            .sql();
+
+        match result {
+            Err(EloquentError::CannotApplyClauseOnUpdate(clause)) => {
+                assert_eq!(clause, "JOIN")
+            }
+            Err(_error) => panic!(),
+            Ok(_value) => panic!(),
+        }
+    }
+
+    #[test]
+    fn test_cannot_apply_clause_on_delete() {
+        let result = Eloquent::query()
+            .table("flights")
+            .join("airports", "flights.origin_airport", "airports.code")
+            .delete()
+            .sql();
+
+        match result {
+            Err(EloquentError::CannotApplyClauseOnDelete(clause)) => {
+                assert_eq!(clause, "JOIN")
+            }
+            Err(_error) => panic!(),
+            Ok(_value) => panic!(),
+        }
     }
 }

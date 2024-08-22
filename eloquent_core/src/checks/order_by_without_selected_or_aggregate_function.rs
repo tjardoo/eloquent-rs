@@ -3,7 +3,7 @@ use crate::{error::EloquentError, PerformChecks, QueryBuilder};
 pub struct OrderByWithoutSelectedOrAggregateFunction;
 
 impl PerformChecks for OrderByWithoutSelectedOrAggregateFunction {
-    fn perform_checks(builder: &QueryBuilder) -> Result<(), EloquentError> {
+    fn check(builder: &QueryBuilder) -> Result<(), EloquentError> {
         if builder.selects.is_empty() {
             return Ok(());
         }

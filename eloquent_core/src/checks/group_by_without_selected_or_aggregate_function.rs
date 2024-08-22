@@ -3,7 +3,7 @@ use crate::{error::EloquentError, PerformChecks, QueryBuilder};
 pub struct GroupByWithoutSelectedOrAggregateFunction;
 
 impl PerformChecks for GroupByWithoutSelectedOrAggregateFunction {
-    fn perform_checks(builder: &QueryBuilder) -> Result<(), EloquentError> {
+    fn check(builder: &QueryBuilder) -> Result<(), EloquentError> {
         for group_by in &builder.group_by {
             if !builder.selects.iter().any(|select| {
                 &select.column == group_by

@@ -1,19 +1,25 @@
-use crate::{error::EloquentError, JoinType, Logic, Operator, QueryBuilder, ToSql};
+use crate::{
+    builders::{
+        delete::DeleteBuilder, insert::InsertBuilder, select::SelectBuilder, update::UpdateBuilder,
+    },
+    error::EloquentError,
+    Action, JoinType, Logic, Operator, QueryBuilder, SqlBuilder, ToSql,
+};
 
 pub fn build_statement(builder: QueryBuilder) -> Result<String, EloquentError> {
-    builder.perform_checks()?;
+    if builder.enable_checks {
+        builder.perform_checks()?;
+    }
 
     let mut sql = String::new();
     let mut params: Vec<&Box<dyn ToSql>> = Vec::new();
 
-    add_selects(&builder, &mut sql);
-    add_table(&builder, &mut sql);
-    add_joins(&builder, &mut sql);
-    add_conditions(&builder, &mut sql, &mut params)?;
-    add_group_by(&builder, &mut sql);
-    add_havings(&builder, &mut sql)?;
-    add_order_by(&builder, &mut sql);
-    add_limit_offset(&builder, &mut sql);
+    sql = match builder.get_action() {
+        Action::Select => SelectBuilder::build(&builder, &mut sql, &mut params)?,
+        Action::Insert => InsertBuilder::build(&builder, &mut sql, &mut params)?,
+        Action::Update => UpdateBuilder::build(&builder, &mut sql, &mut params)?,
+        Action::Delete => DeleteBuilder::build(&builder, &mut sql, &mut params)?,
+    };
 
     let formatted_sql = sql.replace('?', "{}");
 
@@ -22,10 +28,14 @@ pub fn build_statement(builder: QueryBuilder) -> Result<String, EloquentError> {
         .map(|p| p.as_ref().to_sql())
         .fold(formatted_sql, |acc, val| acc.replacen("{}", &val, 1));
 
+    if formatted_sql.contains("{}") {
+        return Err(EloquentError::MissingPlaceholders);
+    }
+
     Ok(formatted_sql)
 }
 
-fn add_selects(builder: &QueryBuilder, sql: &mut String) -> String {
+pub(crate) fn add_selects(builder: &QueryBuilder, sql: &mut String) -> String {
     sql.push_str("SELECT ");
 
     if builder.selects.is_empty() {
@@ -41,16 +51,76 @@ fn add_selects(builder: &QueryBuilder, sql: &mut String) -> String {
         );
     }
 
-    sql.to_string()
-}
-
-fn add_table(builder: &QueryBuilder, sql: &mut String) -> String {
-    sql.push_str(&format!(" FROM {}", builder.table));
+    sql.push_str(" FROM ");
+    sql.push_str(builder.table.as_ref().unwrap());
 
     sql.to_string()
 }
 
-fn add_joins(builder: &QueryBuilder, sql: &mut String) -> String {
+#[allow(clippy::borrowed_box)]
+pub(crate) fn add_inserts<'a>(
+    builder: &'a QueryBuilder,
+    sql: &mut String,
+    params: &mut Vec<&'a Box<(dyn ToSql + 'static)>>,
+) -> String {
+    sql.push_str("INSERT INTO ");
+    sql.push_str(builder.table.as_ref().unwrap());
+    sql.push_str(" (");
+
+    sql.push_str(
+        &builder
+            .inserts
+            .iter()
+            .map(|insert| insert.column.clone())
+            .collect::<Vec<String>>()
+            .join(", "),
+    );
+
+    sql.push_str(") VALUES (");
+
+    sql.push_str(
+        &builder
+            .inserts
+            .iter()
+            .map(|insert| {
+                params.push(&insert.value);
+                "?".to_string()
+            })
+            .collect::<Vec<String>>()
+            .join(", "),
+    );
+
+    sql.push(')');
+
+    sql.to_string()
+}
+
+#[allow(clippy::borrowed_box)]
+pub(crate) fn add_updates<'a>(
+    builder: &'a QueryBuilder,
+    sql: &mut String,
+    params: &mut Vec<&'a Box<(dyn ToSql + 'static)>>,
+) -> String {
+    sql.push_str("UPDATE ");
+    sql.push_str(builder.table.as_ref().unwrap());
+    sql.push_str(" SET ");
+
+    sql.push_str(
+        &builder
+            .updates
+            .iter()
+            .map(|update| {
+                params.push(&update.value);
+                format!("{} = ?", update.column)
+            })
+            .collect::<Vec<String>>()
+            .join(", "),
+    );
+
+    sql.to_string()
+}
+
+pub(crate) fn add_joins(builder: &QueryBuilder, sql: &mut String) -> String {
     for join in &builder.joins {
         sql.push(' ');
 
@@ -73,7 +143,7 @@ fn add_joins(builder: &QueryBuilder, sql: &mut String) -> String {
 }
 
 #[allow(clippy::borrowed_box)]
-fn add_conditions<'a>(
+pub(crate) fn add_conditions<'a>(
     builder: &'a QueryBuilder,
     sql: &mut String,
     params: &mut Vec<&'a Box<(dyn ToSql + 'static)>>,
@@ -154,7 +224,7 @@ fn add_conditions<'a>(
     Ok(sql.to_string())
 }
 
-fn add_group_by(builder: &QueryBuilder, sql: &mut String) -> String {
+pub(crate) fn add_group_by(builder: &QueryBuilder, sql: &mut String) -> String {
     if !builder.group_by.is_empty() {
         sql.push_str(" GROUP BY ");
         sql.push_str(&builder.group_by.join(", "));
@@ -163,7 +233,10 @@ fn add_group_by(builder: &QueryBuilder, sql: &mut String) -> String {
     sql.to_string()
 }
 
-fn add_havings(builder: &QueryBuilder, sql: &mut String) -> Result<String, EloquentError> {
+pub(crate) fn add_havings(
+    builder: &QueryBuilder,
+    sql: &mut String,
+) -> Result<String, EloquentError> {
     if !builder.havings.is_empty() {
         sql.push_str(" HAVING ");
 
@@ -181,7 +254,7 @@ fn add_havings(builder: &QueryBuilder, sql: &mut String) -> Result<String, Eloqu
     Ok(sql.to_string())
 }
 
-fn add_order_by(builder: &QueryBuilder, sql: &mut String) -> String {
+pub(crate) fn add_order_by(builder: &QueryBuilder, sql: &mut String) -> String {
     if !builder.order_by.is_empty() {
         sql.push_str(" ORDER BY ");
         builder.order_by.iter().for_each(|order| {
@@ -201,7 +274,7 @@ fn add_order_by(builder: &QueryBuilder, sql: &mut String) -> String {
     sql.to_string()
 }
 
-fn add_limit_offset(builder: &QueryBuilder, sql: &mut String) -> String {
+pub(crate) fn add_limit_offset(builder: &QueryBuilder, sql: &mut String) -> String {
     if let Some(limit) = &builder.limit {
         sql.push_str(&format!(" LIMIT {}", limit));
     }

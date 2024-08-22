@@ -23,9 +23,9 @@ let result = Eloquent::query()
             .or_where_like("airports.city", "%NY%")
     })
     .group_by(vec!["origin_airport", "airports.city"])
-    .having_gt("startup_time_in_minutes_avg", 120)
-    .order_by_asc("startup_time_in_minutes_avg")
+    .having_gt("AVG(startup_time_in_minutes)", 120)
+    .order_by_asc("AVG(startup_time_in_minutes)")
     .limit(20);
 
-println!("{}", result.sql());
+println!("{}", result.sql().unwrap());
 ```

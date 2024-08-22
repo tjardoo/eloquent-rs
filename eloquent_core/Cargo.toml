@@ -7,5 +7,8 @@ description = "Core query builder component for Eloquent."
 repository = "https://github.com/tjardoo/eloquent-rs"
 documentation = "https://docs.rs/eloquent"
 
+[dependencies]
+sqlformat = "0.2.0"
+
 [lib]
 doctest = false

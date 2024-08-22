@@ -3,14 +3,19 @@ use std::fmt::Display;
 use error::EloquentError;
 
 pub mod builder;
+pub mod builders;
 pub mod checker;
 pub mod checks;
 pub mod compiler;
 pub mod error;
+pub mod queries;
 
 pub struct QueryBuilder {
-    table: String,
+    table: Option<String>,
     selects: Vec<Select>,
+    inserts: Vec<Insert>,
+    updates: Vec<Update>,
+    delete: bool,
     conditions: Vec<Condition>,
     closures: Vec<(Logic, Vec<Condition>)>,
     joins: Vec<Join>,
@@ -19,6 +24,30 @@ pub struct QueryBuilder {
     order_by: Vec<OrderColumn>,
     limit: Option<u64>,
     offset: Option<u64>,
+    enable_checks: bool,
+}
+
+pub enum Action {
+    Select,
+    Insert,
+    Update,
+    Delete,
+}
+
+impl QueryBuilder {
+    fn get_action(&self) -> Action {
+        if !self.selects.is_empty() {
+            Action::Select
+        } else if !self.inserts.is_empty() {
+            Action::Insert
+        } else if !self.updates.is_empty() {
+            Action::Update
+        } else if self.delete {
+            Action::Delete
+        } else {
+            Action::Select
+        }
+    }
 }
 
 pub trait ToSql {
@@ -36,14 +65,23 @@ struct Condition {
     values: Vec<Box<dyn ToSql>>,
 }
 
-#[derive(Debug, PartialEq)]
 struct Select {
     column: String,
     function: Option<Function>,
     alias: Option<String>,
 }
 
-#[derive(Debug, PartialEq)]
+struct Insert {
+    column: String,
+    value: Box<dyn ToSql>,
+}
+
+struct Update {
+    column: String,
+    value: Box<dyn ToSql>,
+}
+
+#[derive(PartialEq)]
 struct OrderColumn {
     column: String,
     order: Order,
@@ -135,7 +173,16 @@ pub(crate) enum Order {
 }
 
 pub trait PerformChecks {
-    fn perform_checks(builder: &QueryBuilder) -> Result<(), EloquentError>;
+    fn check(builder: &QueryBuilder) -> Result<(), EloquentError>;
+}
+
+#[allow(clippy::borrowed_box)]
+pub trait SqlBuilder {
+    fn build<'a>(
+        builder: &'a QueryBuilder,
+        sql: &mut String,
+        params: &mut Vec<&'a Box<(dyn ToSql + 'static)>>,
+    ) -> Result<String, EloquentError>;
 }
 
 impl Condition {

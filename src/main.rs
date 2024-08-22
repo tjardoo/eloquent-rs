@@ -25,7 +25,11 @@ fn main() {
         .order_by_asc("AVG(startup_time_in_minutes)")
         .limit(20);
 
-    println!("{}", result.sql().unwrap());
+    // Prints the unformatted SQL
+    // println!("{}", result.sql().unwrap());
+
+    // Prints the formatted SQL
+    println!("{}", result.pretty_sql().unwrap());
 
     // SELECT
     //     origin_airport,
@@ -33,14 +37,15 @@ fn main() {
     //     airports.city AS destination_city
     // FROM
     //     flights
-    // JOIN
-    //     airports
-    //     ON flights.destination_airport = airports.iata_code
+    //     JOIN airports ON flights.destination_airport = airports.iata_code
     // WHERE
     //     origin_airport = 'AMS'
     //     AND flight_number NOT IN ('KL123', 'KL456')
     //     AND gate_number IS NOT NULL
-    //     AND (flight_duration >= 120 OR airports.city LIKE '%NY%')
+    //     AND (
+    //         flight_duration >= 120
+    //         OR airports.city LIKE '%NY%'
+    //     )
     // GROUP BY
     //     origin_airport,
     //     airports.city
@@ -49,5 +54,5 @@ fn main() {
     // ORDER BY
     //     AVG(startup_time_in_minutes) ASC
     // LIMIT
-    //     20;
+    //     20
 }
