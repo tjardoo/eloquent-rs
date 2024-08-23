@@ -1,87 +1,284 @@
-//! # Eloquent Core
-//!
-//! Eloquent Core is the core library for the Eloquent libary. It provides the core functionality for building SQL queries.
-//!
+use std::fmt::Display;
 
-use builder::Bindings;
+use builders::select::SelectBuilder;
+use error::EloquentError;
 
-mod builder;
-mod closures;
-mod compiler;
-mod shared;
-mod traits;
+pub mod builder;
+pub mod builders;
+pub mod checks;
+pub mod compiler;
+pub mod error;
+pub mod queries;
+pub mod validator;
 
-/// The main struct for Eloquent to build SQL queries.
-pub struct Eloquent {
-    bindings: Bindings,
+pub struct QueryBuilder {
+    table: Option<String>,
+    selects: Vec<Select>,
+    inserts: Vec<Insert>,
+    updates: Vec<Update>,
+    delete: bool,
+    conditions: Vec<Condition>,
+    closures: Vec<(Logic, Vec<Condition>)>,
+    joins: Vec<Join>,
+    havings: Vec<Having>,
+    group_by: Vec<String>,
+    order_by: Vec<OrderColumn>,
+    limit: Option<u64>,
+    offset: Option<u64>,
+    enable_checks: bool,
 }
 
-impl Eloquent {
-    /// Create a new instance of Eloquent with the given table name.
-    ///
-    /// ```rust
-    /// use eloquent_core::Eloquent;
-    ///
-    /// let mut eloquent = Eloquent::table("users");
-    /// eloquent.select("id");
-    ///
-    /// assert_eq!(eloquent.to_sql(), "SELECT id FROM users");
-    /// ```
-    pub fn table(name: &str) -> Self {
-        Self {
-            bindings: Bindings {
-                select: vec![],
-                insert: vec![],
-                update: vec![],
-                table: name.to_string(),
-                join: vec![],
-                r#where: vec![],
-                where_closure: vec![],
-                group_by: vec![],
-                having: vec![],
-                order_by: vec![],
-                is_delete: false,
-                limit: None,
-                offset: None,
-            },
+pub enum Action {
+    Select,
+    Insert,
+    Update,
+    Delete,
+}
+
+impl QueryBuilder {
+    fn get_action(&self) -> Action {
+        if !self.selects.is_empty() {
+            Action::Select
+        } else if !self.inserts.is_empty() {
+            Action::Insert
+        } else if !self.updates.is_empty() {
+            Action::Update
+        } else if self.delete {
+            Action::Delete
+        } else {
+            Action::Select
         }
     }
 }
 
-/// The operator to use in a "where" clause.
-#[derive(Debug, Clone)]
-pub enum Operator {
+pub trait ToSql {
+    fn to_sql(&self) -> String;
+}
+
+pub trait Columnable {
+    fn to_columns(&self) -> Vec<String>;
+}
+
+struct Condition {
+    field: String,
+    operator: Operator,
+    logic: Logic,
+    values: Vec<Box<dyn ToSql>>,
+}
+
+struct Select {
+    column: String,
+    function: Option<Function>,
+    alias: Option<String>,
+}
+
+struct Insert {
+    column: String,
+    value: Box<dyn ToSql>,
+}
+
+struct Update {
+    column: String,
+    value: Box<dyn ToSql>,
+}
+
+#[derive(PartialEq)]
+struct OrderColumn {
+    column: String,
+    order: Order,
+}
+
+impl Select {
+    fn format_column_name(&self) -> String {
+        let column = match &self.function {
+            Some(function) => match function {
+                Function::Distinct => format!("{} {}", function, self.column),
+                _ => format!("{}({})", function, self.column),
+            },
+            None => self.column.clone(),
+        };
+
+        if let Some(alias) = &self.alias {
+            format!("{} AS {}", column, alias)
+        } else {
+            column
+        }
+    }
+
+    fn format_column_name_without_alias(&self) -> String {
+        match &self.function {
+            Some(function) => match function {
+                Function::Distinct => format!("{} {}", function, self.column),
+                _ => format!("{}({})", function, self.column),
+            },
+            None => self.column.clone(),
+        }
+    }
+}
+
+struct Having {
+    column: String,
+    operator: Operator,
+    value: i64,
+}
+
+#[derive(Debug, PartialEq)]
+enum Operator {
     Equal,
     NotEqual,
-    LessThan,
-    LessThanOrEqual,
     GreaterThan,
     GreaterThanOrEqual,
+    LessThan,
+    LessThanOrEqual,
     Like,
-    NotLike,
     In,
     NotIn,
+    IsNull,
+    IsNotNull,
 }
 
-/// The value to use in a "where" clause.
-#[derive(Debug, Clone, PartialEq)]
-pub enum Variable {
-    String(String),
-    Int(u32),
-    Bool(bool),
-    Null,
-    Array(Vec<ArrayVariable>),
+#[derive(Debug, PartialEq)]
+enum Logic {
+    And,
+    Or,
 }
 
-/// The array value to use in a "where" clause.
-#[derive(Debug, Clone, PartialEq)]
-pub enum ArrayVariable {
-    String(String),
-    Int(u32),
+#[derive(Debug, PartialEq, Eq, Hash)]
+enum Function {
+    Count,
+    Sum,
+    Avg,
+    Min,
+    Max,
+    Distinct,
 }
 
-/// The direction to use in an "order by" clause.
-pub enum Direction {
+struct Join {
+    table: String,
+    left_hand: String,
+    join_type: JoinType,
+    right_hand: String,
+}
+
+enum JoinType {
+    Inner,
+    Left,
+    Right,
+    Full,
+}
+
+#[derive(Debug, PartialEq)]
+pub(crate) enum Order {
     Asc,
     Desc,
+}
+
+pub trait PerformChecks {
+    fn check(builder: &QueryBuilder) -> Result<(), EloquentError>;
+}
+
+#[allow(clippy::borrowed_box)]
+pub trait SqlBuilder {
+    fn build<'a>(
+        builder: &'a QueryBuilder,
+        sql: &mut String,
+        params: &mut Vec<&'a Box<(dyn ToSql + 'static)>>,
+    ) -> Result<String, EloquentError>;
+}
+
+impl Condition {
+    fn new(field: &str, operator: Operator, logic: Logic, values: Vec<Box<dyn ToSql>>) -> Self {
+        Condition {
+            field: field.to_string(),
+            operator,
+            logic,
+            values,
+        }
+    }
+}
+
+impl ToSql for &str {
+    fn to_sql(&self) -> String {
+        format!("'{}'", self)
+    }
+}
+
+impl ToSql for i32 {
+    fn to_sql(&self) -> String {
+        self.to_string()
+    }
+}
+
+impl ToSql for QueryBuilder {
+    fn to_sql(&self) -> String {
+        let mut sql = String::new();
+        let mut params = Vec::new();
+
+        match self.get_action() {
+            Action::Select => {
+                SelectBuilder::build(self, &mut sql, &mut params).unwrap();
+            }
+            _ => panic!("Not implemented"),
+        }
+
+        sql
+    }
+}
+
+impl Columnable for &str {
+    fn to_columns(&self) -> Vec<String> {
+        vec![self.to_string()]
+    }
+}
+
+impl Columnable for Vec<&str> {
+    fn to_columns(&self) -> Vec<String> {
+        self.iter().map(|&s| s.to_string()).collect()
+    }
+}
+
+impl Display for Operator {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let operator = match self {
+            Operator::Equal => "=",
+            Operator::NotEqual => "!=",
+            Operator::GreaterThan => ">",
+            Operator::GreaterThanOrEqual => ">=",
+            Operator::LessThan => "<",
+            Operator::LessThanOrEqual => "<=",
+            Operator::Like => "LIKE",
+            Operator::In => "IN",
+            Operator::NotIn => "NOT IN",
+            Operator::IsNull => "IS NULL",
+            Operator::IsNotNull => "IS NOT NULL",
+        };
+
+        write!(f, "{}", operator)
+    }
+}
+
+impl Display for Order {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let order = match self {
+            Order::Asc => "ASC",
+            Order::Desc => "DESC",
+        };
+
+        write!(f, "{}", order)
+    }
+}
+
+impl Display for Function {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let function = match self {
+            Function::Count => "COUNT",
+            Function::Sum => "SUM",
+            Function::Avg => "AVG",
+            Function::Min => "MIN",
+            Function::Max => "MAX",
+            Function::Distinct => "DISTINCT",
+        };
+
+        write!(f, "{}", function)
+    }
 }

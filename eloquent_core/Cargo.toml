@@ -1,9 +1,14 @@
 [package]
 name = "eloquent_core"
-version = "1.0.0"
+version = "2.0.0"
 edition = "2021"
 license = "MIT"
-repository = "https://github.com/tjardoo/eloquent-rs"
 description = "Core query builder component for Eloquent."
+repository = "https://github.com/tjardoo/eloquent-rs"
+documentation = "https://docs.rs/eloquent"
 
 [dependencies]
+sqlformat = "0.2.0"
+
+[lib]
+doctest = false

@@ -1,205 +1,287 @@
 use crate::{
-    shared::{Clause, WhereOperator},
-    Eloquent, Operator, Variable,
+    builders::{
+        delete::DeleteBuilder, insert::InsertBuilder, select::SelectBuilder, update::UpdateBuilder,
+    },
+    error::EloquentError,
+    Action, JoinType, Logic, Operator, QueryBuilder, SqlBuilder, ToSql,
 };
 
-impl Eloquent {
-    pub fn compile(&self) -> String {
-        if self.bindings.insert.is_empty() == false {
-            return self.compile_insert();
-        }
-
-        if self.bindings.update.is_empty() == false {
-            return self.compile_update();
-        }
-
-        if self.bindings.is_delete {
-            return self.compile_delete();
-        }
-
-        return self.compile_select();
+pub fn build_statement(builder: &QueryBuilder) -> Result<String, EloquentError> {
+    if builder.enable_checks {
+        builder.perform_checks()?;
     }
 
-    fn compile_select(&self) -> String {
-        let mut builder = "SELECT ".to_string();
+    let mut sql = String::new();
+    let mut params: Vec<&Box<dyn ToSql>> = Vec::new();
 
-        if self.bindings.select.is_empty() {
-            builder.push_str("*");
-        } else {
-            builder.push_str(&self.bindings.select.join(", "));
-        }
+    sql = match builder.get_action() {
+        Action::Select => SelectBuilder::build(builder, &mut sql, &mut params)?,
+        Action::Insert => InsertBuilder::build(builder, &mut sql, &mut params)?,
+        Action::Update => UpdateBuilder::build(builder, &mut sql, &mut params)?,
+        Action::Delete => DeleteBuilder::build(builder, &mut sql, &mut params)?,
+    };
 
-        builder.push_str(" FROM ");
-        builder.push_str(&self.bindings.table);
+    let formatted_sql = sql.replace('?', "{}");
 
-        for join in self.bindings.join.iter() {
-            builder.push_str(&format!(
-                " {} {} ON {} = {}",
-                join.r#type, join.table, join.left_hand, join.right_hand
-            ));
-        }
+    let formatted_sql = params
+        .iter()
+        .map(|p| p.as_ref().to_sql())
+        .fold(formatted_sql, |acc, val| acc.replacen("{}", &val, 1));
 
-        builder = self.append_where_clauses(&mut builder);
-
-        if self.bindings.group_by.is_empty() == false {
-            builder.push_str(" GROUP BY ");
-            builder.push_str(&self.bindings.group_by.join(", "));
-        }
-
-        if self.bindings.having.is_empty() == false {
-            builder.push_str(" HAVING ");
-            builder.push_str(
-                &self
-                    .bindings
-                    .having
-                    .clone()
-                    .into_iter()
-                    .map(|clause| format!("{} {} {}", clause.column, clause.operator, clause.value))
-                    .collect::<Vec<String>>()
-                    .join(", "),
-            );
-        }
-
-        if self.bindings.order_by.is_empty() == false {
-            builder.push_str(" ORDER BY ");
-            builder.push_str(&self.bindings.order_by.join(", "));
-        }
-
-        if let Some(limit) = self.bindings.limit {
-            builder.push_str(&format!(" LIMIT {}", limit));
-        }
-
-        if let Some(offset) = self.bindings.offset {
-            builder.push_str(&format!(" OFFSET {}", offset));
-        }
-
-        builder
+    if formatted_sql.contains("{}") {
+        return Err(EloquentError::MissingPlaceholders);
     }
 
-    fn compile_insert(&self) -> String {
-        let mut builder = "INSERT INTO ".to_string();
+    Ok(formatted_sql)
+}
 
-        builder.push_str(&self.bindings.table);
+pub(crate) fn add_selects(builder: &QueryBuilder, sql: &mut String) -> String {
+    sql.push_str("SELECT ");
 
-        builder.push_str(" (");
-        builder.push_str(
-            &self
-                .bindings
-                .insert
-                .clone()
-                .into_iter()
-                .map(|(column, _value)| column)
+    if builder.selects.is_empty() {
+        sql.push('*');
+    } else {
+        sql.push_str(
+            &builder
+                .selects
+                .iter()
+                .map(|s| s.format_column_name())
                 .collect::<Vec<String>>()
                 .join(", "),
         );
-        builder.push_str(") VALUES (");
-        builder.push_str(
-            &self
-                .bindings
-                .insert
-                .clone()
-                .into_iter()
-                .map(|(_column, value)| value.to_string())
-                .collect::<Vec<String>>()
-                .join(", "),
-        );
-        builder.push_str(")");
+    }
 
-        if self.bindings.r#where.is_empty() == false {
-            panic!("Where clauses are not allowed in insert statements.")
+    sql.push_str(" FROM ");
+    sql.push_str(builder.table.as_ref().unwrap());
+
+    sql.to_string()
+}
+
+#[allow(clippy::borrowed_box)]
+pub(crate) fn add_inserts<'a>(
+    builder: &'a QueryBuilder,
+    sql: &mut String,
+    params: &mut Vec<&'a Box<(dyn ToSql + 'static)>>,
+) -> String {
+    sql.push_str("INSERT INTO ");
+    sql.push_str(builder.table.as_ref().unwrap());
+    sql.push_str(" (");
+
+    sql.push_str(
+        &builder
+            .inserts
+            .iter()
+            .map(|insert| insert.column.clone())
+            .collect::<Vec<String>>()
+            .join(", "),
+    );
+
+    sql.push_str(") VALUES (");
+
+    sql.push_str(
+        &builder
+            .inserts
+            .iter()
+            .map(|insert| {
+                params.push(&insert.value);
+                "?".to_string()
+            })
+            .collect::<Vec<String>>()
+            .join(", "),
+    );
+
+    sql.push(')');
+
+    sql.to_string()
+}
+
+#[allow(clippy::borrowed_box)]
+pub(crate) fn add_updates<'a>(
+    builder: &'a QueryBuilder,
+    sql: &mut String,
+    params: &mut Vec<&'a Box<(dyn ToSql + 'static)>>,
+) -> String {
+    sql.push_str("UPDATE ");
+    sql.push_str(builder.table.as_ref().unwrap());
+    sql.push_str(" SET ");
+
+    sql.push_str(
+        &builder
+            .updates
+            .iter()
+            .map(|update| {
+                params.push(&update.value);
+                format!("{} = ?", update.column)
+            })
+            .collect::<Vec<String>>()
+            .join(", "),
+    );
+
+    sql.to_string()
+}
+
+pub(crate) fn add_joins(builder: &QueryBuilder, sql: &mut String) -> String {
+    for join in &builder.joins {
+        sql.push(' ');
+
+        sql.push_str(match join.join_type {
+            JoinType::Inner => "JOIN",
+            JoinType::Left => "LEFT JOIN",
+            JoinType::Right => "RIGHT JOIN",
+            JoinType::Full => "FULL JOIN",
+        });
+
+        sql.push(' ');
+        sql.push_str(&join.table);
+        sql.push_str(" ON ");
+        sql.push_str(&join.left_hand);
+        sql.push_str(" = ");
+        sql.push_str(&join.right_hand);
+    }
+
+    sql.to_string()
+}
+
+#[allow(clippy::borrowed_box)]
+pub(crate) fn add_conditions<'a>(
+    builder: &'a QueryBuilder,
+    sql: &mut String,
+    params: &mut Vec<&'a Box<(dyn ToSql + 'static)>>,
+) -> Result<String, EloquentError> {
+    if !builder.conditions.is_empty() || !builder.closures.is_empty() {
+        sql.push_str(" WHERE ");
+
+        let mut conditions_str = String::new();
+        let mut first_condition = true;
+
+        for (i, condition) in builder.conditions.iter().enumerate() {
+            if i > 0 {
+                conditions_str.push_str(match condition.logic {
+                    Logic::And => " AND ",
+                    Logic::Or => " OR ",
+                });
+            }
+
+            let condition_sql = match &condition.operator {
+                Operator::Equal => format!("{} = ?", condition.field),
+                Operator::NotEqual => format!("{} != ?", condition.field),
+                Operator::GreaterThan => format!("{} > ?", condition.field),
+                Operator::GreaterThanOrEqual => format!("{} >= ?", condition.field),
+                Operator::LessThan => format!("{} < ?", condition.field),
+                Operator::LessThanOrEqual => format!("{} <= ?", condition.field),
+                Operator::Like => format!("{} LIKE ?", condition.field),
+                Operator::In | Operator::NotIn => {
+                    let placeholders = vec!["?"; condition.values.len()].join(", ");
+                    if condition.operator == Operator::In {
+                        format!("{} IN ({})", condition.field, placeholders)
+                    } else {
+                        format!("{} NOT IN ({})", condition.field, placeholders)
+                    }
+                }
+                Operator::IsNull => format!("{} IS NULL", condition.field),
+                Operator::IsNotNull => format!("{} IS NOT NULL", condition.field),
+            };
+
+            conditions_str.push_str(&condition_sql);
+            if !matches!(condition.operator, Operator::IsNull | Operator::IsNotNull) {
+                params.extend(condition.values.iter());
+            }
+
+            first_condition = false;
         }
 
-        builder
-    }
-
-    fn compile_update(&self) -> String {
-        let mut builder = "UPDATE ".to_string();
-
-        builder.push_str(&self.bindings.table);
-
-        builder.push_str(" SET ");
-        builder.push_str(
-            &self
-                .bindings
-                .update
-                .clone()
-                .into_iter()
-                .map(|(column, value)| format!("{} = {}", column, value))
-                .collect::<Vec<String>>()
-                .join(", "),
-        );
-
-        builder = self.append_where_clauses(&mut builder);
-
-        builder
-    }
-
-    fn compile_delete(&self) -> String {
-        let mut builder = "DELETE FROM ".to_string();
-
-        builder.push_str(&self.bindings.table);
-
-        builder = self.append_where_clauses(&mut builder);
-
-        builder
-    }
-
-    fn append_where_clauses(&self, builder: &mut String) -> String {
-        for (index, clause) in self.bindings.r#where.iter().enumerate() {
-            if index == 0 {
-                builder.push_str(" WHERE ");
-            } else if clause.where_operator == WhereOperator::And {
-                builder.push_str(" AND ");
-            } else {
-                builder.push_str(" OR ");
+        for (logic, closure) in builder.closures.iter() {
+            if !first_condition {
+                match logic {
+                    Logic::And => conditions_str.push_str(" AND "),
+                    Logic::Or => conditions_str.push_str(" OR "),
+                }
             }
 
-            if clause.where_operator == WhereOperator::Not {
-                builder.push_str("NOT ");
-            }
-
-            builder.push_str(self.construct_where_clause(clause.clone().into()).as_str());
-        }
-
-        for (index, closure) in self.bindings.where_closure.iter().enumerate() {
-            if index == 0 && self.bindings.r#where.is_empty() {
-                builder.push_str(" WHERE ");
-            } else if closure.where_operator == WhereOperator::And {
-                builder.push_str(" AND ");
-            } else {
-                builder.push_str(" OR ");
-            }
-
-            if closure.closures[0].where_operator == WhereOperator::Not {
-                builder.push_str("NOT ");
-            }
-
-            builder.push_str("(");
-            for (index, clause) in closure.closures.iter().enumerate() {
-                if index == 0 {
-                    //
-                } else if clause.where_operator == WhereOperator::And {
-                    builder.push_str(" AND ");
-                } else {
-                    builder.push_str(" OR ");
+            conditions_str.push('(');
+            for (i, condition) in closure.iter().enumerate() {
+                if i > 0 {
+                    conditions_str.push_str(match condition.logic {
+                        Logic::And => " AND ",
+                        Logic::Or => " OR ",
+                    });
                 }
 
-                builder.push_str(self.construct_where_clause(clause.clone().into()).as_str());
+                let condition_sql = format!("{} {} ?", condition.field, condition.operator);
+
+                conditions_str.push_str(&condition_sql);
+                if !matches!(condition.operator, Operator::IsNull | Operator::IsNotNull) {
+                    params.extend(condition.values.iter());
+                }
             }
-            builder.push_str(")");
+            conditions_str.push(')');
+            first_condition = false;
         }
 
-        builder.to_string()
+        sql.push_str(&conditions_str);
     }
 
-    fn construct_where_clause(&self, clauses: Clause) -> String {
-        match clauses.value {
-            Variable::Null => match clauses.operator {
-                Operator::Equal => format!("{} IS NULL", clauses.column),
-                Operator::NotEqual => format!("{} IS NOT NULL", clauses.column),
-                _ => panic!("Invalid operator for NULL value in WHERE clause."),
-            },
-            _ => format!("{} {} {}", clauses.column, clauses.operator, clauses.value),
-        }
+    Ok(sql.to_string())
+}
+
+pub(crate) fn add_group_by(builder: &QueryBuilder, sql: &mut String) -> String {
+    if !builder.group_by.is_empty() {
+        sql.push_str(" GROUP BY ");
+        sql.push_str(&builder.group_by.join(", "));
     }
+
+    sql.to_string()
+}
+
+pub(crate) fn add_havings(
+    builder: &QueryBuilder,
+    sql: &mut String,
+) -> Result<String, EloquentError> {
+    if !builder.havings.is_empty() {
+        sql.push_str(" HAVING ");
+
+        let havings = &builder.havings;
+
+        sql.push_str(
+            &havings
+                .iter()
+                .map(|clause| format!("{} {} {}", clause.column, clause.operator, clause.value))
+                .collect::<Vec<String>>()
+                .join(", "),
+        );
+    }
+
+    Ok(sql.to_string())
+}
+
+pub(crate) fn add_order_by(builder: &QueryBuilder, sql: &mut String) -> String {
+    if !builder.order_by.is_empty() {
+        sql.push_str(" ORDER BY ");
+        builder.order_by.iter().for_each(|order| {
+            sql.push_str(&order.column);
+            sql.push(' ');
+            sql.push_str(match order.order {
+                crate::Order::Asc => "ASC",
+                crate::Order::Desc => "DESC",
+            });
+
+            if order != builder.order_by.last().unwrap() {
+                sql.push_str(", ");
+            }
+        });
+    }
+
+    sql.to_string()
+}
+
+pub(crate) fn add_limit_offset(builder: &QueryBuilder, sql: &mut String) -> String {
+    if let Some(limit) = &builder.limit {
+        sql.push_str(&format!(" LIMIT {}", limit));
+    }
+
+    if let Some(offset) = &builder.offset {
+        sql.push_str(&format!(" OFFSET {}", offset));
+    }
+
+    sql.to_string()
 }

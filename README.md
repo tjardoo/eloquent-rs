@@ -1,79 +1,31 @@
 # Eloquent
 
-> [!WARNING]
->
-> This package is developed for learning purposes and is not intended for production use.
+This Rust library provides a fluent and type-safe query builder designed to simplify the construction of SQL queries for interacting with relational databases. With its expressive syntax, you can effortlessly build complex SQL queries using a chain of method calls that mirror SQL operations. The library supports a wide range of conditions such as WHERE, OR WHERE, IN, NOT IN, LIKE, and many more, while also allowing for nested conditions using closures.
 
-Eloquent is a SQL query builder to easily build complex SQL queries in Rust. It is inspired by Laravel's Query Builder and is designed to be simple and easy to use. This is not an ORM, in contrast to Laravel's Eloquent ORM. This libary is designed to be used with any SQL database and does not have any database specific features.
-
-The query builder supports `select`, `insert`, `update`, `delete`, `where`, `join`, `group_by`, `having`, `order_by`, `limit`, `offset` and `to_sql` methods and support where clause closures.
-
-See [Available Methods](./docs/available-methods.md) for more details.
-
-## Usage
-
-```ini
-[dependencies]
-eloquent = "1.0"
-```
+Whether you’re filtering flights by departure airport, checking for null values, or creating complex nested conditions, this library ensures that your queries are easy to read, write, and maintain. Its design allows you to focus on the logic of your queries without worrying about the underlying SQL syntax, providing both power and flexibility in building database queries.
 
 ```rust
-use eloquent_core::{Eloquent, Operator, Variable};
+let result = Eloquent::query()
+    .table("flights")
+    .select("origin_airport")
+    .select_avg("startup_time_in_minutes")
+    .select_as("airports.city", "destination_city")
+    .join(
+        "airports",
+        "flights.destination_airport",
+        "airports.iata_code",
+    )
+    .r#where("origin_airport", "AMS")
+    .where_not_in("flight_number", vec!["KL123", "KL456"])
+    .where_not_null("gate_number")
+    .where_closure(|q| {
+        q.where_gte("flight_duration", 120)
+            .or_where_like("airports.city", "%NY%")
+    })
+    .group_by(vec!["origin_airport", "airports.city"])
+    .having_gt("AVG(startup_time_in_minutes)", 120)
+    .order_by_asc("AVG(startup_time_in_minutes)")
+    .limit(20);
 
-fn example_query() {
-    let query = Eloquent::table("orders")
-        .select("orders.customer_id")
-        .select_as("customers.name", "customer_name")
-        .select_count("orders.id", "total_orders")
-        .join("customers", "orders.customer_id", "customers.id")
-        .r#where(
-            "orders.order_date",
-            Operator::GreaterThanOrEqual,
-            Variable::String("2024-01-01".to_string()),
-        )
-        .r#where(
-            "customers.country_id",
-            Operator::In,
-            Variable::Array(vec![
-                ArrayVariable::String("NL".to_string()),
-                ArrayVariable::String("DE".to_string()),
-            ]),
-        )
-        .where_not_null("shipped_at")
-        .group_by(vec!["orders.customer_id", "customers.name"])
-        .having("total_orders", Operator::GreaterThan, Variable::Int(5))
-        .order_by("total_orders", Direction::Desc)
-        .order_by("customer_name", Direction::Asc)
-        .limit(10)
-        .offset(0)
-        .to_sql();
-
-    assert_eq!(
-        query,
-        "SELECT orders.customer_id, customers.name AS customer_name, COUNT(orders.id) AS total_orders FROM orders JOIN customers ON orders.customer_id = customers.id WHERE orders.order_date >= `2024-01-01` AND customers.country_id IN (`NL`, `DE`) AND shipped_at IS NOT NULL GROUP BY orders.customer_id, customers.name HAVING total_orders > 5 ORDER BY total_orders DESC, customer_name ASC LIMIT 10 OFFSET 0"
-    );
-}
-```
-
-```rust
-use eloquent_core::{Eloquent, Operator, Variable};
-
-fn example_query() {
-    let query = Eloquent::table("users")
-        .where_closure(|closure| {
-            closure
-                .r#where("age", Operator::GreaterThanOrEqual, Variable::Int(18))
-                .r#where("age", Operator::LessThan, Variable::Int(25));
-        })
-        .or_where_closure(|closure| {
-            closure
-                .r#where("age", Operator::GreaterThanOrEqual, Variable::Int(30))
-                .r#where("age", Operator::LessThan, Variable::Int(35));
-        })
-        .to_sql();
-    assert_eq!(
-        query,
-        "SELECT * FROM users WHERE (age >= 18 AND age < 25) OR (age >= 30 AND age < 35)"
-    );
-}
+println!("{}", result.sql().unwrap());
 ```
