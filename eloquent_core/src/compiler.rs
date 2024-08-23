@@ -6,7 +6,7 @@ use crate::{
     Action, JoinType, Logic, Operator, QueryBuilder, SqlBuilder, ToSql,
 };
 
-pub fn build_statement(builder: QueryBuilder) -> Result<String, EloquentError> {
+pub fn build_statement(builder: &QueryBuilder) -> Result<String, EloquentError> {
     if builder.enable_checks {
         builder.perform_checks()?;
     }
@@ -15,10 +15,10 @@ pub fn build_statement(builder: QueryBuilder) -> Result<String, EloquentError> {
     let mut params: Vec<&Box<dyn ToSql>> = Vec::new();
 
     sql = match builder.get_action() {
-        Action::Select => SelectBuilder::build(&builder, &mut sql, &mut params)?,
-        Action::Insert => InsertBuilder::build(&builder, &mut sql, &mut params)?,
-        Action::Update => UpdateBuilder::build(&builder, &mut sql, &mut params)?,
-        Action::Delete => DeleteBuilder::build(&builder, &mut sql, &mut params)?,
+        Action::Select => SelectBuilder::build(builder, &mut sql, &mut params)?,
+        Action::Insert => InsertBuilder::build(builder, &mut sql, &mut params)?,
+        Action::Update => UpdateBuilder::build(builder, &mut sql, &mut params)?,
+        Action::Delete => DeleteBuilder::build(builder, &mut sql, &mut params)?,
     };
 
     let formatted_sql = sql.replace('?', "{}");

@@ -1,14 +1,15 @@
 use std::fmt::Display;
 
+use builders::select::SelectBuilder;
 use error::EloquentError;
 
 pub mod builder;
 pub mod builders;
-pub mod checker;
 pub mod checks;
 pub mod compiler;
 pub mod error;
 pub mod queries;
+pub mod validator;
 
 pub struct QueryBuilder {
     table: Option<String>,
@@ -205,6 +206,22 @@ impl ToSql for &str {
 impl ToSql for i32 {
     fn to_sql(&self) -> String {
         self.to_string()
+    }
+}
+
+impl ToSql for QueryBuilder {
+    fn to_sql(&self) -> String {
+        let mut sql = String::new();
+        let mut params = Vec::new();
+
+        match self.get_action() {
+            Action::Select => {
+                SelectBuilder::build(self, &mut sql, &mut params).unwrap();
+            }
+            _ => panic!("Not implemented"),
+        }
+
+        sql
     }
 }
 

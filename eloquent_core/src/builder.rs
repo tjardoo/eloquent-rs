@@ -26,17 +26,17 @@ impl QueryBuilder {
         self
     }
 
-    pub fn disable_checks(mut self) -> Self {
+    pub fn skip_validation(mut self) -> Self {
         self.enable_checks = false;
 
         self
     }
 
-    pub fn sql(self) -> Result<String, EloquentError> {
+    pub fn sql(&self) -> Result<String, EloquentError> {
         build_statement(self)
     }
 
-    pub fn pretty_sql(self) -> Result<String, EloquentError> {
+    pub fn pretty_sql(&self) -> Result<String, EloquentError> {
         let unformatted_sql = build_statement(self)?;
 
         let options = sqlformat::FormatOptions {

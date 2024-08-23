@@ -826,8 +826,8 @@ mod tests {
     }
 
     #[test]
-    fn test_disabled_checks() {
-        let result = Eloquent::query().table("flights").disable_checks().sql();
+    fn test_skip_validation() {
+        let result = Eloquent::query().table("flights").skip_validation().sql();
 
         assert_eq!(result.unwrap(), "SELECT * FROM flights");
     }

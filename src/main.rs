@@ -25,11 +25,7 @@ fn main() {
         .order_by_asc("AVG(startup_time_in_minutes)")
         .limit(20);
 
-    // Prints the unformatted SQL
-    // println!("{}", result.sql().unwrap());
-
-    // Prints the formatted SQL
-    println!("{}", result.pretty_sql().unwrap());
+    println!("{}", result.pretty_sql().unwrap()); // or .sql() for unformatted SQL
 
     // SELECT
     //     origin_airport,

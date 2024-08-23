@@ -10,6 +10,7 @@ impl QueryBuilder {
     ) -> Self {
         self.conditions
             .push(Condition::new(field, operator, logic, values));
+
         self
     }
 
