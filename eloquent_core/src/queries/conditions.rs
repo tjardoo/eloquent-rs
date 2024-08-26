@@ -109,6 +109,10 @@ impl QueryBuilder {
         self.add_condition(field, Operator::In, Logic::And, boxed_values)
     }
 
+    pub fn where_in_subquery(self, field: &str, subquery: QueryBuilder) -> Self {
+        self.add_condition(field, Operator::In, Logic::And, vec![Box::new(subquery)])
+    }
+
     pub fn or_where_in(self, field: &str, values: Vec<impl ToSql + 'static>) -> Self {
         let boxed_values = values
             .into_iter()

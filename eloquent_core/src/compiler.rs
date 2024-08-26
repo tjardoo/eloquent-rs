@@ -26,7 +26,9 @@ pub fn build_statement(builder: &QueryBuilder) -> Result<String, EloquentError> 
     let formatted_sql = params
         .iter()
         .map(|p| p.as_ref().to_sql())
-        .fold(formatted_sql, |acc, val| acc.replacen("{}", &val, 1));
+        .fold(formatted_sql, |acc, val| {
+            acc.replacen("{}", &val.unwrap(), 1)
+        });
 
     if formatted_sql.contains("{}") {
         return Err(EloquentError::MissingPlaceholders);
@@ -172,6 +174,7 @@ pub(crate) fn add_conditions<'a>(
                 Operator::Like => format!("{} LIKE ?", condition.field),
                 Operator::In | Operator::NotIn => {
                     let placeholders = vec!["?"; condition.values.len()].join(", ");
+
                     if condition.operator == Operator::In {
                         format!("{} IN ({})", condition.field, placeholders)
                     } else {

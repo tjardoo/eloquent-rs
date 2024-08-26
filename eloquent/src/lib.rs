@@ -75,20 +75,25 @@ mod tests {
 
     #[test]
     fn test_select_count() {
-        let result = Eloquent::query().table("flights").select_count("id");
+        let result = Eloquent::query()
+            .table("flights")
+            .select_count("id", "id_count");
 
-        assert_eq!(result.sql().unwrap(), "SELECT COUNT(id) FROM flights");
+        assert_eq!(
+            result.sql().unwrap(),
+            "SELECT COUNT(id) AS id_count FROM flights"
+        );
     }
 
     #[test]
     fn test_select_min() {
         let result = Eloquent::query()
             .table("flights")
-            .select_min("flight_duration");
+            .select_min("flight_duration", "flight_duration_min");
 
         assert_eq!(
             result.sql().unwrap(),
-            "SELECT MIN(flight_duration) FROM flights"
+            "SELECT MIN(flight_duration) AS flight_duration_min FROM flights"
         );
     }
 
@@ -96,11 +101,11 @@ mod tests {
     fn test_select_max() {
         let result = Eloquent::query()
             .table("flights")
-            .select_max("flight_duration");
+            .select_max("flight_duration", "flight_duration_max");
 
         assert_eq!(
             result.sql().unwrap(),
-            "SELECT MAX(flight_duration) FROM flights"
+            "SELECT MAX(flight_duration) AS flight_duration_max FROM flights"
         );
     }
 
@@ -108,11 +113,11 @@ mod tests {
     fn test_select_avg() {
         let result = Eloquent::query()
             .table("flights")
-            .select_avg("flight_duration");
+            .select_avg("flight_duration", "flight_duration_avg");
 
         assert_eq!(
             result.sql().unwrap(),
-            "SELECT AVG(flight_duration) FROM flights"
+            "SELECT AVG(flight_duration) AS flight_duration_avg FROM flights"
         );
     }
 
@@ -120,11 +125,11 @@ mod tests {
     fn test_select_sum() {
         let result = Eloquent::query()
             .table("flights")
-            .select_sum("flight_duration");
+            .select_sum("flight_duration", "flight_duration_sum");
 
         assert_eq!(
             result.sql().unwrap(),
-            "SELECT SUM(flight_duration) FROM flights"
+            "SELECT SUM(flight_duration) AS flight_duration_sum FROM flights"
         );
     }
 
@@ -570,12 +575,12 @@ mod tests {
         let result = Eloquent::query()
             .table("flights")
             .select("origin")
-            .select_avg("flight_duration")
+            .select_avg("flight_duration", "flight_duration_avg")
             .group_by("origin");
 
         assert_eq!(
             result.sql().unwrap(),
-            "SELECT origin, AVG(flight_duration) FROM flights GROUP BY origin"
+            "SELECT origin, AVG(flight_duration) AS flight_duration_avg FROM flights GROUP BY origin"
         );
     }
 
@@ -584,12 +589,12 @@ mod tests {
         let result = Eloquent::query()
             .table("flights")
             .select(vec!["origin", "destination"])
-            .select_avg("flight_duration")
+            .select_avg("flight_duration", "flight_duration_avg")
             .group_by(vec!["origin", "destination"]);
 
         assert_eq!(
             result.sql().unwrap(),
-            "SELECT origin, destination, AVG(flight_duration) FROM flights GROUP BY origin, destination"
+            "SELECT origin, destination, AVG(flight_duration) AS flight_duration_avg FROM flights GROUP BY origin, destination"
         );
     }
 
@@ -881,5 +886,22 @@ mod tests {
             Err(_error) => panic!(),
             Ok(_value) => panic!(),
         }
+    }
+
+    #[test]
+    fn test_where_in_subquery() {
+        let subquery = Eloquent::query()
+            .table("flights")
+            .select("id")
+            .where_gt("duration_in_min", 120);
+
+        let result = Eloquent::query()
+            .table("flights")
+            .where_in_subquery("id", subquery);
+
+        assert_eq!(
+            result.sql().unwrap(),
+            "SELECT * FROM flights WHERE id IN (SELECT id FROM flights WHERE duration_in_min > 120)"
+        );
     }
 }

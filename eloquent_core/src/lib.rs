@@ -1,6 +1,6 @@
 use std::fmt::Display;
 
-use builders::select::SelectBuilder;
+use compiler::build_statement;
 use error::EloquentError;
 
 pub mod builder;
@@ -52,7 +52,7 @@ impl QueryBuilder {
 }
 
 pub trait ToSql {
-    fn to_sql(&self) -> String;
+    fn to_sql(&self) -> Result<String, EloquentError>;
 }
 
 pub trait Columnable {
@@ -198,30 +198,20 @@ impl Condition {
 }
 
 impl ToSql for &str {
-    fn to_sql(&self) -> String {
-        format!("'{}'", self)
+    fn to_sql(&self) -> Result<String, EloquentError> {
+        Ok(format!("'{}'", self))
     }
 }
 
 impl ToSql for i32 {
-    fn to_sql(&self) -> String {
-        self.to_string()
+    fn to_sql(&self) -> Result<String, EloquentError> {
+        Ok(self.to_string())
     }
 }
 
 impl ToSql for QueryBuilder {
-    fn to_sql(&self) -> String {
-        let mut sql = String::new();
-        let mut params = Vec::new();
-
-        match self.get_action() {
-            Action::Select => {
-                SelectBuilder::build(self, &mut sql, &mut params).unwrap();
-            }
-            _ => panic!("Not implemented"),
-        }
-
-        sql
+    fn to_sql(&self) -> Result<String, EloquentError> {
+        build_statement(self)
     }
 }
 

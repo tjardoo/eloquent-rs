@@ -31,7 +31,7 @@ impl QueryBuilder {
     pub fn select_raw(mut self, raw: &str, values: Vec<impl ToSql + 'static>) -> Self {
         let mut formatted_raw = raw.to_string();
         for value in values {
-            formatted_raw = formatted_raw.replacen('?', &value.to_sql(), 1);
+            formatted_raw = formatted_raw.replacen('?', &value.to_sql().unwrap(), 1);
         }
 
         self.selects.push(Select {
@@ -43,51 +43,51 @@ impl QueryBuilder {
         self
     }
 
-    pub fn select_count(mut self, column: &str) -> Self {
+    pub fn select_count(mut self, column: &str, alias: &str) -> Self {
         self.selects.push(Select {
             function: Some(Function::Count),
             column: column.to_string(),
-            alias: None,
+            alias: Some(alias.to_string()),
         });
 
         self
     }
 
-    pub fn select_min(mut self, column: &str) -> Self {
+    pub fn select_min(mut self, column: &str, alias: &str) -> Self {
         self.selects.push(Select {
             function: Some(Function::Min),
             column: column.to_string(),
-            alias: None,
+            alias: Some(alias.to_string()),
         });
 
         self
     }
 
-    pub fn select_max(mut self, column: &str) -> Self {
+    pub fn select_max(mut self, column: &str, alias: &str) -> Self {
         self.selects.push(Select {
             function: Some(Function::Max),
             column: column.to_string(),
-            alias: None,
+            alias: Some(alias.to_string()),
         });
 
         self
     }
 
-    pub fn select_avg(mut self, column: &str) -> Self {
+    pub fn select_avg(mut self, column: &str, alias: &str) -> Self {
         self.selects.push(Select {
             function: Some(Function::Avg),
             column: column.to_string(),
-            alias: None,
+            alias: Some(alias.to_string()),
         });
 
         self
     }
 
-    pub fn select_sum(mut self, column: &str) -> Self {
+    pub fn select_sum(mut self, column: &str, alias: &str) -> Self {
         self.selects.push(Select {
             function: Some(Function::Sum),
             column: column.to_string(),
-            alias: None,
+            alias: Some(alias.to_string()),
         });
 
         self

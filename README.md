@@ -8,7 +8,7 @@ Whether you’re filtering flights by departure airport, checking for null value
 let result = Eloquent::query()
     .table("flights")
     .select("origin_airport")
-    .select_avg("startup_time_in_minutes")
+    .select_avg("startup_time_in_minutes", "startup_time_in_minutes_avg")
     .select_as("airports.city", "destination_city")
     .join(
         "airports",
@@ -23,9 +23,34 @@ let result = Eloquent::query()
             .or_where_like("airports.city", "%NY%")
     })
     .group_by(vec!["origin_airport", "airports.city"])
-    .having_gt("AVG(startup_time_in_minutes)", 120)
-    .order_by_asc("AVG(startup_time_in_minutes)")
+    .having_gt("startup_time_in_minutes_avg", 120)
+    .order_by_asc("startup_time_in_minutes_avg")
     .limit(20);
 
-println!("{}", result.sql().unwrap());
+println!("{}", result.pretty_sql().unwrap()); // or .sql() for unformatted SQL
+
+// SELECT
+//     origin_airport,
+//     AVG(startup_time_in_minutes) AS startup_time_in_minutes_avg,
+//     airports.city AS destination_city
+// FROM
+//     flights
+//     JOIN airports ON flights.destination_airport = airports.iata_code
+// WHERE
+//     origin_airport = 'AMS'
+//     AND flight_number NOT IN ('KL123', 'KL456')
+//     AND gate_number IS NOT NULL
+//     AND (
+//         flight_duration >= 120
+//         OR airports.city LIKE '%NY%'
+//     )
+// GROUP BY
+//     origin_airport,
+//     airports.city
+// HAVING
+//     startup_time_in_minutes_avg > 120
+// ORDER BY
+//     startup_time_in_minutes_avg ASC
+// LIMIT
+//     20
 ```

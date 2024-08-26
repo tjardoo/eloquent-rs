@@ -1,12 +1,10 @@
 use eloquent::Eloquent;
 
 fn main() {
-    println!("Hello, world!");
-
     let result = Eloquent::query()
         .table("flights")
         .select("origin_airport")
-        .select_avg("startup_time_in_minutes")
+        .select_avg("startup_time_in_minutes", "startup_time_in_minutes_avg")
         .select_as("airports.city", "destination_city")
         .join(
             "airports",
@@ -29,7 +27,7 @@ fn main() {
 
     // SELECT
     //     origin_airport,
-    //     AVG(startup_time_in_minutes),
+    //     AVG(startup_time_in_minutes) AS startup_time_in_minutes_avg,
     //     airports.city AS destination_city
     // FROM
     //     flights
@@ -46,9 +44,9 @@ fn main() {
     //     origin_airport,
     //     airports.city
     // HAVING
-    //     AVG(startup_time_in_minutes) > 120
+    //     startup_time_in_minutes_avg > 120
     // ORDER BY
-    //     AVG(startup_time_in_minutes) ASC
+    //     startup_time_in_minutes_avg ASC
     // LIMIT
     //     20
 }
