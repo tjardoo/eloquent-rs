@@ -6,6 +6,10 @@ impl Eloquent {
     pub fn query() -> QueryBuilder {
         QueryBuilder::new()
     }
+
+    pub fn subquery() -> SubqueryBuilder {
+        SubqueryBuilder::new()
+    }
 }
 
 #[cfg(test)]
@@ -890,7 +894,7 @@ mod tests {
 
     #[test]
     fn test_where_in_subquery() {
-        let subquery = Eloquent::query()
+        let subquery = Eloquent::subquery()
             .table("flights")
             .select("id")
             .where_gt("duration_in_min", 120);

@@ -3,12 +3,13 @@ use std::fmt::Display;
 use compiler::build_statement;
 use error::EloquentError;
 
-pub mod builder;
 pub mod builders;
 pub mod checks;
 pub mod compiler;
 pub mod error;
 pub mod queries;
+pub mod query_builder;
+pub mod subqueries;
 pub mod validator;
 
 pub struct QueryBuilder {
@@ -19,6 +20,20 @@ pub struct QueryBuilder {
     delete: bool,
     conditions: Vec<Condition>,
     closures: Vec<(Logic, Vec<Condition>)>,
+    joins: Vec<Join>,
+    havings: Vec<Having>,
+    group_by: Vec<String>,
+    order_by: Vec<OrderColumn>,
+    limit: Option<u64>,
+    offset: Option<u64>,
+    enable_checks: bool,
+}
+
+#[allow(dead_code)]
+pub struct SubqueryBuilder {
+    table: Option<String>,
+    selects: Vec<Select>,
+    conditions: Vec<Condition>,
     joins: Vec<Join>,
     havings: Vec<Having>,
     group_by: Vec<String>,
@@ -212,6 +227,15 @@ impl ToSql for i32 {
 impl ToSql for QueryBuilder {
     fn to_sql(&self) -> Result<String, EloquentError> {
         build_statement(self)
+    }
+}
+
+impl ToSql for SubqueryBuilder {
+    fn to_sql(&self) -> Result<String, EloquentError> {
+        // @todo
+
+        // build_statement(self)
+        Ok("".to_string())
     }
 }
 
