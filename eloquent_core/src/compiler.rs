@@ -203,7 +203,9 @@ pub(crate) fn add_conditions<'a>(
                 Operator::LessThanOrEqual => format!("{} <= ?", condition.field),
                 Operator::Like => format!("{} LIKE ?", condition.field),
                 Operator::In | Operator::NotIn => {
-                    if condition.is_subquery {
+                    let is_subquery = condition.values.iter().any(|v| v.is_subquery());
+
+                    if is_subquery {
                         format!("{} {} {}", condition.field, condition.operator, "{}")
                     } else {
                         let placeholders = vec!["?"; condition.values.len()].join(", ");

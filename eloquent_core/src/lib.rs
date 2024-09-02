@@ -67,6 +67,10 @@ impl QueryBuilder {
 
 pub trait ToSql {
     fn to_sql(&self) -> Result<String, EloquentError>;
+
+    fn is_subquery(&self) -> bool {
+        false
+    }
 }
 
 pub trait Columnable {
@@ -78,7 +82,6 @@ struct Condition {
     operator: Operator,
     logic: Logic,
     values: Vec<Box<dyn ToSql>>,
-    is_subquery: bool,
 }
 
 struct Select {
@@ -210,7 +213,6 @@ impl Condition {
             operator,
             logic,
             values,
-            is_subquery: false,
         }
     }
 }
@@ -236,6 +238,10 @@ impl ToSql for QueryBuilder {
 impl ToSql for SubqueryBuilder {
     fn to_sql(&self) -> Result<String, EloquentError> {
         build_substatement(self)
+    }
+
+    fn is_subquery(&self) -> bool {
+        true
     }
 }
 
