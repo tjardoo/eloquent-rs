@@ -3,16 +3,17 @@ use std::fmt::Display;
 use compiler::{build_statement, build_substatement};
 use error::EloquentError;
 
-pub mod builders;
-pub mod checks;
-pub mod compiler;
+mod builders;
+mod checks;
+mod compiler;
 pub mod error;
-pub mod queries;
-pub mod query_builder;
-pub mod subqueries;
-pub mod subquery_builder;
-pub mod validator;
+mod queries;
+mod query_builder;
+mod subqueries;
+mod subquery_builder;
+mod validator;
 
+/// The main builder struct that holds all the query building information.
 pub struct QueryBuilder {
     table: Option<String>,
     selects: Vec<Select>,
@@ -30,6 +31,7 @@ pub struct QueryBuilder {
     enable_checks: bool,
 }
 
+/// The subquery builder struct that holds all the subquery building information.
 pub struct SubqueryBuilder {
     table: Option<String>,
     selects: Vec<Select>,
@@ -58,12 +60,12 @@ pub trait Selectable {
     fn to_select_column(&self) -> String;
 }
 
-pub trait PerformChecks {
+pub(crate) trait PerformChecks {
     fn check(builder: &QueryBuilder) -> Result<(), EloquentError>;
 }
 
 #[allow(clippy::borrowed_box)]
-pub trait SqlBuilder {
+pub(crate) trait SqlBuilder {
     fn build<'a>(
         builder: &'a QueryBuilder,
         sql: &mut String,
@@ -71,7 +73,7 @@ pub trait SqlBuilder {
     ) -> Result<String, EloquentError>;
 }
 
-pub enum Action {
+pub(crate) enum Action {
     Select,
     Insert,
     Update,

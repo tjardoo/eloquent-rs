@@ -50,7 +50,7 @@ impl QueryBuilder {
         Ok(sql)
     }
 
-    pub fn get_action(&self) -> Action {
+    pub(crate) fn get_action(&self) -> Action {
         if !self.selects.is_empty() {
             Action::Select
         } else if !self.inserts.is_empty() {
