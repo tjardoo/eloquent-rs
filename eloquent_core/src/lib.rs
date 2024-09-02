@@ -1,6 +1,6 @@
 use std::fmt::Display;
 
-use compiler::build_statement;
+use compiler::{build_statement, build_substatement};
 use error::EloquentError;
 
 pub mod builders;
@@ -40,7 +40,6 @@ pub struct SubqueryBuilder {
     order_by: Vec<OrderColumn>,
     limit: Option<u64>,
     offset: Option<u64>,
-    enable_checks: bool,
 }
 
 pub enum Action {
@@ -79,12 +78,15 @@ struct Condition {
     operator: Operator,
     logic: Logic,
     values: Vec<Box<dyn ToSql>>,
+    is_subquery: bool,
 }
 
 struct Select {
     column: String,
     function: Option<Function>,
     alias: Option<String>,
+    #[allow(dead_code)]
+    is_subquery: bool,
 }
 
 struct Insert {
@@ -208,6 +210,7 @@ impl Condition {
             operator,
             logic,
             values,
+            is_subquery: false,
         }
     }
 }
@@ -232,10 +235,7 @@ impl ToSql for QueryBuilder {
 
 impl ToSql for SubqueryBuilder {
     fn to_sql(&self) -> Result<String, EloquentError> {
-        // @todo
-
-        // build_statement(self)
-        Ok("".to_string())
+        build_substatement(self)
     }
 }
 

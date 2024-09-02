@@ -15,9 +15,9 @@ impl SqlBuilder for SelectBuilder {
         sql: &mut String,
         params: &mut Vec<&'a Box<(dyn crate::ToSql + 'static)>>,
     ) -> Result<String, EloquentError> {
-        add_selects(builder, sql);
+        add_selects(builder.table.as_ref().unwrap(), &builder.selects, sql);
         add_joins(builder, sql);
-        add_conditions(builder, sql, params)?;
+        add_conditions(&builder.conditions, &builder.closures, sql, params)?;
         add_group_by(builder, sql);
         add_havings(builder, sql)?;
         add_order_by(builder, sql);

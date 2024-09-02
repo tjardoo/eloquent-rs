@@ -109,8 +109,16 @@ impl QueryBuilder {
         self.add_condition(field, Operator::In, Logic::And, boxed_values)
     }
 
-    pub fn where_in_subquery(self, field: &str, subquery: SubqueryBuilder) -> Self {
-        self.add_condition(field, Operator::In, Logic::And, vec![Box::new(subquery)])
+    pub fn where_in_subquery(mut self, field: &str, subquery: SubqueryBuilder) -> Self {
+        self.conditions.push(Condition {
+            field: field.to_string(),
+            operator: Operator::In,
+            logic: Logic::And,
+            values: vec![Box::new(subquery)],
+            is_subquery: true,
+        });
+
+        self
     }
 
     pub fn or_where_in(self, field: &str, values: Vec<impl ToSql + 'static>) -> Self {
@@ -129,6 +137,18 @@ impl QueryBuilder {
             .collect();
 
         self.add_condition(field, Operator::NotIn, Logic::And, boxed_values)
+    }
+
+    pub fn where_not_in_subquery(mut self, field: &str, subquery: SubqueryBuilder) -> Self {
+        self.conditions.push(Condition {
+            field: field.to_string(),
+            operator: Operator::NotIn,
+            logic: Logic::And,
+            values: vec![Box::new(subquery)],
+            is_subquery: true,
+        });
+
+        self
     }
 
     pub fn or_where_not_in(self, field: &str, values: Vec<impl ToSql + 'static>) -> Self {

@@ -63,18 +63,11 @@ impl SubqueryBuilder {
             order_by: Vec::new(),
             limit: None,
             offset: None,
-            enable_checks: true,
         }
     }
 
     pub fn table(mut self, table: &str) -> Self {
         self.table = Some(table.to_string());
-
-        self
-    }
-
-    pub fn skip_validation(mut self) -> Self {
-        self.enable_checks = false;
 
         self
     }

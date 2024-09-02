@@ -1,4 +1,4 @@
-use crate::{Columnable, Function, QueryBuilder, Select, ToSql};
+use crate::{Columnable, Function, QueryBuilder, Select, SubqueryBuilder, ToSql};
 
 impl QueryBuilder {
     pub fn select<T>(mut self, columns: T) -> Self
@@ -12,6 +12,7 @@ impl QueryBuilder {
                 function: None,
                 column: column.to_string(),
                 alias: None,
+                is_subquery: false,
             });
         }
 
@@ -23,6 +24,7 @@ impl QueryBuilder {
             function: None,
             column: column.to_string(),
             alias: Some(alias.to_string()),
+            is_subquery: false,
         });
 
         self
@@ -38,6 +40,7 @@ impl QueryBuilder {
             function: None,
             column: formatted_raw.to_string(),
             alias: None,
+            is_subquery: false,
         });
 
         self
@@ -48,6 +51,7 @@ impl QueryBuilder {
             function: Some(Function::Count),
             column: column.to_string(),
             alias: Some(alias.to_string()),
+            is_subquery: false,
         });
 
         self
@@ -58,6 +62,7 @@ impl QueryBuilder {
             function: Some(Function::Min),
             column: column.to_string(),
             alias: Some(alias.to_string()),
+            is_subquery: false,
         });
 
         self
@@ -68,6 +73,7 @@ impl QueryBuilder {
             function: Some(Function::Max),
             column: column.to_string(),
             alias: Some(alias.to_string()),
+            is_subquery: false,
         });
 
         self
@@ -78,6 +84,7 @@ impl QueryBuilder {
             function: Some(Function::Avg),
             column: column.to_string(),
             alias: Some(alias.to_string()),
+            is_subquery: false,
         });
 
         self
@@ -88,6 +95,7 @@ impl QueryBuilder {
             function: Some(Function::Sum),
             column: column.to_string(),
             alias: Some(alias.to_string()),
+            is_subquery: false,
         });
 
         self
@@ -98,6 +106,18 @@ impl QueryBuilder {
             function: Some(Function::Distinct),
             column: column.to_string(),
             alias: None,
+            is_subquery: false,
+        });
+
+        self
+    }
+
+    pub fn select_subquery(mut self, subquery: SubqueryBuilder, alias: &str) -> Self {
+        self.selects.push(Select {
+            function: None,
+            column: subquery.to_sql().unwrap(),
+            alias: Some(alias.to_string()),
+            is_subquery: true,
         });
 
         self

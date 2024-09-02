@@ -893,6 +893,36 @@ mod tests {
     }
 
     #[test]
+    fn test_select_subquery() {
+        let subquery = Eloquent::subquery()
+            .table("flights")
+            .select_avg("duration_in_min", "avg_duration_in_min");
+
+        let result = Eloquent::query()
+            .table("flights")
+            .select_subquery(subquery, "avg_duration");
+
+        assert_eq!(
+            result.sql().unwrap(),
+            "SELECT (SELECT AVG(duration_in_min) AS avg_duration_in_min FROM flights) AS avg_duration FROM flights"
+        );
+    }
+
+    #[test]
+    fn test_where_subquery() {
+        let subquery = Eloquent::subquery()
+            .table("flights")
+            .select_max("duration_in_min", "max_duration_in_min");
+
+        let result = Eloquent::query().table("flights").r#where("id", subquery);
+
+        assert_eq!(
+            result.sql().unwrap(),
+            "SELECT * FROM flights WHERE id = (SELECT MAX(duration_in_min) AS max_duration_in_min FROM flights)"
+        );
+    }
+
+    #[test]
     fn test_where_in_subquery() {
         let subquery = Eloquent::subquery()
             .table("flights")
@@ -906,6 +936,23 @@ mod tests {
         assert_eq!(
             result.sql().unwrap(),
             "SELECT * FROM flights WHERE id IN (SELECT id FROM flights WHERE duration_in_min > 120)"
+        );
+    }
+
+    #[test]
+    fn test_where_not_in_subquery() {
+        let subquery = Eloquent::subquery()
+            .table("flights")
+            .select("id")
+            .where_gt("duration_in_min", 120);
+
+        let result = Eloquent::query()
+            .table("flights")
+            .where_not_in_subquery("id", subquery);
+
+        assert_eq!(
+            result.sql().unwrap(),
+            "SELECT * FROM flights WHERE id NOT IN (SELECT id FROM flights WHERE duration_in_min > 120)"
         );
     }
 }
