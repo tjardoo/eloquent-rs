@@ -931,7 +931,7 @@ mod tests {
 
         let result = Eloquent::query()
             .table("flights")
-            .where_in_subquery("id", subquery);
+            .where_in("id", vec![subquery]);
 
         assert_eq!(
             result.sql().unwrap(),
@@ -948,7 +948,7 @@ mod tests {
 
         let result = Eloquent::query()
             .table("flights")
-            .where_not_in_subquery("id", subquery);
+            .where_not_in("id", vec![subquery]);
 
         assert_eq!(
             result.sql().unwrap(),
