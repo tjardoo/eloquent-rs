@@ -1,10 +1,12 @@
 # Eloquent
 
-This Rust library provides a fluent and type-safe query builder designed to simplify the construction of SQL queries for interacting with relational databases. With its expressive syntax, you can effortlessly build complex SQL queries using a chain of method calls that mirror SQL operations. The library supports a wide range of conditions such as WHERE, OR WHERE, IN, NOT IN, LIKE, and many more, while also allowing for nested conditions using closures.
+**Eloquent** is a fluent and type-safe query builder for Rust, designed to simplify SQL query construction. It allows you to build complex SQL queries using method chains that closely mirror SQL syntax, all while ensuring type safety and readability.
 
-Whether you’re filtering flights by departure airport, checking for null values, or creating complex nested conditions, this library ensures that your queries are easy to read, write, and maintain. Its design allows you to focus on the logic of your queries without worrying about the underlying SQL syntax, providing both power and flexibility in building database queries.
+The library supports a wide range of SQL operations - `WHERE`, `JOIN`, `IN`, `NOT IN`, `LIKE`, and more—along with nested conditions via closures and subqueries. With features for filtering, grouping, and sorting, Eloquent provides the flexibility needed for constructing powerful, maintainable queries without sacrificing clarity or control over the SQL being generated.
 
 ```rust
+use eloquent::Eloquent;
+
 let result = Eloquent::query()
     .table("flights")
     .select("origin_airport")
@@ -28,29 +30,31 @@ let result = Eloquent::query()
     .limit(20);
 
 println!("{}", result.pretty_sql().unwrap()); // or .sql() for unformatted SQL
+```
 
-// SELECT
-//     origin_airport,
-//     AVG(startup_time_in_minutes) AS startup_time_in_minutes_avg,
-//     airports.city AS destination_city
-// FROM
-//     flights
-//     JOIN airports ON flights.destination_airport = airports.iata_code
-// WHERE
-//     origin_airport = 'AMS'
-//     AND flight_number NOT IN ('KL123', 'KL456')
-//     AND gate_number IS NOT NULL
-//     AND (
-//         flight_duration >= 120
-//         OR airports.city LIKE '%NY%'
-//     )
-// GROUP BY
-//     origin_airport,
-//     airports.city
-// HAVING
-//     startup_time_in_minutes_avg > 120
-// ORDER BY
-//     startup_time_in_minutes_avg ASC
-// LIMIT
-//     20
+```sql
+SELECT
+    origin_airport,
+    AVG(startup_time_in_minutes) AS startup_time_in_minutes_avg,
+    airports.city AS destination_city
+FROM
+    flights
+    JOIN airports ON flights.destination_airport = airports.iata_code
+WHERE
+    origin_airport = 'AMS'
+    AND flight_number NOT IN ('KL123', 'KL456')
+    AND gate_number IS NOT NULL
+    AND (
+        flight_duration >= 120
+        OR airports.city LIKE '%NY%'
+    )
+GROUP BY
+    origin_airport,
+    airports.city
+HAVING
+    startup_time_in_minutes_avg > 120
+ORDER BY
+    startup_time_in_minutes_avg ASC
+LIMIT
+    20
 ```

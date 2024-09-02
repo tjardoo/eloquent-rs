@@ -1,4 +1,4 @@
-use crate::{compiler::build_statement, error::EloquentError, QueryBuilder};
+use crate::{compiler::build_statement, error::EloquentError, Action, QueryBuilder};
 
 impl QueryBuilder {
     pub fn new() -> Self {
@@ -32,12 +32,12 @@ impl QueryBuilder {
         self
     }
 
-    pub fn sql(&self) -> Result<String, EloquentError> {
-        build_statement(self)
+    pub fn sql(self) -> Result<String, EloquentError> {
+        build_statement(&self)
     }
 
-    pub fn pretty_sql(&self) -> Result<String, EloquentError> {
-        let unformatted_sql = build_statement(self)?;
+    pub fn pretty_sql(self) -> Result<String, EloquentError> {
+        let unformatted_sql = build_statement(&self)?;
 
         let options = sqlformat::FormatOptions {
             indent: sqlformat::Indent::Spaces(4),
@@ -48,6 +48,20 @@ impl QueryBuilder {
         let sql = sqlformat::format(&unformatted_sql, &sqlformat::QueryParams::None, options);
 
         Ok(sql)
+    }
+
+    pub(crate) fn get_action(&self) -> Action {
+        if !self.selects.is_empty() {
+            Action::Select
+        } else if !self.inserts.is_empty() {
+            Action::Insert
+        } else if !self.updates.is_empty() {
+            Action::Update
+        } else if self.delete {
+            Action::Delete
+        } else {
+            Action::Select
+        }
     }
 }
 

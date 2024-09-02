@@ -3,7 +3,8 @@ use crate::{
         delete::DeleteBuilder, insert::InsertBuilder, select::SelectBuilder, update::UpdateBuilder,
     },
     error::EloquentError,
-    Action, JoinType, Logic, Operator, QueryBuilder, SqlBuilder, ToSql,
+    Action, Condition, JoinType, Logic, Operator, QueryBuilder, Select, SqlBuilder,
+    SubqueryBuilder, ToSql,
 };
 
 pub fn build_statement(builder: &QueryBuilder) -> Result<String, EloquentError> {
@@ -37,15 +38,43 @@ pub fn build_statement(builder: &QueryBuilder) -> Result<String, EloquentError> 
     Ok(formatted_sql)
 }
 
-pub(crate) fn add_selects(builder: &QueryBuilder, sql: &mut String) -> String {
+pub fn build_substatement(builder: &SubqueryBuilder) -> Result<String, EloquentError> {
+    let mut sql = String::new();
+    sql.push('(');
+
+    let mut params: Vec<&Box<dyn ToSql>> = Vec::new();
+
+    let closures: Vec<(Logic, Vec<Condition>)> = Vec::new();
+
+    add_selects(builder.table.as_ref().unwrap(), &builder.selects, &mut sql);
+    add_conditions(&builder.conditions, &closures, &mut sql, &mut params)?;
+
+    sql.push(')');
+
+    let formatted_sql = sql.replace('?', "{}");
+
+    let formatted_sql = params
+        .iter()
+        .map(|p| p.as_ref().to_sql())
+        .fold(formatted_sql, |acc, val| {
+            acc.replacen("{}", &val.unwrap(), 1)
+        });
+
+    if formatted_sql.contains("{}") {
+        return Err(EloquentError::MissingPlaceholders);
+    }
+
+    Ok(formatted_sql)
+}
+
+pub(crate) fn add_selects(table: &str, selects: &[Select], sql: &mut String) -> String {
     sql.push_str("SELECT ");
 
-    if builder.selects.is_empty() {
+    if selects.is_empty() {
         sql.push('*');
     } else {
         sql.push_str(
-            &builder
-                .selects
+            &selects
                 .iter()
                 .map(|s| s.format_column_name())
                 .collect::<Vec<String>>()
@@ -54,7 +83,7 @@ pub(crate) fn add_selects(builder: &QueryBuilder, sql: &mut String) -> String {
     }
 
     sql.push_str(" FROM ");
-    sql.push_str(builder.table.as_ref().unwrap());
+    sql.push_str(table);
 
     sql.to_string()
 }
@@ -146,17 +175,18 @@ pub(crate) fn add_joins(builder: &QueryBuilder, sql: &mut String) -> String {
 
 #[allow(clippy::borrowed_box)]
 pub(crate) fn add_conditions<'a>(
-    builder: &'a QueryBuilder,
+    conditions: &'a [Condition],
+    closures: &'a [(Logic, Vec<Condition>)],
     sql: &mut String,
     params: &mut Vec<&'a Box<(dyn ToSql + 'static)>>,
 ) -> Result<String, EloquentError> {
-    if !builder.conditions.is_empty() || !builder.closures.is_empty() {
+    if !conditions.is_empty() || !closures.is_empty() {
         sql.push_str(" WHERE ");
 
         let mut conditions_str = String::new();
         let mut first_condition = true;
 
-        for (i, condition) in builder.conditions.iter().enumerate() {
+        for (i, condition) in conditions.iter().enumerate() {
             if i > 0 {
                 conditions_str.push_str(match condition.logic {
                     Logic::And => " AND ",
@@ -173,12 +203,18 @@ pub(crate) fn add_conditions<'a>(
                 Operator::LessThanOrEqual => format!("{} <= ?", condition.field),
                 Operator::Like => format!("{} LIKE ?", condition.field),
                 Operator::In | Operator::NotIn => {
-                    let placeholders = vec!["?"; condition.values.len()].join(", ");
+                    let is_subquery = condition.values.iter().any(|v| v.is_subquery());
 
-                    if condition.operator == Operator::In {
-                        format!("{} IN ({})", condition.field, placeholders)
+                    if is_subquery {
+                        format!("{} {} {}", condition.field, condition.operator, "{}")
                     } else {
-                        format!("{} NOT IN ({})", condition.field, placeholders)
+                        let placeholders = vec!["?"; condition.values.len()].join(", ");
+
+                        if condition.operator == Operator::In {
+                            format!("{} IN ({})", condition.field, placeholders)
+                        } else {
+                            format!("{} NOT IN ({})", condition.field, placeholders)
+                        }
                     }
                 }
                 Operator::IsNull => format!("{} IS NULL", condition.field),
@@ -193,7 +229,7 @@ pub(crate) fn add_conditions<'a>(
             first_condition = false;
         }
 
-        for (logic, closure) in builder.closures.iter() {
+        for (logic, closure) in closures.iter() {
             if !first_condition {
                 match logic {
                     Logic::And => conditions_str.push_str(" AND "),

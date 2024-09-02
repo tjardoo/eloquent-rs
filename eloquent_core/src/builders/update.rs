@@ -14,7 +14,7 @@ impl SqlBuilder for UpdateBuilder {
     ) -> Result<String, EloquentError> {
         add_updates(builder, sql, params);
         add_joins(builder, sql);
-        add_conditions(builder, sql, params)?;
+        add_conditions(&builder.conditions, &builder.closures, sql, params)?;
         add_havings(builder, sql)?;
 
         Ok(sql.to_string())

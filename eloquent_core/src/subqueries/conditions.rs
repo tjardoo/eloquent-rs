@@ -1,6 +1,6 @@
-use crate::{Columnable, Condition, Logic, Operator, QueryBuilder, ToSql};
+use crate::{Columnable, Condition, Logic, Operator, QueryBuilder, SubqueryBuilder, ToSql};
 
-impl QueryBuilder {
+impl SubqueryBuilder {
     fn add_condition(
         mut self,
         field: &str,
@@ -109,6 +109,10 @@ impl QueryBuilder {
         self.add_condition(field, Operator::In, Logic::And, boxed_values)
     }
 
+    pub fn where_in_subquery(self, field: &str, subquery: QueryBuilder) -> Self {
+        self.add_condition(field, Operator::In, Logic::And, vec![Box::new(subquery)])
+    }
+
     pub fn or_where_in(self, field: &str, values: Vec<impl ToSql + 'static>) -> Self {
         let boxed_values = values
             .into_iter()
@@ -174,31 +178,5 @@ impl QueryBuilder {
 
     pub fn or_where_not_null(self, field: &str) -> Self {
         self.add_condition(field, Operator::IsNotNull, Logic::Or, vec![])
-    }
-
-    pub fn where_closure<F>(mut self, closure: F) -> Self
-    where
-        F: FnOnce(Self) -> Self,
-    {
-        let mut nested_builder = QueryBuilder::new();
-
-        nested_builder = closure(nested_builder);
-
-        self.closures.push((Logic::And, nested_builder.conditions));
-
-        self
-    }
-
-    pub fn or_where_closure<F>(mut self, closure: F) -> Self
-    where
-        F: FnOnce(Self) -> Self,
-    {
-        let mut nested_builder = QueryBuilder::new();
-
-        nested_builder = closure(nested_builder);
-
-        self.closures.push((Logic::Or, nested_builder.conditions));
-
-        self
     }
 }

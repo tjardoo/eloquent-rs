@@ -1,16 +1,19 @@
 use std::fmt::Display;
 
-use compiler::build_statement;
+use compiler::{build_statement, build_substatement};
 use error::EloquentError;
 
-pub mod builder;
-pub mod builders;
-pub mod checks;
-pub mod compiler;
+mod builders;
+mod checks;
+mod compiler;
 pub mod error;
-pub mod queries;
-pub mod validator;
+mod queries;
+mod query_builder;
+mod subqueries;
+mod subquery_builder;
+mod validator;
 
+/// The main builder struct that holds all the query building information.
 pub struct QueryBuilder {
     table: Option<String>,
     selects: Vec<Select>,
@@ -28,35 +31,53 @@ pub struct QueryBuilder {
     enable_checks: bool,
 }
 
-pub enum Action {
-    Select,
-    Insert,
-    Update,
-    Delete,
-}
-
-impl QueryBuilder {
-    fn get_action(&self) -> Action {
-        if !self.selects.is_empty() {
-            Action::Select
-        } else if !self.inserts.is_empty() {
-            Action::Insert
-        } else if !self.updates.is_empty() {
-            Action::Update
-        } else if self.delete {
-            Action::Delete
-        } else {
-            Action::Select
-        }
-    }
+/// The subquery builder struct that holds all the subquery building information.
+pub struct SubqueryBuilder {
+    table: Option<String>,
+    selects: Vec<Select>,
+    conditions: Vec<Condition>,
+    joins: Vec<Join>,
+    havings: Vec<Having>,
+    group_by: Vec<String>,
+    order_by: Vec<OrderColumn>,
+    limit: Option<u64>,
+    offset: Option<u64>,
 }
 
 pub trait ToSql {
     fn to_sql(&self) -> Result<String, EloquentError>;
+
+    fn is_subquery(&self) -> bool {
+        false
+    }
 }
 
 pub trait Columnable {
     fn to_columns(&self) -> Vec<String>;
+}
+
+pub trait Selectable {
+    fn to_select_column(&self) -> String;
+}
+
+pub(crate) trait PerformChecks {
+    fn check(builder: &QueryBuilder) -> Result<(), EloquentError>;
+}
+
+#[allow(clippy::borrowed_box)]
+pub(crate) trait SqlBuilder {
+    fn build<'a>(
+        builder: &'a QueryBuilder,
+        sql: &mut String,
+        params: &mut Vec<&'a Box<(dyn ToSql + 'static)>>,
+    ) -> Result<String, EloquentError>;
+}
+
+pub(crate) enum Action {
+    Select,
+    Insert,
+    Update,
+    Delete,
 }
 
 struct Condition {
@@ -86,34 +107,6 @@ struct Update {
 struct OrderColumn {
     column: String,
     order: Order,
-}
-
-impl Select {
-    fn format_column_name(&self) -> String {
-        let column = match &self.function {
-            Some(function) => match function {
-                Function::Distinct => format!("{} {}", function, self.column),
-                _ => format!("{}({})", function, self.column),
-            },
-            None => self.column.clone(),
-        };
-
-        if let Some(alias) = &self.alias {
-            format!("{} AS {}", column, alias)
-        } else {
-            column
-        }
-    }
-
-    fn format_column_name_without_alias(&self) -> String {
-        match &self.function {
-            Some(function) => match function {
-                Function::Distinct => format!("{} {}", function, self.column),
-                _ => format!("{}({})", function, self.column),
-            },
-            None => self.column.clone(),
-        }
-    }
 }
 
 struct Having {
@@ -173,17 +166,44 @@ pub(crate) enum Order {
     Desc,
 }
 
-pub trait PerformChecks {
-    fn check(builder: &QueryBuilder) -> Result<(), EloquentError>;
+impl Select {
+    fn format_column_name(&self) -> String {
+        let column = match &self.function {
+            Some(function) => match function {
+                Function::Distinct => format!("{} {}", function, self.column),
+                _ => format!("{}({})", function, self.column),
+            },
+            None => self.column.clone(),
+        };
+
+        if let Some(alias) = &self.alias {
+            format!("{} AS {}", column, alias)
+        } else {
+            column
+        }
+    }
+
+    fn format_column_name_without_alias(&self) -> String {
+        match &self.function {
+            Some(function) => match function {
+                Function::Distinct => format!("{} {}", function, self.column),
+                _ => format!("{}({})", function, self.column),
+            },
+            None => self.column.clone(),
+        }
+    }
 }
 
-#[allow(clippy::borrowed_box)]
-pub trait SqlBuilder {
-    fn build<'a>(
-        builder: &'a QueryBuilder,
-        sql: &mut String,
-        params: &mut Vec<&'a Box<(dyn ToSql + 'static)>>,
-    ) -> Result<String, EloquentError>;
+impl Selectable for &str {
+    fn to_select_column(&self) -> String {
+        self.to_string()
+    }
+}
+
+impl Selectable for SubqueryBuilder {
+    fn to_select_column(&self) -> String {
+        self.to_sql().unwrap()
+    }
 }
 
 impl Condition {
@@ -212,6 +232,16 @@ impl ToSql for i32 {
 impl ToSql for QueryBuilder {
     fn to_sql(&self) -> Result<String, EloquentError> {
         build_statement(self)
+    }
+}
+
+impl ToSql for SubqueryBuilder {
+    fn to_sql(&self) -> Result<String, EloquentError> {
+        build_substatement(self)
+    }
+
+    fn is_subquery(&self) -> bool {
+        true
     }
 }
 

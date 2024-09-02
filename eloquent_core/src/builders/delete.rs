@@ -16,7 +16,7 @@ impl SqlBuilder for DeleteBuilder {
         sql.push_str(builder.table.as_ref().unwrap());
 
         add_joins(builder, sql);
-        add_conditions(builder, sql, params)?;
+        add_conditions(&builder.conditions, &builder.closures, sql, params)?;
         add_havings(builder, sql)?;
 
         Ok(sql.to_string())

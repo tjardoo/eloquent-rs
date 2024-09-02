@@ -1,6 +1,6 @@
-use crate::{Columnable, Function, QueryBuilder, Select, Selectable, ToSql};
+use crate::{Columnable, Function, Select, SubqueryBuilder, ToSql};
 
-impl QueryBuilder {
+impl SubqueryBuilder {
     pub fn select<T>(mut self, columns: T) -> Self
     where
         T: Columnable,
@@ -18,13 +18,10 @@ impl QueryBuilder {
         self
     }
 
-    pub fn select_as<T>(mut self, column: T, alias: &str) -> Self
-    where
-        T: Selectable,
-    {
+    pub fn select_as(mut self, column: &str, alias: &str) -> Self {
         self.selects.push(Select {
             function: None,
-            column: column.to_select_column(),
+            column: column.to_string(),
             alias: Some(alias.to_string()),
         });
 
@@ -46,78 +43,60 @@ impl QueryBuilder {
         self
     }
 
-    pub fn select_count<T>(mut self, column: T, alias: &str) -> Self
-    where
-        T: Selectable,
-    {
+    pub fn select_count(mut self, column: &str, alias: &str) -> Self {
         self.selects.push(Select {
             function: Some(Function::Count),
-            column: column.to_select_column(),
+            column: column.to_string(),
             alias: Some(alias.to_string()),
         });
 
         self
     }
 
-    pub fn select_min<T>(mut self, column: T, alias: &str) -> Self
-    where
-        T: Selectable,
-    {
+    pub fn select_min(mut self, column: &str, alias: &str) -> Self {
         self.selects.push(Select {
             function: Some(Function::Min),
-            column: column.to_select_column(),
+            column: column.to_string(),
             alias: Some(alias.to_string()),
         });
 
         self
     }
 
-    pub fn select_max<T>(mut self, column: T, alias: &str) -> Self
-    where
-        T: Selectable,
-    {
+    pub fn select_max(mut self, column: &str, alias: &str) -> Self {
         self.selects.push(Select {
             function: Some(Function::Max),
-            column: column.to_select_column(),
+            column: column.to_string(),
             alias: Some(alias.to_string()),
         });
 
         self
     }
 
-    pub fn select_avg<T>(mut self, column: T, alias: &str) -> Self
-    where
-        T: Selectable,
-    {
+    pub fn select_avg(mut self, column: &str, alias: &str) -> Self {
         self.selects.push(Select {
             function: Some(Function::Avg),
-            column: column.to_select_column(),
+            column: column.to_string(),
             alias: Some(alias.to_string()),
         });
 
         self
     }
 
-    pub fn select_sum<T>(mut self, column: T, alias: &str) -> Self
-    where
-        T: Selectable,
-    {
+    pub fn select_sum(mut self, column: &str, alias: &str) -> Self {
         self.selects.push(Select {
             function: Some(Function::Sum),
-            column: column.to_select_column(),
+            column: column.to_string(),
             alias: Some(alias.to_string()),
         });
 
         self
     }
 
-    pub fn select_distinct<T>(mut self, column: T) -> Self
-    where
-        T: Selectable,
-    {
+    pub fn select_distinct(mut self, column: &str) -> Self {
         self.selects.push(Select {
             function: Some(Function::Distinct),
-            column: column.to_select_column(),
+            column: column.to_string(),
             alias: None,
         });
 
