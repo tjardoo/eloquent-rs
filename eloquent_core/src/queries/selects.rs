@@ -1,4 +1,4 @@
-use crate::{Columnable, Function, QueryBuilder, Select, SubqueryBuilder, ToSql};
+use crate::{Columnable, Function, QueryBuilder, Select, Selectable, ToSql};
 
 impl QueryBuilder {
     pub fn select<T>(mut self, columns: T) -> Self
@@ -12,19 +12,20 @@ impl QueryBuilder {
                 function: None,
                 column: column.to_string(),
                 alias: None,
-                is_subquery: false,
             });
         }
 
         self
     }
 
-    pub fn select_as(mut self, column: &str, alias: &str) -> Self {
+    pub fn select_as<T>(mut self, column: T, alias: &str) -> Self
+    where
+        T: Selectable,
+    {
         self.selects.push(Select {
             function: None,
-            column: column.to_string(),
+            column: column.to_select_column(),
             alias: Some(alias.to_string()),
-            is_subquery: false,
         });
 
         self
@@ -40,84 +41,84 @@ impl QueryBuilder {
             function: None,
             column: formatted_raw.to_string(),
             alias: None,
-            is_subquery: false,
         });
 
         self
     }
 
-    pub fn select_count(mut self, column: &str, alias: &str) -> Self {
+    pub fn select_count<T>(mut self, column: T, alias: &str) -> Self
+    where
+        T: Selectable,
+    {
         self.selects.push(Select {
             function: Some(Function::Count),
-            column: column.to_string(),
+            column: column.to_select_column(),
             alias: Some(alias.to_string()),
-            is_subquery: false,
         });
 
         self
     }
 
-    pub fn select_min(mut self, column: &str, alias: &str) -> Self {
+    pub fn select_min<T>(mut self, column: T, alias: &str) -> Self
+    where
+        T: Selectable,
+    {
         self.selects.push(Select {
             function: Some(Function::Min),
-            column: column.to_string(),
+            column: column.to_select_column(),
             alias: Some(alias.to_string()),
-            is_subquery: false,
         });
 
         self
     }
 
-    pub fn select_max(mut self, column: &str, alias: &str) -> Self {
+    pub fn select_max<T>(mut self, column: T, alias: &str) -> Self
+    where
+        T: Selectable,
+    {
         self.selects.push(Select {
             function: Some(Function::Max),
-            column: column.to_string(),
+            column: column.to_select_column(),
             alias: Some(alias.to_string()),
-            is_subquery: false,
         });
 
         self
     }
 
-    pub fn select_avg(mut self, column: &str, alias: &str) -> Self {
+    pub fn select_avg<T>(mut self, column: T, alias: &str) -> Self
+    where
+        T: Selectable,
+    {
         self.selects.push(Select {
             function: Some(Function::Avg),
-            column: column.to_string(),
+            column: column.to_select_column(),
             alias: Some(alias.to_string()),
-            is_subquery: false,
         });
 
         self
     }
 
-    pub fn select_sum(mut self, column: &str, alias: &str) -> Self {
+    pub fn select_sum<T>(mut self, column: T, alias: &str) -> Self
+    where
+        T: Selectable,
+    {
         self.selects.push(Select {
             function: Some(Function::Sum),
-            column: column.to_string(),
+            column: column.to_select_column(),
             alias: Some(alias.to_string()),
-            is_subquery: false,
         });
 
         self
     }
 
-    pub fn select_distinct(mut self, column: &str) -> Self {
+    pub fn select_distinct<T>(mut self, column: T) -> Self
+    where
+        T: Selectable,
+    {
         self.selects.push(Select {
             function: Some(Function::Distinct),
-            column: column.to_string(),
+            column: column.to_select_column(),
             alias: None,
-            is_subquery: false,
-        });
-
-        self
-    }
-
-    pub fn select_subquery(mut self, subquery: SubqueryBuilder, alias: &str) -> Self {
-        self.selects.push(Select {
-            function: None,
-            column: subquery.to_sql().unwrap(),
-            alias: Some(alias.to_string()),
-            is_subquery: true,
         });
 
         self

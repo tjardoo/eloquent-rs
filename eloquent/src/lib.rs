@@ -900,7 +900,7 @@ mod tests {
 
         let result = Eloquent::query()
             .table("flights")
-            .select_subquery(subquery, "avg_duration");
+            .select_as(subquery, "avg_duration");
 
         assert_eq!(
             result.sql().unwrap(),

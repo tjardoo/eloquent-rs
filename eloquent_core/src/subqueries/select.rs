@@ -12,7 +12,6 @@ impl SubqueryBuilder {
                 function: None,
                 column: column.to_string(),
                 alias: None,
-                is_subquery: true,
             });
         }
 
@@ -24,7 +23,6 @@ impl SubqueryBuilder {
             function: None,
             column: column.to_string(),
             alias: Some(alias.to_string()),
-            is_subquery: true,
         });
 
         self
@@ -40,7 +38,6 @@ impl SubqueryBuilder {
             function: None,
             column: formatted_raw.to_string(),
             alias: None,
-            is_subquery: true,
         });
 
         self
@@ -51,7 +48,6 @@ impl SubqueryBuilder {
             function: Some(Function::Count),
             column: column.to_string(),
             alias: Some(alias.to_string()),
-            is_subquery: true,
         });
 
         self
@@ -62,7 +58,6 @@ impl SubqueryBuilder {
             function: Some(Function::Min),
             column: column.to_string(),
             alias: Some(alias.to_string()),
-            is_subquery: true,
         });
 
         self
@@ -73,7 +68,6 @@ impl SubqueryBuilder {
             function: Some(Function::Max),
             column: column.to_string(),
             alias: Some(alias.to_string()),
-            is_subquery: true,
         });
 
         self
@@ -84,7 +78,6 @@ impl SubqueryBuilder {
             function: Some(Function::Avg),
             column: column.to_string(),
             alias: Some(alias.to_string()),
-            is_subquery: true,
         });
 
         self
@@ -95,7 +88,6 @@ impl SubqueryBuilder {
             function: Some(Function::Sum),
             column: column.to_string(),
             alias: Some(alias.to_string()),
-            is_subquery: true,
         });
 
         self
@@ -106,7 +98,6 @@ impl SubqueryBuilder {
             function: Some(Function::Distinct),
             column: column.to_string(),
             alias: None,
-            is_subquery: true,
         });
 
         self

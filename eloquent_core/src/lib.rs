@@ -77,6 +77,10 @@ pub trait Columnable {
     fn to_columns(&self) -> Vec<String>;
 }
 
+pub trait Selectable {
+    fn to_select_column(&self) -> String;
+}
+
 struct Condition {
     field: String,
     operator: Operator,
@@ -88,8 +92,6 @@ struct Select {
     column: String,
     function: Option<Function>,
     alias: Option<String>,
-    #[allow(dead_code)]
-    is_subquery: bool,
 }
 
 struct Insert {
@@ -133,6 +135,18 @@ impl Select {
             },
             None => self.column.clone(),
         }
+    }
+}
+
+impl Selectable for &str {
+    fn to_select_column(&self) -> String {
+        self.to_string()
+    }
+}
+
+impl Selectable for SubqueryBuilder {
+    fn to_select_column(&self) -> String {
+        self.to_sql().unwrap()
     }
 }
 
