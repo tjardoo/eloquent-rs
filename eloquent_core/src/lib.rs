@@ -123,6 +123,7 @@ enum Operator {
     GreaterThanOrEqual,
     LessThan,
     LessThanOrEqual,
+    Between,
     Like,
     In,
     NotIn,
@@ -229,6 +230,12 @@ impl ToSql for i32 {
     }
 }
 
+impl ToSql for bool {
+    fn to_sql(&self) -> Result<String, EloquentError> {
+        Ok(self.to_string())
+    }
+}
+
 impl ToSql for QueryBuilder {
     fn to_sql(&self) -> Result<String, EloquentError> {
         build_statement(self)
@@ -266,6 +273,7 @@ impl Display for Operator {
             Operator::GreaterThanOrEqual => ">=",
             Operator::LessThan => "<",
             Operator::LessThanOrEqual => "<=",
+            Operator::Between => "BETWEEN",
             Operator::Like => "LIKE",
             Operator::In => "IN",
             Operator::NotIn => "NOT IN",

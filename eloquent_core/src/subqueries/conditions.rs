@@ -92,6 +92,20 @@ impl SubqueryBuilder {
         )
     }
 
+    pub fn where_between(
+        self,
+        field: &str,
+        min: impl ToSql + 'static,
+        max: impl ToSql + 'static,
+    ) -> Self {
+        self.add_condition(
+            field,
+            Operator::Between,
+            Logic::And,
+            vec![Box::new(min), Box::new(max)],
+        )
+    }
+
     pub fn where_like(self, field: &str, value: impl ToSql + 'static) -> Self {
         self.add_condition(field, Operator::Like, Logic::And, vec![Box::new(value)])
     }

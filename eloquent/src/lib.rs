@@ -429,6 +429,18 @@ mod tests {
     }
 
     #[test]
+    fn test_where_between() {
+        let result = Eloquent::query()
+            .table("flights")
+            .where_between("flight_duration", 120, 180);
+
+        assert_eq!(
+            result.sql().unwrap(),
+            "SELECT * FROM flights WHERE flight_duration BETWEEN 120 AND 180"
+        );
+    }
+
+    #[test]
     fn test_where_like() {
         let result = Eloquent::query()
             .table("flights")

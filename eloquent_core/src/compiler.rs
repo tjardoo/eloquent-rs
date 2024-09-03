@@ -3,8 +3,8 @@ use crate::{
         delete::DeleteBuilder, insert::InsertBuilder, select::SelectBuilder, update::UpdateBuilder,
     },
     error::EloquentError,
-    Action, Condition, JoinType, Logic, Operator, QueryBuilder, Select, SqlBuilder,
-    SubqueryBuilder, ToSql,
+    Action, Condition, Having, Join, JoinType, Logic, Operator, OrderColumn, QueryBuilder, Select,
+    SqlBuilder, SubqueryBuilder, ToSql,
 };
 
 pub fn build_statement(builder: &QueryBuilder) -> Result<String, EloquentError> {
@@ -47,7 +47,12 @@ pub fn build_substatement(builder: &SubqueryBuilder) -> Result<String, EloquentE
     let closures: Vec<(Logic, Vec<Condition>)> = Vec::new();
 
     add_selects(builder.table.as_ref().unwrap(), &builder.selects, &mut sql);
+    add_joins(&builder.joins, &mut sql);
     add_conditions(&builder.conditions, &closures, &mut sql, &mut params)?;
+    add_group_by(&builder.group_by, &mut sql);
+    add_havings(&builder.havings, &mut sql)?;
+    add_order_by(&builder.order_by, &mut sql);
+    add_limit_offset(&builder.limit, &builder.offset, &mut sql);
 
     sql.push(')');
 
@@ -151,8 +156,8 @@ pub(crate) fn add_updates<'a>(
     sql.to_string()
 }
 
-pub(crate) fn add_joins(builder: &QueryBuilder, sql: &mut String) -> String {
-    for join in &builder.joins {
+pub(crate) fn add_joins(joins: &[Join], sql: &mut String) -> String {
+    for join in joins {
         sql.push(' ');
 
         sql.push_str(match join.join_type {
@@ -201,6 +206,7 @@ pub(crate) fn add_conditions<'a>(
                 Operator::GreaterThanOrEqual => format!("{} >= ?", condition.field),
                 Operator::LessThan => format!("{} < ?", condition.field),
                 Operator::LessThanOrEqual => format!("{} <= ?", condition.field),
+                Operator::Between => format!("{} BETWEEN ? AND ?", condition.field),
                 Operator::Like => format!("{} LIKE ?", condition.field),
                 Operator::In | Operator::NotIn => {
                     let is_subquery = condition.values.iter().any(|v| v.is_subquery());
@@ -263,23 +269,20 @@ pub(crate) fn add_conditions<'a>(
     Ok(sql.to_string())
 }
 
-pub(crate) fn add_group_by(builder: &QueryBuilder, sql: &mut String) -> String {
-    if !builder.group_by.is_empty() {
+pub(crate) fn add_group_by(group_by: &[String], sql: &mut String) -> String {
+    if !group_by.is_empty() {
         sql.push_str(" GROUP BY ");
-        sql.push_str(&builder.group_by.join(", "));
+        sql.push_str(&group_by.join(", "));
     }
 
     sql.to_string()
 }
 
-pub(crate) fn add_havings(
-    builder: &QueryBuilder,
-    sql: &mut String,
-) -> Result<String, EloquentError> {
-    if !builder.havings.is_empty() {
+pub(crate) fn add_havings(havings: &[Having], sql: &mut String) -> Result<String, EloquentError> {
+    if !havings.is_empty() {
         sql.push_str(" HAVING ");
 
-        let havings = &builder.havings;
+        let havings = &havings;
 
         sql.push_str(
             &havings
@@ -293,10 +296,10 @@ pub(crate) fn add_havings(
     Ok(sql.to_string())
 }
 
-pub(crate) fn add_order_by(builder: &QueryBuilder, sql: &mut String) -> String {
-    if !builder.order_by.is_empty() {
+pub(crate) fn add_order_by(order_by: &[OrderColumn], sql: &mut String) -> String {
+    if !order_by.is_empty() {
         sql.push_str(" ORDER BY ");
-        builder.order_by.iter().for_each(|order| {
+        order_by.iter().for_each(|order| {
             sql.push_str(&order.column);
             sql.push(' ');
             sql.push_str(match order.order {
@@ -304,7 +307,7 @@ pub(crate) fn add_order_by(builder: &QueryBuilder, sql: &mut String) -> String {
                 crate::Order::Desc => "DESC",
             });
 
-            if order != builder.order_by.last().unwrap() {
+            if order != order_by.last().unwrap() {
                 sql.push_str(", ");
             }
         });
@@ -313,12 +316,16 @@ pub(crate) fn add_order_by(builder: &QueryBuilder, sql: &mut String) -> String {
     sql.to_string()
 }
 
-pub(crate) fn add_limit_offset(builder: &QueryBuilder, sql: &mut String) -> String {
-    if let Some(limit) = &builder.limit {
+pub(crate) fn add_limit_offset(
+    limit: &Option<u64>,
+    offset: &Option<u64>,
+    sql: &mut String,
+) -> String {
+    if let Some(limit) = &limit {
         sql.push_str(&format!(" LIMIT {}", limit));
     }
 
-    if let Some(offset) = &builder.offset {
+    if let Some(offset) = &offset {
         sql.push_str(&format!(" OFFSET {}", offset));
     }
 

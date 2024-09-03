@@ -13,9 +13,9 @@ impl SqlBuilder for UpdateBuilder {
         params: &mut Vec<&'a Box<(dyn crate::ToSql + 'static)>>,
     ) -> Result<String, EloquentError> {
         add_updates(builder, sql, params);
-        add_joins(builder, sql);
+        add_joins(&builder.joins, sql);
         add_conditions(&builder.conditions, &builder.closures, sql, params)?;
-        add_havings(builder, sql)?;
+        add_havings(&builder.havings, sql)?;
 
         Ok(sql.to_string())
     }
