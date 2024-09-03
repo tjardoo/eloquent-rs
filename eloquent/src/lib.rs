@@ -441,6 +441,19 @@ mod tests {
     }
 
     #[test]
+    fn test_or_where_between() {
+        let result = Eloquent::query()
+            .table("flights")
+            .r#where("origin", "AMS")
+            .or_where_between("flight_duration", 120, 180);
+
+        assert_eq!(
+            result.sql().unwrap(),
+            "SELECT * FROM flights WHERE origin = 'AMS' OR flight_duration BETWEEN 120 AND 180"
+        );
+    }
+
+    #[test]
     fn test_where_like() {
         let result = Eloquent::query()
             .table("flights")
@@ -1028,6 +1041,54 @@ mod tests {
         assert_eq!(
             result.sql().unwrap(),
             "SELECT * FROM flights WHERE id NOT IN (SELECT id FROM flights WHERE duration_in_min > 120)"
+        );
+    }
+
+    #[test]
+    fn test_where_date() {
+        let result = Eloquent::query()
+            .table("flights")
+            .where_date("departure_date", "2024-10-01");
+
+        assert_eq!(
+            result.sql().unwrap(),
+            "SELECT * FROM flights WHERE DATE(departure_date) = '2024-10-01'"
+        );
+    }
+
+    #[test]
+    fn test_where_year() {
+        let result = Eloquent::query()
+            .table("flights")
+            .where_year("departure_date", 2024);
+
+        assert_eq!(
+            result.sql().unwrap(),
+            "SELECT * FROM flights WHERE YEAR(departure_date) = 2024"
+        );
+    }
+
+    #[test]
+    fn test_where_month() {
+        let result = Eloquent::query()
+            .table("flights")
+            .where_month("departure_date", 10);
+
+        assert_eq!(
+            result.sql().unwrap(),
+            "SELECT * FROM flights WHERE MONTH(departure_date) = 10"
+        );
+    }
+
+    #[test]
+    fn test_where_day() {
+        let result = Eloquent::query()
+            .table("flights")
+            .where_day("departure_date", 10);
+
+        assert_eq!(
+            result.sql().unwrap(),
+            "SELECT * FROM flights WHERE DAY(departure_date) = 10"
         );
     }
 }
