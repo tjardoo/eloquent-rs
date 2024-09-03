@@ -106,6 +106,20 @@ impl SubqueryBuilder {
         )
     }
 
+    pub fn or_where_between(
+        self,
+        field: &str,
+        min: impl ToSql + 'static,
+        max: impl ToSql + 'static,
+    ) -> Self {
+        self.add_condition(
+            field,
+            Operator::Between,
+            Logic::Or,
+            vec![Box::new(min), Box::new(max)],
+        )
+    }
+
     pub fn where_like(self, field: &str, value: impl ToSql + 'static) -> Self {
         self.add_condition(field, Operator::Like, Logic::And, vec![Box::new(value)])
     }
@@ -192,5 +206,21 @@ impl SubqueryBuilder {
 
     pub fn or_where_not_null(self, field: &str) -> Self {
         self.add_condition(field, Operator::IsNotNull, Logic::Or, vec![])
+    }
+
+    pub fn where_date(self, field: &str, value: impl ToSql + 'static) -> Self {
+        self.add_condition(field, Operator::Date, Logic::And, vec![Box::new(value)])
+    }
+
+    pub fn where_year(self, field: &str, value: impl ToSql + 'static) -> Self {
+        self.add_condition(field, Operator::Year, Logic::And, vec![Box::new(value)])
+    }
+
+    pub fn where_month(self, field: &str, value: impl ToSql + 'static) -> Self {
+        self.add_condition(field, Operator::Month, Logic::And, vec![Box::new(value)])
+    }
+
+    pub fn where_day(self, field: &str, value: impl ToSql + 'static) -> Self {
+        self.add_condition(field, Operator::Day, Logic::And, vec![Box::new(value)])
     }
 }

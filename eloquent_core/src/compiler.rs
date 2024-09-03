@@ -199,33 +199,7 @@ pub(crate) fn add_conditions<'a>(
                 });
             }
 
-            let condition_sql = match &condition.operator {
-                Operator::Equal => format!("{} = ?", condition.field),
-                Operator::NotEqual => format!("{} != ?", condition.field),
-                Operator::GreaterThan => format!("{} > ?", condition.field),
-                Operator::GreaterThanOrEqual => format!("{} >= ?", condition.field),
-                Operator::LessThan => format!("{} < ?", condition.field),
-                Operator::LessThanOrEqual => format!("{} <= ?", condition.field),
-                Operator::Between => format!("{} BETWEEN ? AND ?", condition.field),
-                Operator::Like => format!("{} LIKE ?", condition.field),
-                Operator::In | Operator::NotIn => {
-                    let is_subquery = condition.values.iter().any(|v| v.is_subquery());
-
-                    if is_subquery {
-                        format!("{} {} {}", condition.field, condition.operator, "{}")
-                    } else {
-                        let placeholders = vec!["?"; condition.values.len()].join(", ");
-
-                        if condition.operator == Operator::In {
-                            format!("{} IN ({})", condition.field, placeholders)
-                        } else {
-                            format!("{} NOT IN ({})", condition.field, placeholders)
-                        }
-                    }
-                }
-                Operator::IsNull => format!("{} IS NULL", condition.field),
-                Operator::IsNotNull => format!("{} IS NOT NULL", condition.field),
-            };
+            let condition_sql = condition.format_sql();
 
             conditions_str.push_str(&condition_sql);
             if !matches!(condition.operator, Operator::IsNull | Operator::IsNotNull) {
@@ -252,7 +226,7 @@ pub(crate) fn add_conditions<'a>(
                     });
                 }
 
-                let condition_sql = format!("{} {} ?", condition.field, condition.operator);
+                let condition_sql = condition.format_sql();
 
                 conditions_str.push_str(&condition_sql);
                 if !matches!(condition.operator, Operator::IsNull | Operator::IsNotNull) {
@@ -287,7 +261,14 @@ pub(crate) fn add_havings(havings: &[Having], sql: &mut String) -> Result<String
         sql.push_str(
             &havings
                 .iter()
-                .map(|clause| format!("{} {} {}", clause.column, clause.operator, clause.value))
+                .map(|clause| {
+                    clause
+                        .conditions
+                        .iter()
+                        .map(|condition| condition.format_sql())
+                        .collect::<Vec<String>>()
+                        .join(" AND ")
+                })
                 .collect::<Vec<String>>()
                 .join(", "),
         );

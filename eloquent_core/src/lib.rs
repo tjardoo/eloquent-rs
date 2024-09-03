@@ -110,9 +110,7 @@ struct OrderColumn {
 }
 
 struct Having {
-    column: String,
-    operator: Operator,
-    value: i64,
+    conditions: Vec<Condition>,
 }
 
 #[derive(Debug, PartialEq)]
@@ -129,6 +127,10 @@ enum Operator {
     NotIn,
     IsNull,
     IsNotNull,
+    Date,
+    Year,
+    Month,
+    Day,
 }
 
 #[derive(Debug, PartialEq)]
@@ -230,6 +232,12 @@ impl ToSql for i32 {
     }
 }
 
+impl ToSql for i64 {
+    fn to_sql(&self) -> Result<String, EloquentError> {
+        Ok(self.to_string())
+    }
+}
+
 impl ToSql for bool {
     fn to_sql(&self) -> Result<String, EloquentError> {
         Ok(self.to_string())
@@ -279,6 +287,10 @@ impl Display for Operator {
             Operator::NotIn => "NOT IN",
             Operator::IsNull => "IS NULL",
             Operator::IsNotNull => "IS NOT NULL",
+            Operator::Date => "DATE",
+            Operator::Year => "YEAR",
+            Operator::Month => "MONTH",
+            Operator::Day => "DAY",
         };
 
         write!(f, "{}", operator)
@@ -308,5 +320,39 @@ impl Display for Function {
         };
 
         write!(f, "{}", function)
+    }
+}
+
+impl Condition {
+    fn format_sql(&self) -> String {
+        let values = self
+            .values
+            .iter()
+            .map(|v| v.to_sql().unwrap())
+            .collect::<Vec<String>>()
+            .join(", ");
+
+        match self.operator {
+            Operator::Between => format!(
+                "{} {} {} AND {}",
+                self.field,
+                self.operator,
+                values.split(", ").next().unwrap(),
+                values.split(", ").last().unwrap()
+            ),
+            Operator::In | Operator::NotIn => {
+                if self.values.iter().any(|v| v.is_subquery()) {
+                    // subquery already contains parentheses so we don't need to add them
+                    format!("{} {} {}", self.field, self.operator, values)
+                } else {
+                    format!("{} {} ({})", self.field, self.operator, values)
+                }
+            }
+            Operator::IsNull | Operator::IsNotNull => format!("{} {}", self.field, self.operator),
+            Operator::Date | Operator::Year | Operator::Month | Operator::Day => {
+                format!("{}({}) = {}", self.operator, self.field, values)
+            }
+            _ => format!("{} {} {}", self.field, self.operator, values),
+        }
     }
 }
