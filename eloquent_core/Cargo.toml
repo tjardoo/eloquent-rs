@@ -11,4 +11,4 @@ documentation = "https://docs.rs/eloquent"
 sqlformat = "0.2.0"
 
 [lib]
-doctest = false
+doctest = true

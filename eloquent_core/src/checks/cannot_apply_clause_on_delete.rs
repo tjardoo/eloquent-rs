@@ -27,3 +27,25 @@ impl PerformChecks for CannotApplyClauseOnDelete {
         Ok(())
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use crate::{error::EloquentError, QueryBuilder};
+
+    #[test]
+    fn test_cannot_apply_clause_on_delete() {
+        let result = QueryBuilder::new()
+            .table("flights")
+            .join("airports", "flights.origin_airport", "airports.code")
+            .delete()
+            .sql();
+
+        match result {
+            Err(EloquentError::CannotApplyClauseOnDelete(clause)) => {
+                assert_eq!(clause, "JOIN")
+            }
+            Err(_error) => panic!(),
+            Ok(_value) => panic!(),
+        }
+    }
+}

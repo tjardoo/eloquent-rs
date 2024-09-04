@@ -6,6 +6,7 @@ use error::EloquentError;
 mod builders;
 mod checks;
 mod compiler;
+/// The error module that contains all the possible errors that can occur while building a query.
 pub mod error;
 mod queries;
 mod query_builder;

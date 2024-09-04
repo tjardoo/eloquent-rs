@@ -21,3 +21,24 @@ impl PerformChecks for HavingClauseWithoutAggregateFunction {
         Ok(())
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use crate::{error::EloquentError, QueryBuilder};
+
+    #[test]
+    fn test_having_clause_without_aggregate_function() {
+        let result: Result<_, EloquentError> = QueryBuilder::new()
+            .table("flights")
+            .having("origin", 300)
+            .sql();
+
+        match result {
+            Err(EloquentError::HavingClauseWithoutAggregateFunction(column)) => {
+                assert_eq!(column, "origin")
+            }
+            Err(_error) => panic!(),
+            Ok(_value) => panic!(),
+        }
+    }
+}

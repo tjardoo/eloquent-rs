@@ -1,6 +1,7 @@
 use crate::SubqueryBuilder;
 
 impl SubqueryBuilder {
+    /// Create a new instance of the subquery builder.
     pub fn new() -> Self {
         Self {
             table: None,
@@ -15,6 +16,7 @@ impl SubqueryBuilder {
         }
     }
 
+    /// Set the table name for the subquery.
     pub fn table(mut self, table: &str) -> Self {
         self.table = Some(table.to_string());
 

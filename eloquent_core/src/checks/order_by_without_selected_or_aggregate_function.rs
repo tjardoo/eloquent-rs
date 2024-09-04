@@ -26,3 +26,25 @@ impl PerformChecks for OrderByWithoutSelectedOrAggregateFunction {
         Ok(())
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use crate::{error::EloquentError, QueryBuilder};
+
+    #[test]
+    fn test_order_by_without_selected_or_aggregate_function() {
+        let result = QueryBuilder::new()
+            .table("flights")
+            .select("destination")
+            .order_by_asc("origin")
+            .sql();
+
+        match result {
+            Err(EloquentError::OrderByWithNonSelectedOrAggregateFunction(column)) => {
+                assert_eq!(column, "origin")
+            }
+            Err(_error) => panic!(),
+            Ok(_value) => panic!(),
+        }
+    }
+}

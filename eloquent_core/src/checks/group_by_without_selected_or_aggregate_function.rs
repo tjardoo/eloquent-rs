@@ -6,7 +6,7 @@ impl PerformChecks for GroupByWithoutSelectedOrAggregateFunction {
     fn check(builder: &QueryBuilder) -> Result<(), EloquentError> {
         for group_by in &builder.group_by {
             if !builder.selects.iter().any(|select| {
-                &select.column == group_by
+                &select.format_column_name_without_alias() == group_by
                     || select
                         .alias
                         .as_ref()
@@ -20,5 +20,26 @@ impl PerformChecks for GroupByWithoutSelectedOrAggregateFunction {
         }
 
         Ok(())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::{error::EloquentError, QueryBuilder};
+
+    #[test]
+    fn test_group_by_without_selected_or_aggregate_function() {
+        let result = QueryBuilder::new()
+            .table("flights")
+            .group_by("origin")
+            .sql();
+
+        match result {
+            Err(EloquentError::GroupByWithNonSelectedOrAggregateFunction(column)) => {
+                assert_eq!(column, "origin")
+            }
+            Err(_error) => panic!(),
+            Ok(_value) => panic!(),
+        }
     }
 }

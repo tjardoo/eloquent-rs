@@ -27,3 +27,25 @@ impl PerformChecks for CannotApplyClauseOnUpdate {
         Ok(())
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use crate::{error::EloquentError, QueryBuilder};
+
+    #[test]
+    fn test_cannot_apply_clause_on_update() {
+        let result = QueryBuilder::new()
+            .table("flights")
+            .join("airports", "flights.origin_airport", "airports.code")
+            .update("origin_airport", "AMS")
+            .sql();
+
+        match result {
+            Err(EloquentError::CannotApplyClauseOnUpdate(clause)) => {
+                assert_eq!(clause, "JOIN")
+            }
+            Err(_error) => panic!(),
+            Ok(_value) => panic!(),
+        }
+    }
+}

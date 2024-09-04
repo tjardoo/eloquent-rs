@@ -51,3 +51,25 @@ impl PerformChecks for CannotApplyClauseOnInsert {
         Ok(())
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use crate::{error::EloquentError, QueryBuilder};
+
+    #[test]
+    fn test_cannot_apply_clause_on_insert() {
+        let result = QueryBuilder::new()
+            .table("flights")
+            .insert("origin_airport", "AMS")
+            .r#where("origin_airport", "FRA")
+            .sql();
+
+        match result {
+            Err(EloquentError::CannotApplyClauseOnInsert(clause)) => {
+                assert_eq!(clause, "WHERE")
+            }
+            Err(_error) => panic!(),
+            Ok(_value) => panic!(),
+        }
+    }
+}

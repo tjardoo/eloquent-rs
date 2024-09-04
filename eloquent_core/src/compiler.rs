@@ -312,3 +312,32 @@ pub(crate) fn add_limit_offset(
 
     sql.to_string()
 }
+
+#[cfg(test)]
+mod tests {
+    use crate::{error::EloquentError, QueryBuilder};
+
+    #[test]
+    fn test_missing_placeholder() {
+        let result = QueryBuilder::new()
+            .select_raw(
+                "flight_duration * ? as delay_in_min, delay_in_min * ? as delay_in_hr",
+                vec![5],
+            )
+            .table("flights")
+            .sql();
+
+        match result {
+            Err(EloquentError::MissingPlaceholders) => (),
+            Err(_error) => panic!(),
+            Ok(_value) => panic!(),
+        }
+    }
+
+    #[test]
+    fn test_skip_validation() {
+        let result = QueryBuilder::new().table("flights").skip_validation().sql();
+
+        assert_eq!(result.unwrap(), "SELECT * FROM flights");
+    }
+}

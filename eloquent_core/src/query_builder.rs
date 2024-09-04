@@ -1,6 +1,7 @@
 use crate::{compiler::build_statement, error::EloquentError, Action, QueryBuilder};
 
 impl QueryBuilder {
+    /// Create a new instance of the QueryBuilder.
     pub fn new() -> Self {
         Self {
             table: None,
@@ -20,22 +21,26 @@ impl QueryBuilder {
         }
     }
 
+    /// Set the table name for the query.
     pub fn table(mut self, table: &str) -> Self {
         self.table = Some(table.to_string());
 
         self
     }
 
+    /// Skip the validation checks.
     pub fn skip_validation(mut self) -> Self {
         self.enable_checks = false;
 
         self
     }
 
+    /// Compile the query to a SQL string.
     pub fn sql(self) -> Result<String, EloquentError> {
         build_statement(&self)
     }
 
+    /// Compile the query to a formatted SQL string.
     pub fn pretty_sql(self) -> Result<String, EloquentError> {
         let unformatted_sql = build_statement(&self)?;
 
