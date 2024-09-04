@@ -1,7 +1,10 @@
-use std::fmt::Display;
+//! # Eloquent Core
+//!
+//! The core library for building SQL queries. This library is used by the [Eloquent](https://crates.io/crates/eloquent) library to build SQL queries.
 
 use compiler::{build_statement, build_substatement};
 use error::EloquentError;
+use std::fmt::Display;
 
 mod builders;
 mod checks;
