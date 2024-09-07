@@ -230,6 +230,18 @@ impl ToSql for &str {
     }
 }
 
+impl ToSql for String {
+    fn to_sql(&self) -> Result<String, EloquentError> {
+        Ok(format!("'{}'", self))
+    }
+}
+
+impl ToSql for &String {
+    fn to_sql(&self) -> Result<String, EloquentError> {
+        Ok(format!("'{}'", self))
+    }
+}
+
 impl ToSql for i32 {
     fn to_sql(&self) -> Result<String, EloquentError> {
         Ok(self.to_string())
@@ -237,6 +249,18 @@ impl ToSql for i32 {
 }
 
 impl ToSql for i64 {
+    fn to_sql(&self) -> Result<String, EloquentError> {
+        Ok(self.to_string())
+    }
+}
+
+impl ToSql for f32 {
+    fn to_sql(&self) -> Result<String, EloquentError> {
+        Ok(self.to_string())
+    }
+}
+
+impl ToSql for f64 {
     fn to_sql(&self) -> Result<String, EloquentError> {
         Ok(self.to_string())
     }
