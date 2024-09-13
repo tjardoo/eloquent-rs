@@ -340,4 +340,17 @@ mod tests {
 
         assert_eq!(result.unwrap(), "SELECT * FROM flights");
     }
+
+    #[test]
+    fn test_escapes_single_quotes() {
+        let result = QueryBuilder::new()
+            .table("flights")
+            .r#where("origin_airport", "'N ABC 'S")
+            .sql();
+
+        assert_eq!(
+            result.unwrap(),
+            "SELECT * FROM flights WHERE origin_airport = '\'\'N ABC \'\'S'"
+        );
+    }
 }

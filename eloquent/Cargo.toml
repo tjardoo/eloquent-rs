@@ -9,7 +9,7 @@ documentation = "https://docs.rs/eloquent"
 keywords = ["database", "query", "sql"]
 
 [dependencies]
-eloquent_core = { path = "../eloquent_core", version = "2.0.0" }
+eloquent_core = { path = "../eloquent_core", version = "2.0" }
 
 [lib]
 doctest = false

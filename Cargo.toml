@@ -8,4 +8,4 @@ publish = false
 members = ["eloquent", "eloquent_core"]
 
 [dependencies]
-eloquent = { path = "eloquent", version = "2.0.0" }
+eloquent = { path = "eloquent", version = "2.0" }

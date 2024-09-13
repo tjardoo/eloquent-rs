@@ -226,19 +226,19 @@ impl Condition {
 
 impl ToSql for &str {
     fn to_sql(&self) -> Result<String, EloquentError> {
-        Ok(format!("'{}'", self))
+        Ok(format!("'{}'", self.replace('\'', "''")))
     }
 }
 
 impl ToSql for String {
     fn to_sql(&self) -> Result<String, EloquentError> {
-        Ok(format!("'{}'", self))
+        Ok(format!("'{}'", self.replace('\'', "''")))
     }
 }
 
 impl ToSql for &String {
     fn to_sql(&self) -> Result<String, EloquentError> {
-        Ok(format!("'{}'", self))
+        Ok(format!("'{}'", self.replace('\'', "''")))
     }
 }
 
