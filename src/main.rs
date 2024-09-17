@@ -1,6 +1,12 @@
 use eloquent::Eloquent;
+use ftail::Ftail;
 
 fn main() {
+    Ftail::new()
+        .formatted_console(log::LevelFilter::Off)
+        .init()
+        .unwrap();
+
     println!("Hello, world!");
 
     let result = Eloquent::query()

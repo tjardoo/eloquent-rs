@@ -1,4 +1,4 @@
-use crate::{compiler::add_inserts, error::EloquentError, SqlBuilder};
+use crate::{compilers::inserts, error::EloquentError, SqlBuilder};
 
 pub struct InsertBuilder;
 
@@ -8,7 +8,9 @@ impl SqlBuilder for InsertBuilder {
         sql: &mut String,
         params: &mut Vec<&'a Box<(dyn crate::ToSql + 'static)>>,
     ) -> Result<String, EloquentError> {
-        add_inserts(builder, sql, params);
+        let table = builder.table.as_ref().ok_or(EloquentError::MissingTable)?;
+
+        inserts::format(table, &builder.inserts, sql, params);
 
         Ok(sql.to_string())
     }

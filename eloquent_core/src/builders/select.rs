@@ -1,8 +1,5 @@
 use crate::{
-    compiler::{
-        add_conditions, add_group_by, add_havings, add_joins, add_limit_offset, add_order_by,
-        add_selects,
-    },
+    compilers::{conditions, group_by, havings, joins, limit, offset, order_by, selects},
     error::EloquentError,
     SqlBuilder,
 };
@@ -15,13 +12,16 @@ impl SqlBuilder for SelectBuilder {
         sql: &mut String,
         params: &mut Vec<&'a Box<(dyn crate::ToSql + 'static)>>,
     ) -> Result<String, EloquentError> {
-        add_selects(builder.table.as_ref().unwrap(), &builder.selects, sql);
-        add_joins(&builder.joins, sql);
-        add_conditions(&builder.conditions, &builder.closures, sql, params)?;
-        add_group_by(&builder.group_by, sql);
-        add_havings(&builder.havings, sql)?;
-        add_order_by(&builder.order_by, sql);
-        add_limit_offset(&builder.limit, &builder.offset, sql);
+        let table = builder.table.as_ref().ok_or(EloquentError::MissingTable)?;
+
+        selects::format(table, &builder.selects, sql);
+        joins::format(&builder.joins, sql);
+        conditions::format(&builder.conditions, &builder.closures, sql, params)?;
+        group_by::format(&builder.group_by, sql);
+        havings::format(&builder.havings, sql)?;
+        order_by::format(&builder.order_by, sql);
+        limit::format(&builder.limit, sql);
+        offset::format(&builder.offset, sql);
 
         Ok(sql.to_string())
     }

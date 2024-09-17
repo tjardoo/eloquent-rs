@@ -9,6 +9,7 @@ use std::fmt::Display;
 mod builders;
 mod checks;
 mod compiler;
+mod compilers;
 /// The error module that contains all the possible errors that can occur while building a query.
 pub mod error;
 mod queries;
@@ -348,6 +349,19 @@ impl Display for Function {
         };
 
         write!(f, "{}", function)
+    }
+}
+
+impl Display for JoinType {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let join_type = match self {
+            JoinType::Inner => "JOIN",
+            JoinType::Left => "LEFT JOIN",
+            JoinType::Right => "RIGHT JOIN",
+            JoinType::Full => "FULL JOIN",
+        };
+
+        write!(f, "{}", join_type)
     }
 }
 

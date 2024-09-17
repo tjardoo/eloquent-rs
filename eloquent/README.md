@@ -4,6 +4,11 @@
 
 The library supports a wide range of SQL operations - `WHERE`, `JOIN`, `IN`, `NOT IN`, `LIKE`, and more—along with nested conditions via closures and subqueries. With features for filtering, grouping, and sorting, Eloquent provides the flexibility needed for constructing powerful, maintainable queries without sacrificing clarity or control over the SQL being generated.
 
+```toml
+[dependencies]
+eloquent = "2.0"
+```
+
 ```rust
 use eloquent::Eloquent;
 

@@ -9,6 +9,7 @@ documentation = "https://docs.rs/eloquent"
 
 [dependencies]
 sqlformat = "0.2.0"
+log = "0.4"
 
 [lib]
 doctest = true

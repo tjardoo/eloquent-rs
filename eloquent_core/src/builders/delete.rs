@@ -1,5 +1,5 @@
 use crate::{
-    compiler::{add_conditions, add_havings, add_joins},
+    compilers::{conditions, delete, havings, joins},
     error::EloquentError,
     SqlBuilder,
 };
@@ -12,12 +12,13 @@ impl SqlBuilder for DeleteBuilder {
         sql: &mut String,
         params: &mut Vec<&'a Box<(dyn crate::ToSql + 'static)>>,
     ) -> Result<String, EloquentError> {
-        sql.push_str("DELETE FROM ");
-        sql.push_str(builder.table.as_ref().unwrap());
+        let table = builder.table.as_ref().ok_or(EloquentError::MissingTable)?;
 
-        add_joins(&builder.joins, sql);
-        add_conditions(&builder.conditions, &builder.closures, sql, params)?;
-        add_havings(&builder.havings, sql)?;
+        delete::format(table, sql);
+
+        joins::format(&builder.joins, sql);
+        conditions::format(&builder.conditions, &builder.closures, sql, params)?;
+        havings::format(&builder.havings, sql)?;
 
         Ok(sql.to_string())
     }
