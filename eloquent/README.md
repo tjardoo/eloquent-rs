@@ -2,20 +2,20 @@
 
 **Eloquent** is a fluent, type-safe query builder for Rust, designed to make SQL query construction intuitive. It provides an expressive API, allowing developers to craft complex SQL queries through method chaining.
 
-Eloquent supports a wide range of SQL operations — `WHERE`, `JOIN`, `IN`, `NOT IN`, `LIKE`, `LIMIT`, `OFFSET`, `ORDER BY`, `GROUP BY`, `HAVING`, and more — enabling flexible query construction. Nested conditions using closures, subqueries, and pagination are also supported, offering control over your queries while maintaining code clarity.
-
 ## Features
 
 - Fluent API for building SQL queries.
 - Type-safe query construction with method chaining.
 - Support for:
-  - `SELECT`, `JOIN`, `WHERE`, `GROUP BY`, `HAVING` etc.
+  - `SELECT`, `JOIN`, `WHERE`, `GROUP BY`, `HAVING`, etc.
   - Conditional queries with `AND`, `OR`, `NOT`, `LIKE`, `IN`, `NOT IN`, `IS NULL`, etc.
   - Aggregation functions: `AVG`, `SUM`, `MIN`, `MAX`, and `COUNT`.
+  - Function aliases and raw expressions.
   - CRUD operations: `INSERT`, `UPDATE`, and `DELETE`.
   - Subqueries and nested conditions using closures.
-  - Pagination support via `paginate()`.
+  - Cursor-based pagination support via `paginate()`.
   - SQL query generation as raw `sql()` or formatted output `pretty_sql()`.
+  - Query validation and error handling (can be skipped with `skip_validation()`).
 
 ## Installation
 
@@ -39,7 +39,7 @@ let query = Eloquent::query()
     .table("users")
     .select(vec!["name", "email"])
     .where_not_null("verified_at")
-    .where_like("email", "%@gmail.com%")
+    .where_like("email", "%@gmail.com")
     .limit(100);
 
 println!("{}", query.pretty_sql().unwrap());
@@ -53,14 +53,14 @@ FROM
     users
 WHERE
     verified_at IS NOT NULL
-    AND email LIKE '%@gmail.com%'
+    AND email LIKE '%@gmail.com'
 LIMIT
     100
 ```
 
 ### Complex Query
 
-This example will generate a complex SQL query with multiple conditions, joins, and aggregation functions.
+This example will generate a more complex SQL query with multiple conditions, joins, and aggregation functions.
 
 ```rust
 use eloquent::Eloquent;
@@ -119,20 +119,38 @@ LIMIT
 
 ### Pagination
 
-Eloquent supports pagination using the `paginate()` method, which allows you to paginate results based on a column value. You can specify the column name, starting value, and number of records to fetch. When retrieving the next set of records, the last value from the previous query should be used as the starting value.
+Eloquent supports pagination using the custom `paginate()` method, which allows you to paginate results When retrieving the next set of records, the last value from the previous query should be used as the starting value.
 
 ```rust
 use eloquent::Eloquent;
 
+let last_id = None; // initial query
+
 let query = Eloquent::query()
     .table("departures")
     .select("flight_number")
-    .paginate("id", Some(1000), 25)
+    .paginate::<u64>("id", last_id, 25)
     .sql()?;
 ```
 
 ```sql
-SELECT flight_number FROM departures WHERE id > 1000 ORDER BY id ASC LIMIT 25
+SELECT flight_number FROM departures ORDER BY id ASC LIMIT 25
+```
+
+```rust
+use eloquent::Eloquent;
+
+let last_id = Some(40); // last id from previous query
+
+let query = Eloquent::query()
+    .table("departures")
+    .select("flight_number")
+    .paginate("id", last_id, 25)
+    .sql()?;
+```
+
+```sql
+SELECT flight_number FROM departures WHERE id > 40 ORDER BY id ASC LIMIT 25
 ```
 
 ### Subquery
@@ -153,7 +171,8 @@ let subquery = Eloquent::subquery()
 let query = Eloquent::query()
     .table("events")
     .select(vec!["event_name", "event_date"])
-    .r#where("event_id", subquery);
+    .r#where("event_id", subquery)
+    .pretty_sql()?;
 ```
 
 ```sql

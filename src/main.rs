@@ -79,20 +79,24 @@ fn main() {
         "SELECT event_name, event_date FROM events WHERE event_id = (SELECT event_id, AVG(price) AS price_avg FROM tickets GROUP BY event_id ORDER BY price_avg DESC LIMIT 1)"
     );
 
+    let mut last_id = None;
+
     let query = Eloquent::query()
         .table("departures")
         .select("flight_number")
-        .paginate::<u64>("id", None, 25);
+        .paginate::<u64>("id", last_id, 25);
 
     assert_eq!(
         query.sql().unwrap(),
         "SELECT flight_number FROM departures ORDER BY id ASC LIMIT 25"
     );
 
+    last_id = Some(1000);
+
     let query = Eloquent::query()
         .table("departures")
         .select("flight_number")
-        .paginate("id", Some(1000), 25);
+        .paginate("id", last_id, 25);
 
     assert_eq!(
         query.sql().unwrap(),
