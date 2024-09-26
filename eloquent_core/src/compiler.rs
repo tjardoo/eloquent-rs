@@ -50,7 +50,7 @@ pub fn build_substatement(builder: &SubqueryBuilder) -> Result<String, EloquentE
 
     selects::format(builder.table.as_ref().unwrap(), &builder.selects, &mut sql);
     joins::format(&builder.joins, &mut sql);
-    conditions::format(&builder.conditions, &closures, &mut sql, &mut params)?;
+    conditions::format(&builder.conditions, &closures, &None, &mut sql, &mut params)?;
     group_by::format(&builder.group_by, &mut sql);
     havings::format(&builder.havings, &mut sql)?;
     order_by::format(&builder.order_by, &mut sql);

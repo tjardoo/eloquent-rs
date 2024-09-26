@@ -17,7 +17,7 @@ impl SqlBuilder for DeleteBuilder {
         delete::format(table, sql);
 
         joins::format(&builder.joins, sql);
-        conditions::format(&builder.conditions, &builder.closures, sql, params)?;
+        conditions::format(&builder.conditions, &builder.closures, &None, sql, params)?;
         havings::format(&builder.havings, sql)?;
 
         Ok(sql.to_string())

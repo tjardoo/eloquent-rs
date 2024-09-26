@@ -11,6 +11,7 @@ pub enum EloquentError {
     CannotApplyClauseOnInsert(String),
     CannotApplyClauseOnUpdate(String),
     CannotApplyClauseOnDelete(String),
+    CannotUseOffsetLimitWithPagination(String),
 }
 
 impl std::error::Error for EloquentError {}
@@ -52,6 +53,9 @@ impl std::fmt::Display for EloquentError {
             }
             EloquentError::CannotApplyClauseOnDelete(clause) => {
                 write!(f, "Cannot apply clause '{}' on DELETE", clause)
+            }
+            EloquentError::CannotUseOffsetLimitWithPagination(clause) => {
+                write!(f, "Cannot use '{}' with PAGINATION", clause)
             }
         }
     }

@@ -34,6 +34,7 @@ pub struct QueryBuilder {
     limit: Option<u64>,
     offset: Option<u64>,
     enable_checks: bool,
+    paginate: Option<Paginate>,
 }
 
 /// The subquery builder struct that holds all the subquery building information.
@@ -174,6 +175,12 @@ pub(crate) enum Order {
     Desc,
 }
 
+pub(crate) struct Paginate {
+    column: String,
+    last_id: Option<Box<dyn ToSql>>,
+    per_page: u64,
+}
+
 impl Select {
     fn format_column_name(&self) -> String {
         let column = match &self.function {
@@ -250,6 +257,18 @@ impl ToSql for i32 {
 }
 
 impl ToSql for i64 {
+    fn to_sql(&self) -> Result<String, EloquentError> {
+        Ok(self.to_string())
+    }
+}
+
+impl ToSql for u32 {
+    fn to_sql(&self) -> Result<String, EloquentError> {
+        Ok(self.to_string())
+    }
+}
+
+impl ToSql for u64 {
     fn to_sql(&self) -> Result<String, EloquentError> {
         Ok(self.to_string())
     }
