@@ -28,7 +28,7 @@
 //!
 //! ## Usage
 //!
-//! ### Simple Query
+//! ### Simple query example
 //!
 //! This example demonstrates a basic SQL query using Eloquent's fluent API to select specific columns from a table, apply conditions, and limit the number of results.
 //!
@@ -42,7 +42,7 @@
 //!     .where_like("email", "%@gmail.com")
 //!     .limit(100);
 //!
-//! println!("{}", query.pretty_sql().unwrap());
+//! println!("{}", query.pretty_sql()?);
 //! ```
 //!
 //! ```sql
@@ -58,7 +58,7 @@
 //!     100
 //! ```
 //!
-//! ### Complex Query
+//! ### Complex query example
 //!
 //! This example will generate a more complex SQL query with multiple conditions, joins, and aggregation functions.
 //!
@@ -87,7 +87,7 @@
 //!     .order_by_asc("startup_time_in_minutes_avg")
 //!     .limit(20);
 //!
-//! println!("{}", query.pretty_sql().unwrap());
+//! println!("{}", query.pretty_sql()?);
 //! ```
 //!
 //! ```sql
@@ -117,7 +117,7 @@
 //!     20
 //! ```
 //!
-//! ### Pagination
+//! ### Pagination example
 //!
 //! Eloquent supports pagination using the custom `paginate()` method, which allows you to paginate results When retrieving the next set of records, the last value from the previous query should be used as the starting value.
 //!
@@ -153,7 +153,7 @@
 //! SELECT flight_number FROM departures WHERE id > 40 ORDER BY id ASC LIMIT 25
 //! ```
 //!
-//! ### Subquery
+//! ### Subquery example
 //!
 //! Eloquent supports subqueries using closures, allowing you to nest conditions and queries within your main query.
 //!
