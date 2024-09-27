@@ -10,12 +10,15 @@
   - `SELECT`, `JOIN`, `WHERE`, `GROUP BY`, `HAVING`, etc.
   - Conditional queries with `AND`, `OR`, `NOT`, `LIKE`, `IN`, `NOT IN`, `IS NULL`, etc.
   - Aggregation functions: `AVG`, `SUM`, `MIN`, `MAX`, and `COUNT`.
+  - Date functions: `DATE`, `TIME`, `YEAR`, `MONTH`, `DAY`, etc.
   - Function aliases and raw expressions.
   - CRUD operations: `INSERT`, `UPDATE`, and `DELETE`.
   - Subqueries and nested conditions using closures.
   - Cursor-based pagination support via `paginate()`.
   - SQL query generation as raw `sql()` or formatted output `pretty_sql()`.
   - Query validation and error handling (can be skipped with `skip_validation()`).
+
+Use your IDE to explore the available methods and their parameters, or refer to the [docs.rs/eloquent - QueryBuilder](https://docs.rs/eloquent/latest/eloquent/struct.QueryBuilder.html).
 
 ## Installation
 
@@ -134,7 +137,7 @@ let query = Eloquent::query()
 ```
 
 ```sql
-SELECT flight_number FROM departures ORDER BY id ASC LIMIT 25
+SELECT flight_number FROM departures LIMIT 25
 ```
 
 ```rust
@@ -150,7 +153,7 @@ let query = Eloquent::query()
 ```
 
 ```sql
-SELECT flight_number FROM departures WHERE id > 40 ORDER BY id ASC LIMIT 25
+SELECT flight_number FROM departures WHERE id > 40 LIMIT 25
 ```
 
 ### Subquery example
