@@ -12,7 +12,7 @@ impl QueryBuilder {
     ///
     /// assert_eq!(
     ///     result.sql().unwrap(),
-    ///     "SELECT * FROM departures ORDER BY id ASC LIMIT 25"
+    ///     "SELECT * FROM departures LIMIT 25"
     /// );
     /// ```
     ///
@@ -25,7 +25,7 @@ impl QueryBuilder {
     ///
     /// assert_eq!(
     ///     result.sql().unwrap(),
-    ///     "SELECT * FROM departures WHERE id > 1000 ORDER BY id ASC LIMIT 25"
+    ///     "SELECT * FROM departures WHERE id > 1000 LIMIT 25"
     /// );
     /// ```
     pub fn paginate<T: ToSql + 'static>(

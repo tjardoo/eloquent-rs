@@ -1,5 +1,5 @@
 use crate::{
-    compilers::{conditions, group_by, havings, joins, limit, offset, order_by, paginate, selects},
+    compilers::{conditions, group_by, havings, joins, limit, offset, order_by, selects},
     error::EloquentError,
     SqlBuilder,
 };
@@ -26,9 +26,8 @@ impl SqlBuilder for SelectBuilder {
         group_by::format(&builder.group_by, sql);
         havings::format(&builder.havings, sql)?;
         order_by::format(&builder.order_by, sql);
-        limit::format(&builder.limit, sql);
+        limit::format(&builder.limit, &builder.paginate, sql);
         offset::format(&builder.offset, sql);
-        paginate::format(&builder.paginate, sql);
 
         Ok(sql.to_string())
     }

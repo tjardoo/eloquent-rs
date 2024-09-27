@@ -83,23 +83,23 @@ fn main() {
 
     let query = Eloquent::query()
         .table("departures")
-        .select("flight_number")
+        .select(vec!["flight_number", "departure_date"])
         .paginate::<u64>("id", last_id, 25);
 
     assert_eq!(
         query.sql().unwrap(),
-        "SELECT flight_number FROM departures ORDER BY id ASC LIMIT 25"
+        "SELECT flight_number, departure_date FROM departures LIMIT 25"
     );
 
     last_id = Some(1000);
 
     let query = Eloquent::query()
         .table("departures")
-        .select("flight_number")
+        .select(vec!["flight_number", "departure_date"])
         .paginate("id", last_id, 25);
 
     assert_eq!(
         query.sql().unwrap(),
-        "SELECT flight_number FROM departures WHERE id > 1000 ORDER BY id ASC LIMIT 25"
+        "SELECT flight_number, departure_date FROM departures WHERE id > 1000 LIMIT 25"
     );
 }

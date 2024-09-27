@@ -54,7 +54,7 @@ pub fn build_substatement(builder: &SubqueryBuilder) -> Result<String, EloquentE
     group_by::format(&builder.group_by, &mut sql);
     havings::format(&builder.havings, &mut sql)?;
     order_by::format(&builder.order_by, &mut sql);
-    limit::format(&builder.limit, &mut sql);
+    limit::format(&builder.limit, &None, &mut sql);
     offset::format(&builder.offset, &mut sql);
 
     sql.push(')');
