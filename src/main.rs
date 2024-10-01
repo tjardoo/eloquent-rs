@@ -2,13 +2,13 @@ use eloquent::Eloquent;
 use ftail::Ftail;
 
 fn main() {
+    // Initialize logger to see the output (optional)
     Ftail::new()
         .formatted_console(log::LevelFilter::Off)
         .init()
         .unwrap();
 
-    println!("Hello, world!");
-
+    // Query example 1
     let result = Eloquent::query()
         .table("flights")
         .select("origin_airport")
@@ -36,6 +36,7 @@ fn main() {
         "SELECT origin_airport, AVG(startup_time_in_minutes) AS startup_time_in_minutes_avg, airports.city AS destination_city FROM flights JOIN airports ON flights.destination_airport = airports.iata_code WHERE origin_airport = 'AMS' AND flight_number NOT IN ('KL123', 'KL456') AND gate_number IS NOT NULL AND (flight_duration >= 120 OR airports.city LIKE '%NY%') GROUP BY origin_airport, airports.city HAVING startup_time_in_minutes_avg > 120 ORDER BY startup_time_in_minutes_avg ASC LIMIT 20"
     );
 
+    // Query example 2
     let result = Eloquent::query()
         .table("arcticles")
         .select(vec![
@@ -61,6 +62,7 @@ fn main() {
         "SELECT articles.title, articles.slug, articles.published_at, authors.name AS author_name, COUNT(comments.id) AS comments_count, AVG(comments.rating) AS average_rating FROM arcticles JOIN authors ON articles.author_id = authors.id LEFT JOIN comments ON articles.id = comments.article_id WHERE articles.category = 'Technology' AND articles.published_at BETWEEN '2024-01-01' AND '2024-12-31' AND articles.is_published = true GROUP BY authors.name HAVING comments_count > 10 ORDER BY articles.published_at DESC LIMIT 10"
     );
 
+    // Subquery example
     let subquery = Eloquent::subquery()
         .table("tickets")
         .select("event_id")
@@ -79,6 +81,7 @@ fn main() {
         "SELECT event_name, event_date FROM events WHERE event_id = (SELECT event_id, AVG(price) AS price_avg FROM tickets GROUP BY event_id ORDER BY price_avg DESC LIMIT 1)"
     );
 
+    // Pagination example
     let mut last_id = None;
 
     let query = Eloquent::query()

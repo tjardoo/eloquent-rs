@@ -18,7 +18,7 @@
 //!   - SQL query generation as raw `sql()` or formatted output `pretty_sql()`.
 //!   - Query validation and error handling (can be skipped with `skip_validation()`).
 //!
-//! Use your IDE to explore the available methods and their parameters, or refer to the [docs.rs/eloquent - QueryBuilder](https://docs.rs/eloquent/latest/eloquent/struct.QueryBuilder.html).
+//! Use your IDE to explore the available methods, or refer to the [docs.rs/eloquent - QueryBuilder](https://docs.rs/eloquent/latest/eloquent/struct.QueryBuilder.html).
 //!
 //! ## Installation
 //!
@@ -33,7 +33,7 @@
 //!
 //! ### Simple query example
 //!
-//! This example demonstrates a basic SQL query using Eloquent's fluent API to select specific columns from a table, apply conditions, and limit the number of results.
+//! This example demonstrates a basic SQL query using Eloquent's fluent API.
 //!
 //! ```rust
 //! use eloquent::Eloquent;
@@ -63,7 +63,7 @@
 //!
 //! ### Complex query example
 //!
-//! This example will generate a more complex SQL query with multiple conditions, joins, and aggregation functions.
+//! This example demonstrates a more complex SQL query using Eloquent's fluent API.
 //!
 //! ```rust
 //! use eloquent::Eloquent;
@@ -120,45 +120,9 @@
 //!     20
 //! ```
 //!
-//! ### Pagination example
-//!
-//! Eloquent supports pagination using the custom `paginate()` method, which allows you to paginate results When retrieving the next set of records, the last value from the previous query should be used as the starting value.
-//!
-//! ```rust
-//! use eloquent::Eloquent;
-//!
-//! let last_id = None; // initial query
-//!
-//! let query = Eloquent::query()
-//!     .table("departures")
-//!     .select("flight_number")
-//!     .paginate::<u64>("id", last_id, 25)
-//!     .sql()?;
-//! ```
-//!
-//! ```sql
-//! SELECT flight_number FROM departures LIMIT 25
-//! ```
-//!
-//! ```rust
-//! use eloquent::Eloquent;
-//!
-//! let last_id = Some(40); // last id from previous query
-//!
-//! let query = Eloquent::query()
-//!     .table("departures")
-//!     .select("flight_number")
-//!     .paginate("id", last_id, 25)
-//!     .sql()?;
-//! ```
-//!
-//! ```sql
-//! SELECT flight_number FROM departures WHERE id > 40 LIMIT 25
-//! ```
-//!
 //! ### Subquery example
 //!
-//! Eloquent supports subqueries using closures, allowing you to nest conditions and queries within your main query.
+//! This example demonstrates a subquery using Eloquent's fluent API.
 //!
 //! ```rust
 //! use eloquent::Eloquent;
@@ -198,6 +162,42 @@
 //!         LIMIT
 //!             1
 //!     )
+//! ```
+//!
+//! ### Pagination example
+//!
+//! This example demonstrates cursor-based pagination using Eloquent's `paginate()` method.
+//!
+//! ```rust
+//! use eloquent::Eloquent;
+//!
+//! let last_id = None; // initial query
+//!
+//! let query = Eloquent::query()
+//!     .table("departures")
+//!     .select("flight_number")
+//!     .paginate::<u64>("id", last_id, 25)
+//!     .sql()?;
+//! ```
+//!
+//! ```sql
+//! SELECT flight_number FROM departures LIMIT 25
+//! ```
+//!
+//! ```rust
+//! use eloquent::Eloquent;
+//!
+//! let last_id = Some(40); // last id from previous query
+//!
+//! let query = Eloquent::query()
+//!     .table("departures")
+//!     .select("flight_number")
+//!     .paginate("id", last_id, 25)
+//!     .sql()?;
+//! ```
+//!
+//! ```sql
+//! SELECT flight_number FROM departures WHERE id > 40 LIMIT 25
 //! ```
 
 pub use eloquent_core::*;
