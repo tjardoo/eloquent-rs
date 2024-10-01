@@ -18,6 +18,7 @@ impl QueryBuilder {
             limit: None,
             offset: None,
             enable_checks: true,
+            paginate: None,
         }
     }
 

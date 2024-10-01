@@ -16,11 +16,17 @@ impl SqlBuilder for SelectBuilder {
 
         selects::format(table, &builder.selects, sql);
         joins::format(&builder.joins, sql);
-        conditions::format(&builder.conditions, &builder.closures, sql, params)?;
+        conditions::format(
+            &builder.conditions,
+            &builder.closures,
+            &builder.paginate,
+            sql,
+            params,
+        )?;
         group_by::format(&builder.group_by, sql);
         havings::format(&builder.havings, sql)?;
         order_by::format(&builder.order_by, sql);
-        limit::format(&builder.limit, sql);
+        limit::format(&builder.limit, &builder.paginate, sql);
         offset::format(&builder.offset, sql);
 
         Ok(sql.to_string())
