@@ -1,9 +1,9 @@
-use crate::{Insert, ToSql};
+use crate::{Inserts, ToSql};
 
 #[allow(clippy::borrowed_box)]
 pub(crate) fn format<'a>(
     table: &str,
-    inserts: &'a [Insert],
+    inserts: &'a Inserts,
     sql: &mut String,
     params: &mut Vec<&'a Box<(dyn ToSql + 'static)>>,
 ) -> String {
@@ -11,28 +11,28 @@ pub(crate) fn format<'a>(
     sql.push_str(table);
     sql.push_str(" (");
 
-    sql.push_str(
-        &inserts
-            .iter()
-            .map(|insert| insert.column.clone())
-            .collect::<Vec<String>>()
-            .join(", "),
-    );
+    let columns: Vec<_> = inserts.keys().map(String::as_str).collect();
+    sql.push_str(&columns.join(", "));
 
-    sql.push_str(") VALUES (");
+    sql.push_str(") VALUES ");
 
-    sql.push_str(
-        &inserts
+    let row_count = inserts.values().next().map_or(0, |values| values.len());
+
+    let mut value_placeholders = vec![];
+    for i in 0..row_count {
+        let row_values: Vec<_> = columns
             .iter()
-            .map(|insert| {
-                params.push(&insert.value);
+            .map(|column| {
+                let values = inserts.get(*column).unwrap();
+                params.push(&values[i]);
                 "?".to_string()
             })
-            .collect::<Vec<String>>()
-            .join(", "),
-    );
+            .collect();
 
-    sql.push(')');
+        value_placeholders.push(format!("({})", row_values.join(", ")));
+    }
+
+    sql.push_str(&value_placeholders.join(", "));
 
     sql.to_string()
 }

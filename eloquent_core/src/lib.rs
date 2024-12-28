@@ -4,7 +4,7 @@
 
 use compiler::{build_statement, build_substatement};
 use error::EloquentError;
-use std::fmt::Display;
+use std::{collections::HashMap, fmt::Display};
 
 mod builders;
 mod checks;
@@ -22,7 +22,7 @@ mod validator;
 pub struct QueryBuilder {
     table: Option<String>,
     selects: Vec<Select>,
-    inserts: Vec<Insert>,
+    inserts: Inserts,
     updates: Vec<Update>,
     delete: bool,
     conditions: Vec<Condition>,
@@ -99,10 +99,7 @@ struct Select {
     alias: Option<String>,
 }
 
-struct Insert {
-    column: String,
-    value: Box<dyn ToSql>,
-}
+type Inserts = HashMap<String, Vec<Box<dyn ToSql>>>;
 
 struct Update {
     column: String,
