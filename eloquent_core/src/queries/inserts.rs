@@ -22,7 +22,7 @@ impl QueryBuilder {
         self
     }
 
-    /// Insert single or multiple columns into the table.
+    /// Insert single or multiple rows into the table.
     ///
     /// ```
     /// use eloquent_core::QueryBuilder;
