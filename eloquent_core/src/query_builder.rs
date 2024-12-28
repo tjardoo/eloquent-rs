@@ -1,5 +1,3 @@
-use std::collections::HashMap;
-
 use crate::{compiler::build_statement, error::EloquentError, Action, QueryBuilder};
 
 impl QueryBuilder {
@@ -8,7 +6,7 @@ impl QueryBuilder {
         Self {
             table: None,
             selects: Vec::new(),
-            inserts: HashMap::new(),
+            inserts: Vec::new(),
             updates: Vec::new(),
             delete: false,
             conditions: Vec::new(),
