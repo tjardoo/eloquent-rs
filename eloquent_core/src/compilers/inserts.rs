@@ -16,14 +16,14 @@ pub(crate) fn format<'a>(
 
     sql.push_str(") VALUES ");
 
-    let row_count = inserts.first().map_or(0, |insert| insert.value.len());
+    let row_count = inserts.first().map_or(0, |insert| insert.values.len());
 
     let mut value_placeholders = vec![];
     for i in 0..row_count {
         let row_values: Vec<_> = inserts
             .iter()
             .map(|insert| {
-                params.push(&insert.value[i]);
+                params.push(&insert.values[i]);
                 "?".to_string()
             })
             .collect();

@@ -49,11 +49,11 @@ impl QueryBuilder {
 
     fn add_insert(&mut self, column: &str, value: impl ToSql + 'static) {
         if let Some(insert) = self.inserts.iter_mut().find(|i| i.column == column) {
-            insert.value.push(Box::new(value));
+            insert.values.push(Box::new(value));
         } else {
             self.inserts.push(Insert {
                 column: column.to_string(),
-                value: vec![Box::new(value)],
+                values: vec![Box::new(value)],
             });
         }
     }

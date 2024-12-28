@@ -101,7 +101,7 @@ struct Select {
 
 struct Insert {
     column: String,
-    value: Vec<Box<dyn ToSql>>,
+    values: Vec<Box<dyn ToSql>>,
 }
 
 struct Update {
