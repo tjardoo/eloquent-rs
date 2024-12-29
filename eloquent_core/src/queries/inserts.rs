@@ -17,7 +17,7 @@ impl QueryBuilder {
     /// );
     /// ```
     pub fn insert(mut self, column: &str, value: impl ToSql + 'static) -> Self {
-        self.add_insert(column, value);
+        self.add_insert(column, Box::new(value));
 
         self
     }
@@ -25,40 +25,46 @@ impl QueryBuilder {
     /// Insert single or multiple rows into the table.
     ///
     /// ```
-    /// use eloquent_core::QueryBuilder;
-    ///
+    /// use eloquent_core::{QueryBuilder, ToSql};
+    /// 
     /// let rows = vec![
-    ///     vec![("name", "Alice"), ("email", "alice@example.com")],
-    ///     vec![("name", "Bob"), ("email", "bob@example.com")],
+    ///     vec![
+    ///         ("name", Box::new("Alice") as Box<dyn ToSql>),
+    ///         ("email", Box::new("alice@example.com") as Box<dyn ToSql>),
+    ///         ("age", Box::new(21) as Box<dyn ToSql>),
+    ///     ],
+    ///     vec![
+    ///         ("name", Box::new("Bob") as Box<dyn ToSql>),
+    ///         ("email", Box::new("bob@example.com") as Box<dyn ToSql>),
+    ///         ("age", Box::new(22) as Box<dyn ToSql>),
+    ///     ],
     /// ];
-    ///
-    /// let query = QueryBuilder::new()
-    ///     .table("users")
-    ///     .insert_many(rows);
-    ///
+
+    /// let query = QueryBuilder::new().table("users").insert_many(rows);
+
     /// assert_eq!(
-    ///     query.sql().unwrap(),
-    ///     "INSERT INTO users (name, email) VALUES ('Alice', 'alice@example.com'), ('Bob', 'bob@example.com')"
+    /// query.sql().unwrap(),
+    /// "INSERT INTO users (name, email, age) VALUES ('Alice', 'alice@example.com', 21), ('Bob', 'bob@example.com', 22)"
     /// );
     /// ```
-    pub fn insert_many(mut self, rows: Vec<Vec<(&str, impl ToSql + 'static)>>) -> Self {
+    pub fn insert_many(mut self, rows: Vec<Vec<(&str, Box<dyn ToSql>)>>) -> Self {
         rows.into_iter().for_each(|row| self.add_row(row));
 
         self
     }
 
-    fn add_insert(&mut self, column: &str, value: impl ToSql + 'static) {
+    fn add_insert(&mut self, column: &str, value: Box<dyn ToSql>) {
         if let Some(insert) = self.inserts.iter_mut().find(|i| i.column == column) {
-            insert.values.push(Box::new(value));
+            insert.values.push(value);
         } else {
             self.inserts.push(Insert {
                 column: column.to_string(),
-                values: vec![Box::new(value)],
+                values: vec![value],
             });
         }
     }
 
-    fn add_row(&mut self, row: Vec<(&str, impl ToSql + 'static)>) {
+    fn add_row(&mut self, row: Vec<(&str, Box<dyn ToSql>)>) {
         row.into_iter()
             .for_each(|(column, value)| self.add_insert(column, value));
     }
