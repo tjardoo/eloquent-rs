@@ -1,4 +1,4 @@
-use eloquent::{Eloquent, ToSql};
+use eloquent::Eloquent;
 use ftail::Ftail;
 
 fn main() {
@@ -104,26 +104,5 @@ fn main() {
     assert_eq!(
         query.sql().unwrap(),
         "SELECT flight_number, departure_date FROM departures WHERE id > 1000 LIMIT 25"
-    );
-
-    // Insert Example
-    let rows = vec![
-        vec![
-            ("name", Box::new("Alice") as Box<dyn ToSql>),
-            ("email", Box::new("alice@example.com") as Box<dyn ToSql>),
-            ("age", Box::new(21) as Box<dyn ToSql>),
-        ],
-        vec![
-            ("name", Box::new("Bob") as Box<dyn ToSql>),
-            ("email", Box::new("bob@example.com") as Box<dyn ToSql>),
-            ("age", Box::new(22) as Box<dyn ToSql>),
-        ],
-    ];
-
-    let query = Eloquent::query().table("users").insert_many(rows);
-
-    assert_eq!(
-    query.sql().unwrap(),
-    "INSERT INTO users (name, email, age) VALUES ('Alice', 'alice@example.com', 21), ('Bob', 'bob@example.com', 22)"
     );
 }
