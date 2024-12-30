@@ -25,26 +25,29 @@ impl QueryBuilder {
     /// Insert single or multiple rows into the table.
     ///
     /// ```
-    /// use eloquent_core::{QueryBuilder, ToSql};
+    /// use eloquent_core::{QueryBuilder, ToSql, eloquent_sql_row};
     /// 
     /// let rows = vec![
-    ///     vec![
-    ///         ("name", Box::new("Alice") as Box<dyn ToSql>),
-    ///         ("email", Box::new("alice@example.com") as Box<dyn ToSql>),
-    ///         ("age", Box::new(21) as Box<dyn ToSql>),
-    ///     ],
-    ///     vec![
-    ///         ("name", Box::new("Bob") as Box<dyn ToSql>),
-    ///         ("email", Box::new("bob@example.com") as Box<dyn ToSql>),
-    ///         ("age", Box::new(22) as Box<dyn ToSql>),
-    ///     ],
+    ///     eloquent_sql_row! {
+    ///         "name" => "Alice",
+    ///         "email" => "alice@example.com",
+    ///         "age" => 21,
+    ///         "is_active" => true,
+    ///     },
+    ///     eloquent_sql_row! {
+    ///         "name" => "Bob",
+    ///         "email" => "bob@example.com",
+    ///         "age" => 22,
+    ///         "is_active" => false,
+    ///     },
     /// ];
-
-    /// let query = QueryBuilder::new().table("users").insert_many(rows);
-
+    /// let query = QueryBuilder::new()
+    ///     .table("users")
+    ///     .insert_many(rows);
+    /// 
     /// assert_eq!(
-    /// query.sql().unwrap(),
-    /// "INSERT INTO users (name, email, age) VALUES ('Alice', 'alice@example.com', 21), ('Bob', 'bob@example.com', 22)"
+    ///     query.sql().unwrap(),
+    ///     "INSERT INTO users (name, email, age, is_active) VALUES ('Alice', 'alice@example.com', 21, true), ('Bob', 'bob@example.com', 22, false)"
     /// );
     /// ```
     pub fn insert_many(mut self, rows: Vec<Vec<(&str, Box<dyn ToSql>)>>) -> Self {

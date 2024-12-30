@@ -417,3 +417,12 @@ impl Condition {
         }
     }
 }
+
+#[macro_export]
+macro_rules! eloquent_sql_row {
+    ($($key:expr => $value:expr),* $(,)?) => {
+        vec![
+            $(($key, Box::new($value) as Box<dyn $crate::ToSql>)),*
+        ]
+    };
+}
