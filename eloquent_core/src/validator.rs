@@ -15,6 +15,7 @@ impl QueryBuilder {
         cannot_apply_clause_on_update::CannotApplyClauseOnUpdate::check(self)?;
         cannot_apply_clause_on_delete::CannotApplyClauseOnDelete::check(self)?;
         cannot_use_offset_limit_with_pagination::CannotUseOffsetLimitWithPagination::check(self)?;
+        cannot_insert_with_different_columns::CannotInsertWithDifferentColumns::check(self)?;
 
         Ok(())
     }
