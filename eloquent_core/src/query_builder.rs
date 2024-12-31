@@ -47,11 +47,12 @@ impl QueryBuilder {
 
         let options = sqlformat::FormatOptions {
             indent: sqlformat::Indent::Spaces(4),
-            uppercase: true,
+            uppercase: Some(true),
             lines_between_queries: 2,
+            ignore_case_convert: None,
         };
 
-        let sql = sqlformat::format(&unformatted_sql, &sqlformat::QueryParams::None, options);
+        let sql = sqlformat::format(&unformatted_sql, &sqlformat::QueryParams::None, &options);
 
         Ok(sql)
     }
