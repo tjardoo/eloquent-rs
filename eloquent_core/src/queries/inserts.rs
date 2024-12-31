@@ -26,7 +26,7 @@ impl QueryBuilder {
     ///
     /// ```
     /// use eloquent_core::{QueryBuilder, ToSql, eloquent_sql_row};
-    /// 
+    ///
     /// let rows = vec![
     ///     eloquent_sql_row! {
     ///         "name" => "Alice",
@@ -44,7 +44,7 @@ impl QueryBuilder {
     /// let query = QueryBuilder::new()
     ///     .table("users")
     ///     .insert_many(rows);
-    /// 
+    ///
     /// assert_eq!(
     ///     query.sql().unwrap(),
     ///     "INSERT INTO users (name, email, age, is_active) VALUES ('Alice', 'alice@example.com', 21, true), ('Bob', 'bob@example.com', 22, false)"
