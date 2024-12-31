@@ -101,7 +101,7 @@ struct Select {
 
 struct Insert {
     column: String,
-    value: Box<dyn ToSql>,
+    values: Vec<Box<dyn ToSql>>,
 }
 
 struct Update {
@@ -416,4 +416,13 @@ impl Condition {
             _ => format!("{} {} {}", self.field, self.operator, values),
         }
     }
+}
+
+#[macro_export]
+macro_rules! eloquent_sql_row {
+    ($($key:expr => $value:expr),* $(,)?) => {
+        vec![
+            $(($key, Box::new($value) as Box<dyn $crate::ToSql>)),*
+        ]
+    };
 }

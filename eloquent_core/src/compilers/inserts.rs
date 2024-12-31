@@ -11,28 +11,27 @@ pub(crate) fn format<'a>(
     sql.push_str(table);
     sql.push_str(" (");
 
-    sql.push_str(
-        &inserts
-            .iter()
-            .map(|insert| insert.column.clone())
-            .collect::<Vec<String>>()
-            .join(", "),
-    );
+    let columns: Vec<_> = inserts.iter().map(|insert| insert.column.as_str()).collect();
+    sql.push_str(&columns.join(", "));
 
-    sql.push_str(") VALUES (");
+    sql.push_str(") VALUES ");
 
-    sql.push_str(
-        &inserts
+    let row_count = inserts.first().map_or(0, |insert| insert.values.len());
+
+    let mut value_placeholders = vec![];
+    for i in 0..row_count {
+        let row_values: Vec<_> = inserts
             .iter()
             .map(|insert| {
-                params.push(&insert.value);
+                params.push(&insert.values[i]);
                 "?".to_string()
             })
-            .collect::<Vec<String>>()
-            .join(", "),
-    );
+            .collect();
 
-    sql.push(')');
+        value_placeholders.push(format!("({})", row_values.join(", ")));
+    }
+
+    sql.push_str(&value_placeholders.join(", "));
 
     sql.to_string()
 }

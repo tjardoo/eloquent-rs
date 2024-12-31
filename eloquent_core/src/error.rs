@@ -12,6 +12,7 @@ pub enum EloquentError {
     CannotApplyClauseOnUpdate(String),
     CannotApplyClauseOnDelete(String),
     CannotUseOffsetLimitWithPagination(String),
+    InconsistentInsertColumns,
 }
 
 impl std::error::Error for EloquentError {}
@@ -57,6 +58,10 @@ impl std::fmt::Display for EloquentError {
             EloquentError::CannotUseOffsetLimitWithPagination(clause) => {
                 write!(f, "Cannot use '{}' with PAGINATION", clause)
             }
+            EloquentError::InconsistentInsertColumns => write!(
+                f,
+                "INSERT statement has inconsistent column counts across rows"
+            ),
         }
     }
 }

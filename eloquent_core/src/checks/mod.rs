@@ -9,3 +9,4 @@ pub mod having_clause_without_aggregate_function;
 pub mod missing_table;
 pub mod multiple_crud_actions;
 pub mod order_by_without_selected_or_aggregate_function;
+pub mod cannot_insert_with_different_columns;
