@@ -26,7 +26,6 @@ impl QueryBuilder {
     ///
     /// let result = QueryBuilder::new()
     ///     .table("flights")
-    ///     .insert("id", 1)
     ///     .when(true, |q| {
     ///         q.insert("destination_airport", "AMS")
     ///     })
@@ -36,7 +35,7 @@ impl QueryBuilder {
     ///
     /// assert_eq!(
     ///     result.sql().unwrap(),
-    ///     "INSERT INTO flights (id, destination_airport) VALUES (1, 'AMS')"
+    ///     "INSERT INTO flights (destination_airport) VALUES ('AMS')"
     /// );
     /// ```
     ///
@@ -46,7 +45,6 @@ impl QueryBuilder {
     /// let result = QueryBuilder::new()
     ///     .table("flights")
     ///     .r#where("id", "1")
-    ///     .update("origin_airport", "AMS")
     ///     .when(true, |q| {
     ///         q.update("destination_airport", "BKK")
     ///     })
@@ -56,7 +54,7 @@ impl QueryBuilder {
     ///
     /// assert_eq!(
     ///     result.sql().unwrap(),
-    ///     "UPDATE flights SET origin_airport = 'AMS', destination_airport = 'BKK' WHERE id = '1'"
+    ///     "UPDATE flights SET destination_airport = 'BKK' WHERE id = '1'"
     /// );
     /// ```
     pub fn when<F>(mut self, include: bool, closure: F) -> Self
@@ -71,9 +69,9 @@ impl QueryBuilder {
             return self;
         }
 
-        if self.get_action() == Action::Insert {
+        if nested_builder.get_action() == Action::Insert {
             self.inserts.append(&mut nested_builder.inserts);
-        } else if self.get_action() == Action::Update {
+        } else if nested_builder.get_action() == Action::Update {
             self.updates.append(&mut nested_builder.updates);
         } else {
             self.conditions.append(&mut nested_builder.conditions);

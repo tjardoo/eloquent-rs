@@ -254,7 +254,7 @@ mod tests {
     }
 
     #[test]
-    fn test_conditional_query() {
+    fn test_conditional_select_query() {
         let query = Eloquent::query()
             .table("flights")
             .when(true, |q| q.r#where("origin_airport", "AMS"))
