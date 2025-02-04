@@ -10,3 +10,4 @@ pub mod order_by;
 pub mod paginate;
 pub mod selects;
 pub mod updates;
+pub mod when;

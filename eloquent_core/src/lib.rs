@@ -79,6 +79,7 @@ pub(crate) trait SqlBuilder {
     ) -> Result<String, EloquentError>;
 }
 
+#[derive(Debug, PartialEq)]
 pub(crate) enum Action {
     Select,
     Insert,

@@ -252,4 +252,17 @@ mod tests {
             "SELECT (SELECT AVG(duration_in_min) AS avg_duration_in_min FROM flights) AS avg_duration FROM flights"
         );
     }
+
+    #[test]
+    fn test_conditional_select_query() {
+        let query = Eloquent::query()
+            .table("flights")
+            .when(true, |q| q.r#where("origin_airport", "AMS"))
+            .when(false, |q| q.r#where("destination_airport", "ZRH"));
+
+        assert_eq!(
+            query.sql().unwrap(),
+            "SELECT * FROM flights WHERE origin_airport = 'AMS'"
+        );
+    }
 }
