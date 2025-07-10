@@ -13,3 +13,9 @@ log = "0.4"
 
 [lib]
 doctest = true
+
+[features]
+default = []
+enable-raw = []
+bind-use-question = []
+disable-option-to-sql = []
