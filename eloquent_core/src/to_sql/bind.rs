@@ -13,7 +13,6 @@ pub struct Bind(u32);
 ///     .table("flights")
 ///     .r#where("airline_id", bind(7));
 ///
-/// #[cfg(feature = "bind-use-question")]
 /// assert_eq!(
 ///     result.sql().unwrap(),
 ///     "SELECT * FROM flights WHERE airline LIKE ?2"
