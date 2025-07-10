@@ -13,3 +13,7 @@ log = "0.4"
 
 [lib]
 doctest = true
+
+[features]
+default = ["enable-where-eq"]
+enable-where-eq = []

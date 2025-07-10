@@ -49,6 +49,41 @@ impl QueryBuilder {
         self.add_condition(field, Operator::Equal, Logic::And, vec![Box::new(value)])
     }
 
+    /// Add a where condition to the query.
+    ///
+    /// ```
+    /// use eloquent_core::QueryBuilder;
+    ///
+    /// let result = QueryBuilder::new()
+    ///     .table("flights")
+    ///     .r#where_eq("origin", "AMS");
+    ///
+    /// assert_eq!(
+    ///     result.sql().unwrap(),
+    ///     "SELECT * FROM flights WHERE origin = 'AMS'"
+    /// );
+    /// ```
+    ///
+    /// ```
+    /// use eloquent_core::{QueryBuilder, SubqueryBuilder};
+    ///
+    /// let subquery = SubqueryBuilder::new()
+    ///     .table("flights")
+    ///     .select_max("duration_in_min", "max_duration_in_min");
+    ///
+    /// let result = QueryBuilder::new()
+    ///     .table("flights")
+    ///     .r#where_eq("id", subquery);
+    ///
+    /// assert_eq!(
+    ///     result.sql().unwrap(),
+    ///     "SELECT * FROM flights WHERE id = (SELECT MAX(duration_in_min) AS max_duration_in_min FROM flights)"
+    /// );
+    /// ```
+    pub fn where_eq(self, field: &str, value: impl ToSql + 'static) -> Self {
+        self.add_condition(field, Operator::Equal, Logic::And, vec![Box::new(value)])
+    }
+
     /// Add an OR where condition to the query.
     ///
     /// ```
@@ -732,5 +767,39 @@ impl QueryBuilder {
     /// ```
     pub fn where_day(self, field: &str, value: impl ToSql + 'static) -> Self {
         self.add_condition(field, Operator::Day, Logic::And, vec![Box::new(value)])
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::QueryBuilder;
+    use crate::ToSql;
+
+    #[cfg(feature = "enable-where-eq")]
+    #[test]
+    fn test_where_eq_u32() {
+        assert_eq!(
+            QueryBuilder::new()
+                .table("flights")
+                .where_eq("id", 1)
+                .to_sql()
+                .unwrap()
+                .as_str(),
+            "SELECT * FROM flights WHERE id = 1"
+        );
+    }
+
+    #[cfg(feature = "enable-where-eq")]
+    #[test]
+    fn test_where_eq_str() {
+        assert_eq!(
+            QueryBuilder::new()
+                .table("flights")
+                .where_eq("id", "1")
+                .to_sql()
+                .unwrap()
+                .as_str(),
+            "SELECT * FROM flights WHERE id = '1'"
+        );
     }
 }
