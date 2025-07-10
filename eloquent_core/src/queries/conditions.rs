@@ -775,7 +775,6 @@ mod tests {
     use super::QueryBuilder;
     use crate::ToSql;
 
-    #[cfg(feature = "enable-where-eq")]
     #[test]
     fn test_where_eq_u32() {
         assert_eq!(
@@ -789,7 +788,6 @@ mod tests {
         );
     }
 
-    #[cfg(feature = "enable-where-eq")]
     #[test]
     fn test_where_eq_str() {
         assert_eq!(
