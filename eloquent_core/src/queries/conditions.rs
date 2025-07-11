@@ -49,14 +49,14 @@ impl QueryBuilder {
         self.add_condition(field, Operator::Equal, Logic::And, vec![Box::new(value)])
     }
 
-    /// Add a where condition to the query.
+    /// Add a where condition to the query (alias for `r#where`).
     ///
     /// ```
     /// use eloquent_core::QueryBuilder;
     ///
     /// let result = QueryBuilder::new()
     ///     .table("flights")
-    ///     .r#where_eq("origin", "AMS");
+    ///     .where_eq("origin", "AMS");
     ///
     /// assert_eq!(
     ///     result.sql().unwrap(),
@@ -73,7 +73,7 @@ impl QueryBuilder {
     ///
     /// let result = QueryBuilder::new()
     ///     .table("flights")
-    ///     .r#where_eq("id", subquery);
+    ///     .where_eq("id", subquery);
     ///
     /// assert_eq!(
     ///     result.sql().unwrap(),
