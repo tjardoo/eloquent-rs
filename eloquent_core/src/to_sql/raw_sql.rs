@@ -3,8 +3,9 @@ use crate::{EloquentError, ToSql};
 #[derive(Debug)]
 pub struct RawSql(String);
 
-/// Inject a raw SQ: value into the query
-/// Note: This is an safe function as it can cause the query to misbehave
+/// Inject a raw SQL value into the query. This is an unsafe function as it can cause the query to misbehave.
+///
+/// Requires feature `enable-raw`.
 ///
 /// ```
 /// use eloquent_core::{QueryBuilder, raw_sql};
@@ -17,9 +18,7 @@ pub struct RawSql(String);
 ///     result.sql().unwrap(),
 ///     "INSERT INTO flights (hash) VALUES ('some_hash'::bytea)"
 /// );
-/// ```    
-///
-/// Requires te `enable-raw` feature to be enabled
+/// ```
 //
 pub unsafe fn raw_sql<S>(sql: S) -> RawSql
 where

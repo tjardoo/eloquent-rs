@@ -17,5 +17,5 @@ doctest = true
 [features]
 default = []
 enable-raw = []
-bind-use-question = []
+bind-use-question-mark = []
 disable-option-to-sql = []
