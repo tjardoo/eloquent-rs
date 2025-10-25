@@ -298,7 +298,7 @@ impl ToSql for bool {
     }
 }
 
-#[cfg(not(feature = "disable-option-to-sql"))]
+#[cfg(feature = "nullable-types")]
 impl<T> ToSql for Option<T>
 where
     T: ToSql,

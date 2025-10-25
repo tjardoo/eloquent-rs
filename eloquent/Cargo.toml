@@ -11,5 +11,11 @@ keywords = ["database", "query", "sql"]
 [dependencies]
 eloquent_core = { path = "../eloquent_core", version = "2.0" }
 
+[features]
+default = []
+enable-raw = ["eloquent_core/enable-raw"]
+nullable-types = ["eloquent_core/nullable-types"]
+bind-placeholder-questionmark = ["eloquent_core/bind-placeholder-questionmark"]
+
 [lib]
 doctest = false

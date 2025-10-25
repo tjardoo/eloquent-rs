@@ -5,12 +5,12 @@ pub struct Bind(u32);
 
 /// Use a parameter binding for this value instead of a literal.
 ///
-/// Requires feature `bind-use-question-mark`.
+/// Requires feature `bind-placeholder-questionmark`.
 ///
-/// You can use the feature `bind-use-question-mark` to control the use of '$' vs '?' for formatting.
+/// You can use the feature `bind-placeholder-questionmark` to control the use of '$' vs '?' for formatting.
 ///
 #[cfg_attr(
-    not(feature = "bind-use-question-mark"),
+    not(feature = "bind-placeholder-questionmark"),
     doc = r##"/// ```
 /// use eloquent_core::{QueryBuilder, bind};
 ///
@@ -31,9 +31,7 @@ pub fn bind(index: u32) -> Bind {
 
 impl ToSql for Bind {
     fn to_sql(&self) -> Result<String, EloquentError> {
-        eprintln!("--> bind = {}", self.0);
-
-        if cfg!(feature = "bind-use-question-mark") {
+        if cfg!(feature = "bind-placeholder-questionmark") {
             Ok(format!("?{}", self.0))
         } else {
             Ok(format!("${}", self.0))
@@ -53,13 +51,13 @@ mod tests {
     use crate::QueryBuilder;
 
     #[test]
-    #[cfg(not(feature = "bind-use-question-mark"))]
+    #[cfg(not(feature = "bind-placeholder-questionmark"))]
     fn test_bind_dollar_sign() {
         assert_eq!(bind(2).to_sql(), Ok(String::from("$2")));
     }
 
     #[test]
-    #[cfg(not(feature = "bind-use-question-mark"))]
+    #[cfg(not(feature = "bind-placeholder-questionmark"))]
     fn test_bind_query_builder_delete() {
         let query = QueryBuilder::new()
             .table("flights")
@@ -70,7 +68,7 @@ mod tests {
     }
 
     #[test]
-    #[cfg(not(feature = "bind-use-question-mark"))]
+    #[cfg(not(feature = "bind-placeholder-questionmark"))]
     fn test_bind_query_builder_insert() {
         let query = QueryBuilder::new().table("flights").insert("name", bind(2));
 
@@ -81,7 +79,7 @@ mod tests {
     }
 
     #[test]
-    #[cfg(feature = "bind-use-question-mark")]
+    #[cfg(feature = "bind-placeholder-questionmark")]
     fn test_bind_query_builder_insert() {
         let query = QueryBuilder::new().table("flights").insert("name", bind(4));
 
@@ -92,7 +90,7 @@ mod tests {
     }
 
     #[test]
-    #[cfg(feature = "bind-use-question-mark")]
+    #[cfg(feature = "bind-placeholder-questionmark")]
     fn test_bind_question_mark() {
         assert_eq!(bind(7).to_sql(), Ok(String::from("?7")));
     }

@@ -7,7 +7,7 @@ mod raw_sql;
 pub use raw_sql::raw_sql;
 
 #[cfg(test)]
-#[cfg(not(feature = "disable-option-to-sql"))]
+#[cfg(feature = "nullable-types")]
 mod tests {
     #[test]
     fn test_option_none_to_sql() {
