@@ -6,7 +6,7 @@ pub(crate) fn format<'a>(
     closures: &'a [(Logic, Vec<Condition>)],
     paginate: &'a Option<Paginate>,
     sql: &mut String,
-    params: &mut Vec<&'a Box<(dyn ToSql + 'static)>>,
+    params: &mut Vec<&'a Box<dyn ToSql + 'static>>,
 ) -> Result<String, EloquentError> {
     if conditions.is_empty() && closures.is_empty() && paginate.is_none() {
         return Ok(sql.to_string());

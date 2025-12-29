@@ -7,7 +7,7 @@ pub struct Bind(u32);
 ///
 /// Requires feature `bind-placeholder-questionmark`.
 ///
-/// You can use the feature `bind-placeholder-questionmark` to control the use of '$' vs '?' for formatting.
+/// You can use the feature `bind-placeholder-questionmark` to control the use of `$` vs `?` for formatting.
 ///
 #[cfg_attr(
     not(feature = "bind-placeholder-questionmark"),

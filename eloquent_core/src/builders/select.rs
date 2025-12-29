@@ -10,7 +10,7 @@ impl SqlBuilder for SelectBuilder {
     fn build<'a>(
         builder: &'a crate::QueryBuilder,
         sql: &mut String,
-        params: &mut Vec<&'a Box<(dyn crate::ToSql + 'static)>>,
+        params: &mut Vec<&'a Box<dyn crate::ToSql + 'static>>,
     ) -> Result<String, EloquentError> {
         let table = builder.table.as_ref().ok_or(EloquentError::MissingTable)?;
 

@@ -78,7 +78,7 @@ pub(crate) trait SqlBuilder {
     fn build<'a>(
         builder: &'a QueryBuilder,
         sql: &mut String,
-        params: &mut Vec<&'a Box<(dyn ToSql + 'static)>>,
+        params: &mut Vec<&'a Box<dyn ToSql + 'static>>,
     ) -> Result<String, EloquentError>;
 }
 

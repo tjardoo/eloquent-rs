@@ -5,7 +5,7 @@ pub(crate) fn format<'a>(
     table: &str,
     updates: &'a [Update],
     sql: &mut String,
-    params: &mut Vec<&'a Box<(dyn ToSql + 'static)>>,
+    params: &mut Vec<&'a Box<dyn ToSql + 'static>>,
 ) -> String {
     sql.push_str("UPDATE ");
     sql.push_str(table);
