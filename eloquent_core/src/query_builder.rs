@@ -50,6 +50,7 @@ impl QueryBuilder {
             uppercase: Some(true),
             lines_between_queries: 2,
             ignore_case_convert: None,
+            ..Default::default()
         };
 
         let sql = sqlformat::format(&unformatted_sql, &sqlformat::QueryParams::None, &options);

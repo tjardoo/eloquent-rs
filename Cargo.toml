@@ -10,4 +10,4 @@ members = ["eloquent", "eloquent_core"]
 [dependencies]
 eloquent = { path = "eloquent", version = "2.0" }
 log = "0.4"
-ftail = "0.2"
+ftail = "0.3"
