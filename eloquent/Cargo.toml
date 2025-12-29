@@ -1,6 +1,6 @@
 [package]
 name = "eloquent"
-version = "2.0.4"
+version = "2.1.0"
 edition = "2021"
 license = "MIT"
 description = "Eloquent is a SQL query builder to easily build complex queries in Rust."
@@ -9,7 +9,7 @@ documentation = "https://docs.rs/eloquent"
 keywords = ["database", "query", "sql"]
 
 [dependencies]
-eloquent_core = { path = "../eloquent_core", version = "2.0" }
+eloquent_core = { path = "../eloquent_core", version = "2.1" }
 
 [features]
 default = []
