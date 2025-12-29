@@ -17,6 +17,7 @@
   - Cursor-based pagination support via `paginate()`.
   - SQL query generation as raw `sql()` or formatted output `pretty_sql()`.
   - Query validation and error handling (can be skipped with `skip_validation()`).
+  - Use question or dollar placeholders for prepared statements.
 
 Use your IDE to explore the available methods, or refer to the [docs.rs/eloquent - QueryBuilder](https://docs.rs/eloquent/latest/eloquent/struct.QueryBuilder.html).
 
@@ -198,4 +199,23 @@ let query = Eloquent::query()
 
 ```sql
 SELECT flight_number FROM departures WHERE id > 40 LIMIT 25
+```
+
+### Prepared statements example
+
+This example demonstrates using placeholders for prepared statements.
+
+You can use the feature `bind-placeholder-questionmark` to control the use of `$` vs `?` as placeholders.
+
+```rust
+use eloquent_core::{QueryBuilder, bind};
+
+let result = QueryBuilder::new()
+    .table("flights")
+    .insert("name", bind(4))
+    .sql()?;
+```
+
+```sql
+INSERT INTO flights (name) VALUES ($4)
 ```
