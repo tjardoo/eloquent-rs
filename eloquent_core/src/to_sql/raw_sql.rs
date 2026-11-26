@@ -65,4 +65,18 @@ mod tests {
             );
         }
     }
+
+    #[test]
+    fn test_raw_empty_json_object_in_query() {
+        unsafe {
+            let query = QueryBuilder::new()
+                .table("flights")
+                .r#where("metadata", raw_sql("'{}'::jsonb"));
+
+            assert_eq!(
+                query.to_sql().unwrap(),
+                "SELECT * FROM flights WHERE metadata = '{}'::jsonb"
+            );
+        }
+    }
 }

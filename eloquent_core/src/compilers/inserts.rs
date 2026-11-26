@@ -1,40 +1,62 @@
-use crate::{Insert, ToSql};
+use std::collections::HashSet;
 
-#[allow(clippy::borrowed_box)]
-pub(crate) fn format<'a>(
+use crate::{error::EloquentError, InsertRow};
+
+pub(crate) fn format(
     table: &str,
-    inserts: &'a [Insert],
+    inserts: &[InsertRow],
     sql: &mut String,
-    params: &mut Vec<&'a Box<dyn ToSql + 'static>>,
-) -> String {
+) -> Result<String, EloquentError> {
+    let columns = insert_columns(inserts)?;
+
     sql.push_str("INSERT INTO ");
     sql.push_str(table);
     sql.push_str(" (");
-
-    let columns: Vec<_> = inserts
-        .iter()
-        .map(|insert| insert.column.as_str())
-        .collect();
     sql.push_str(&columns.join(", "));
-
     sql.push_str(") VALUES ");
 
-    let row_count = inserts.first().map_or(0, |insert| insert.values.len());
-
-    let mut value_placeholders = vec![];
-    for i in 0..row_count {
-        let row_values: Vec<_> = inserts
+    let mut rows = Vec::with_capacity(inserts.len());
+    for row in inserts {
+        let values = columns
             .iter()
-            .map(|insert| {
-                params.push(&insert.values[i]);
-                "?".to_string()
+            .map(|column| {
+                row.value(column)
+                    .ok_or(EloquentError::InconsistentInsertColumns)?
+                    .to_sql_value()
             })
-            .collect();
+            .collect::<Result<Vec<String>, EloquentError>>()?;
 
-        value_placeholders.push(format!("({})", row_values.join(", ")));
+        rows.push(format!("({})", values.join(", ")));
     }
 
-    sql.push_str(&value_placeholders.join(", "));
+    sql.push_str(&rows.join(", "));
 
-    sql.to_string()
+    Ok(sql.to_string())
+}
+
+pub(crate) fn insert_columns(rows: &[InsertRow]) -> Result<Vec<&str>, EloquentError> {
+    let columns: Vec<&str> = rows
+        .first()
+        .map(|row| {
+            row.values
+                .iter()
+                .map(|(column, _)| column.as_str())
+                .collect()
+        })
+        .unwrap_or_default();
+
+    let mut seen = HashSet::new();
+    if let Some(duplicate) = columns.iter().find(|column| !seen.insert(**column)) {
+        return Err(EloquentError::DuplicatedColumnNames(duplicate.to_string()));
+    }
+
+    let consistent = rows.iter().all(|row| {
+        row.values.len() == columns.len() && columns.iter().all(|column| row.has_column(column))
+    });
+
+    if !consistent {
+        return Err(EloquentError::InconsistentInsertColumns);
+    }
+
+    Ok(columns)
 }

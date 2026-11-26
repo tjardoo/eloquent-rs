@@ -1,81 +1,82 @@
-use crate::{error::EloquentError, Condition, Logic, Operator, Paginate, ToSql};
+use crate::{error::EloquentError, Logic, Paginate, WhereClause};
 
-#[allow(clippy::borrowed_box)]
-pub(crate) fn format<'a>(
-    conditions: &'a [Condition],
-    closures: &'a [(Logic, Vec<Condition>)],
-    paginate: &'a Option<Paginate>,
+pub(crate) fn format(
+    conditions: &[WhereClause],
+    paginate: &Option<Paginate>,
     sql: &mut String,
-    params: &mut Vec<&'a Box<dyn ToSql + 'static>>,
 ) -> Result<String, EloquentError> {
-    if conditions.is_empty() && closures.is_empty() && paginate.is_none() {
-        return Ok(sql.to_string());
-    }
+    let (filter, has_or) = format_clauses(conditions)?;
 
-    if let Some(paginate) = paginate {
-        if let Some(last_id) = &paginate.last_id {
-            sql.push_str(&format!(
-                " WHERE {} > {}",
-                paginate.column,
-                last_id.to_sql()?
-            ));
+    let cursor = match paginate {
+        Some(Paginate {
+            column,
+            last_id: Some(last_id),
+            ..
+        }) => Some(format!("{} > {}", column, last_id.to_sql_value()?)),
+        _ => None,
+    };
+
+    match (cursor, filter.is_empty()) {
+        (None, true) => {}
+        (None, false) => {
+            sql.push_str(" WHERE ");
+            sql.push_str(&filter);
         }
-    }
-
-    if paginate.is_none() {
-        sql.push_str(" WHERE ");
-    }
-
-    let mut conditions_str = String::new();
-    let mut first_condition = true;
-
-    for (i, condition) in conditions.iter().enumerate() {
-        if i > 0 {
-            conditions_str.push_str(match condition.logic {
-                Logic::And => " AND ",
-                Logic::Or => " OR ",
-            });
+        (Some(cursor), true) => {
+            sql.push_str(" WHERE ");
+            sql.push_str(&cursor);
         }
+        (Some(cursor), false) => {
+            sql.push_str(" WHERE ");
+            sql.push_str(&cursor);
+            sql.push_str(" AND ");
 
-        let condition_sql = condition.format_sql();
-
-        conditions_str.push_str(&condition_sql);
-        if !matches!(condition.operator, Operator::IsNull | Operator::IsNotNull) {
-            params.extend(condition.values.iter());
-        }
-
-        first_condition = false;
-    }
-
-    for (logic, closure) in closures.iter() {
-        if !first_condition {
-            match logic {
-                Logic::And => conditions_str.push_str(" AND "),
-                Logic::Or => conditions_str.push_str(" OR "),
+            // `cursor AND a OR b` would let `b` bypass the cursor
+            if has_or {
+                sql.push('(');
+                sql.push_str(&filter);
+                sql.push(')');
+            } else {
+                sql.push_str(&filter);
             }
         }
-
-        conditions_str.push('(');
-        for (i, condition) in closure.iter().enumerate() {
-            if i > 0 {
-                conditions_str.push_str(match condition.logic {
-                    Logic::And => " AND ",
-                    Logic::Or => " OR ",
-                });
-            }
-
-            let condition_sql = condition.format_sql();
-
-            conditions_str.push_str(&condition_sql);
-            if !matches!(condition.operator, Operator::IsNull | Operator::IsNotNull) {
-                params.extend(condition.values.iter());
-            }
-        }
-        conditions_str.push(')');
-        first_condition = false;
     }
-
-    sql.push_str(&conditions_str);
 
     Ok(sql.to_string())
+}
+
+fn format_clauses(clauses: &[WhereClause]) -> Result<(String, bool), EloquentError> {
+    let mut sql = String::new();
+    let mut has_or = false;
+
+    let mut push = |logic: &Logic, clause: &str| {
+        if !sql.is_empty() {
+            match logic {
+                Logic::And => sql.push_str(" AND "),
+                Logic::Or => {
+                    has_or = true;
+                    sql.push_str(" OR ");
+                }
+            }
+        }
+
+        sql.push_str(clause);
+    };
+
+    for clause in clauses {
+        match clause {
+            WhereClause::Condition(condition) => {
+                push(&condition.logic, &condition.format_sql()?);
+            }
+            WhereClause::Group(group) => {
+                let (nested, _) = format_clauses(&group.clauses)?;
+
+                if !nested.is_empty() {
+                    push(&group.logic, &format!("({})", nested));
+                }
+            }
+        }
+    }
+
+    Ok((sql, has_or))
 }

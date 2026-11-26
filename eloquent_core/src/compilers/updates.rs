@@ -1,26 +1,26 @@
-use crate::{ToSql, Update};
+use crate::{error::EloquentError, Update};
 
-#[allow(clippy::borrowed_box)]
-pub(crate) fn format<'a>(
+pub(crate) fn format(
     table: &str,
-    updates: &'a [Update],
+    updates: &[Update],
     sql: &mut String,
-    params: &mut Vec<&'a Box<dyn ToSql + 'static>>,
-) -> String {
+) -> Result<String, EloquentError> {
     sql.push_str("UPDATE ");
     sql.push_str(table);
     sql.push_str(" SET ");
 
-    sql.push_str(
-        &updates
-            .iter()
-            .map(|update| {
-                params.push(&update.value);
-                format!("{} = ?", update.column)
-            })
-            .collect::<Vec<String>>()
-            .join(", "),
-    );
+    let assignments = updates
+        .iter()
+        .map(|update| {
+            Ok(format!(
+                "{} = {}",
+                update.column,
+                update.value.to_sql_value()?
+            ))
+        })
+        .collect::<Result<Vec<String>, EloquentError>>()?;
 
-    sql.to_string()
+    sql.push_str(&assignments.join(", "));
+
+    Ok(sql.to_string())
 }

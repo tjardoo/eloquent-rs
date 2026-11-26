@@ -1,6 +1,6 @@
 use std::collections::HashSet;
 
-use crate::{error::EloquentError, Logic, PerformChecks, QueryBuilder};
+use crate::{error::EloquentError, Logic, PerformChecks, QueryBuilder, WhereClause};
 
 pub struct DuplicatedConditions;
 
@@ -8,7 +8,12 @@ impl PerformChecks for DuplicatedConditions {
     fn check(builder: &QueryBuilder) -> Result<(), EloquentError> {
         let mut seen = HashSet::new();
 
-        for condition in &builder.conditions {
+        let conditions = builder.conditions.iter().filter_map(|clause| match clause {
+            WhereClause::Condition(condition) => Some(condition),
+            WhereClause::Group(_) => None,
+        });
+
+        for condition in conditions {
             if condition.logic == Logic::Or {
                 continue;
             }

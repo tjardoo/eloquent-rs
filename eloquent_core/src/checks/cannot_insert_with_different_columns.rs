@@ -1,4 +1,6 @@
-use crate::{error::EloquentError, PerformChecks, QueryBuilder};
+use crate::{
+    compilers::inserts::insert_columns, error::EloquentError, PerformChecks, QueryBuilder,
+};
 
 pub struct CannotInsertWithDifferentColumns;
 
@@ -8,22 +10,7 @@ impl PerformChecks for CannotInsertWithDifferentColumns {
             return Ok(());
         }
 
-        let column_count = builder
-            .inserts
-            .first()
-            .map(|insert| insert.values.len())
-            .unwrap_or(0);
-
-        let inconsistent_row = builder
-            .inserts
-            .iter()
-            .find(|insert| insert.values.len() != column_count);
-
-        if inconsistent_row.is_some() {
-            return Err(EloquentError::InconsistentInsertColumns);
-        }
-
-        Ok(())
+        insert_columns(&builder.inserts).map(|_| ())
     }
 }
 
@@ -55,5 +42,64 @@ mod tests {
             Err(_error) => panic!(),
             Ok(_value) => panic!(),
         }
+    }
+
+    #[test]
+    fn test_cannot_insert_rows_with_complementary_columns() {
+        let result = QueryBuilder::new()
+            .table("users")
+            .insert_many(vec![
+                eloquent_sql_row! { "name" => "Alice", "age" => 21 },
+                eloquent_sql_row! { "name" => "Bob" },
+                eloquent_sql_row! { "age" => 22 },
+            ])
+            .sql();
+
+        assert_eq!(result, Err(EloquentError::InconsistentInsertColumns));
+    }
+
+    #[test]
+    fn test_inconsistent_rows_error_without_validation() {
+        let result = QueryBuilder::new()
+            .table("users")
+            .insert_many(vec![
+                eloquent_sql_row! { "name" => "Alice", "age" => 21 },
+                eloquent_sql_row! { "name" => "Bob" },
+            ])
+            .skip_validation()
+            .sql();
+
+        assert_eq!(result, Err(EloquentError::InconsistentInsertColumns));
+    }
+
+    #[test]
+    fn test_insert_rows_with_columns_in_different_order() {
+        let result = QueryBuilder::new()
+            .table("users")
+            .insert_many(vec![
+                eloquent_sql_row! { "name" => "Alice", "age" => 21 },
+                eloquent_sql_row! { "age" => 22, "name" => "Bob" },
+            ])
+            .sql();
+
+        assert_eq!(
+            result.unwrap(),
+            "INSERT INTO users (name, age) VALUES ('Alice', 21), ('Bob', 22)"
+        );
+    }
+
+    #[test]
+    fn test_cannot_insert_duplicated_column_in_row() {
+        let result = QueryBuilder::new()
+            .table("users")
+            .insert_many(vec![
+                eloquent_sql_row! { "name" => "Alice", "name" => "Bob" },
+            ])
+            .sql();
+
+        assert_eq!(
+            result,
+            Err(EloquentError::DuplicatedColumnNames("name".to_string()))
+        );
     }
 }

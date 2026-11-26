@@ -177,3 +177,26 @@ impl QueryBuilder {
         self
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use crate::QueryBuilder;
+
+    #[test]
+    fn test_multiple_havings_are_joined_with_and() {
+        let result = QueryBuilder::new()
+            .table("flights")
+            .select("origin")
+            .select_count("id", "flight_count")
+            .select_sum("passengers", "passenger_count")
+            .group_by("origin")
+            .having_gt("flight_count", 10)
+            .having_lt("passenger_count", 5000)
+            .sql();
+
+        assert_eq!(
+            result.unwrap(),
+            "SELECT origin, COUNT(id) AS flight_count, SUM(passengers) AS passenger_count FROM flights GROUP BY origin HAVING flight_count > 10 AND passenger_count < 5000"
+        );
+    }
+}

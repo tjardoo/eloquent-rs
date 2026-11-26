@@ -1,7 +1,11 @@
 use crate::Select;
 
-pub(crate) fn format(table: &str, selects: &[Select], sql: &mut String) -> String {
+pub(crate) fn format(table: &str, selects: &[Select], distinct: bool, sql: &mut String) -> String {
     sql.push_str("SELECT ");
+
+    if distinct {
+        sql.push_str("DISTINCT ");
+    }
 
     if selects.is_empty() {
         sql.push('*');

@@ -1,4 +1,6 @@
-use crate::{Columnable, Condition, Logic, Operator, QueryBuilder, SubqueryBuilder, ToSql};
+use crate::{
+    Columnable, Condition, Logic, Operator, QueryBuilder, SubqueryBuilder, ToSql, WhereClause,
+};
 
 impl SubqueryBuilder {
     fn add_condition(
@@ -8,8 +10,9 @@ impl SubqueryBuilder {
         logic: Logic,
         values: Vec<Box<dyn ToSql>>,
     ) -> Self {
-        self.conditions
-            .push(Condition::new(field, operator, logic, values));
+        self.conditions.push(WhereClause::Condition(Condition::new(
+            field, operator, logic, values,
+        )));
 
         self
     }
@@ -175,8 +178,7 @@ impl SubqueryBuilder {
         let columns = columns.to_columns();
 
         for column in columns.iter() {
-            self.conditions
-                .push(Condition::new(column, Operator::IsNull, Logic::And, vec![]));
+            self = self.add_condition(column, Operator::IsNull, Logic::And, vec![]);
         }
 
         self
@@ -193,12 +195,7 @@ impl SubqueryBuilder {
         let columns = columns.to_columns();
 
         for column in columns.iter() {
-            self.conditions.push(Condition::new(
-                column,
-                Operator::IsNotNull,
-                Logic::And,
-                vec![],
-            ));
+            self = self.add_condition(column, Operator::IsNotNull, Logic::And, vec![]);
         }
 
         self

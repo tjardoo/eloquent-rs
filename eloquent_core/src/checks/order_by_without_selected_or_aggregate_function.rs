@@ -4,7 +4,8 @@ pub struct OrderByWithoutSelectedOrAggregateFunction;
 
 impl PerformChecks for OrderByWithoutSelectedOrAggregateFunction {
     fn check(builder: &QueryBuilder) -> Result<(), EloquentError> {
-        if builder.selects.is_empty() {
+        // ordering by a non-selected column is only invalid with SELECT DISTINCT
+        if !builder.distinct || builder.selects.is_empty() {
             return Ok(());
         }
 
@@ -32,10 +33,24 @@ mod tests {
     use crate::{error::EloquentError, QueryBuilder};
 
     #[test]
-    fn test_order_by_without_selected_or_aggregate_function() {
+    fn test_order_by_non_selected_column() {
+        let result = QueryBuilder::new()
+            .table("users")
+            .select("name")
+            .order_by_desc("created_at")
+            .sql();
+
+        assert_eq!(
+            result.unwrap(),
+            "SELECT name FROM users ORDER BY created_at DESC"
+        );
+    }
+
+    #[test]
+    fn test_order_by_without_selected_or_aggregate_function_on_distinct() {
         let result = QueryBuilder::new()
             .table("flights")
-            .select("destination")
+            .select_distinct("destination")
             .order_by_asc("origin")
             .sql();
 
@@ -46,5 +61,19 @@ mod tests {
             Err(_error) => panic!(),
             Ok(_value) => panic!(),
         }
+    }
+
+    #[test]
+    fn test_order_by_selected_column_on_distinct() {
+        let result = QueryBuilder::new()
+            .table("flights")
+            .select_distinct("destination")
+            .order_by_asc("destination")
+            .sql();
+
+        assert_eq!(
+            result.unwrap(),
+            "SELECT DISTINCT destination FROM flights ORDER BY destination ASC"
+        );
     }
 }

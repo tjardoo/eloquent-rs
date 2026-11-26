@@ -25,11 +25,11 @@ pub use to_sql::*;
 pub struct QueryBuilder {
     table: Option<String>,
     selects: Vec<Select>,
-    inserts: Vec<Insert>,
+    inserts: Vec<InsertRow>,
     updates: Vec<Update>,
     delete: bool,
-    conditions: Vec<Condition>,
-    closures: Vec<(Logic, Vec<Condition>)>,
+    distinct: bool,
+    conditions: Vec<WhereClause>,
     joins: Vec<Join>,
     havings: Vec<Having>,
     group_by: Vec<String>,
@@ -38,23 +38,31 @@ pub struct QueryBuilder {
     offset: Option<u64>,
     enable_checks: bool,
     paginate: Option<Paginate>,
+    error: Option<EloquentError>,
 }
 
 /// The subquery builder struct that holds all the subquery building information.
 pub struct SubqueryBuilder {
     table: Option<String>,
     selects: Vec<Select>,
-    conditions: Vec<Condition>,
+    distinct: bool,
+    conditions: Vec<WhereClause>,
     joins: Vec<Join>,
     havings: Vec<Having>,
     group_by: Vec<String>,
     order_by: Vec<OrderColumn>,
     limit: Option<u64>,
     offset: Option<u64>,
+    error: Option<EloquentError>,
 }
 
 pub trait ToSql {
     fn to_sql(&self) -> Result<String, EloquentError>;
+
+    /// The SQL used when this value is embedded in another statement.
+    fn to_sql_value(&self) -> Result<String, EloquentError> {
+        self.to_sql()
+    }
 
     fn is_subquery(&self) -> bool {
         false
@@ -73,13 +81,8 @@ pub(crate) trait PerformChecks {
     fn check(builder: &QueryBuilder) -> Result<(), EloquentError>;
 }
 
-#[allow(clippy::borrowed_box)]
 pub(crate) trait SqlBuilder {
-    fn build<'a>(
-        builder: &'a QueryBuilder,
-        sql: &mut String,
-        params: &mut Vec<&'a Box<dyn ToSql + 'static>>,
-    ) -> Result<String, EloquentError>;
+    fn build(builder: &QueryBuilder, sql: &mut String) -> Result<String, EloquentError>;
 }
 
 #[derive(Debug, PartialEq)]
@@ -97,15 +100,37 @@ struct Condition {
     values: Vec<Box<dyn ToSql>>,
 }
 
+enum WhereClause {
+    Condition(Condition),
+    Group(ConditionGroup),
+}
+
+struct ConditionGroup {
+    logic: Logic,
+    clauses: Vec<WhereClause>,
+}
+
 struct Select {
     column: String,
     function: Option<Function>,
     alias: Option<String>,
 }
 
-struct Insert {
-    column: String,
-    values: Vec<Box<dyn ToSql>>,
+struct InsertRow {
+    values: Vec<(String, Box<dyn ToSql>)>,
+}
+
+impl InsertRow {
+    fn has_column(&self, column: &str) -> bool {
+        self.values.iter().any(|(name, _)| name == column)
+    }
+
+    fn value(&self, column: &str) -> Option<&dyn ToSql> {
+        self.values
+            .iter()
+            .find(|(name, _)| name == column)
+            .map(|(_, value)| value.as_ref())
+    }
 }
 
 struct Update {
@@ -156,7 +181,6 @@ enum Function {
     Avg,
     Min,
     Max,
-    Distinct,
 }
 
 struct Join {
@@ -187,13 +211,7 @@ pub(crate) struct Paginate {
 
 impl Select {
     fn format_column_name(&self) -> String {
-        let column = match &self.function {
-            Some(function) => match function {
-                Function::Distinct => format!("{} {}", function, self.column),
-                _ => format!("{}({})", function, self.column),
-            },
-            None => self.column.clone(),
-        };
+        let column = self.format_column_name_without_alias();
 
         if let Some(alias) = &self.alias {
             format!("{} AS {}", column, alias)
@@ -204,13 +222,25 @@ impl Select {
 
     fn format_column_name_without_alias(&self) -> String {
         match &self.function {
-            Some(function) => match function {
-                Function::Distinct => format!("{} {}", function, self.column),
-                _ => format!("{}({})", function, self.column),
-            },
+            Some(function) => format!("{}({})", function, self.column),
             None => self.column.clone(),
         }
     }
+}
+
+// single pass, so a `?` inside a value is never treated as a placeholder
+fn interpolate_raw(raw: &str, values: Vec<impl ToSql>) -> Result<String, EloquentError> {
+    let mut values = values.into_iter();
+    let mut parts = raw.split('?');
+    let mut sql = String::from(parts.next().unwrap_or_default());
+
+    for part in parts {
+        let value = values.next().ok_or(EloquentError::MissingPlaceholders)?;
+        sql.push_str(&value.to_sql_value()?);
+        sql.push_str(part);
+    }
+
+    Ok(sql)
 }
 
 impl Selectable for &str {
@@ -315,6 +345,14 @@ impl ToSql for QueryBuilder {
     fn to_sql(&self) -> Result<String, EloquentError> {
         build_statement(self)
     }
+
+    fn to_sql_value(&self) -> Result<String, EloquentError> {
+        Ok(format!("({})", build_statement(self)?))
+    }
+
+    fn is_subquery(&self) -> bool {
+        true
+    }
 }
 
 impl ToSql for SubqueryBuilder {
@@ -383,7 +421,6 @@ impl Display for Function {
             Function::Avg => "AVG",
             Function::Min => "MIN",
             Function::Max => "MAX",
-            Function::Distinct => "DISTINCT",
         };
 
         write!(f, "{}", function)
@@ -404,36 +441,37 @@ impl Display for JoinType {
 }
 
 impl Condition {
-    fn format_sql(&self) -> String {
+    fn format_sql(&self) -> Result<String, EloquentError> {
         let values = self
             .values
             .iter()
-            .map(|v| v.to_sql().unwrap())
-            .collect::<Vec<String>>()
-            .join(", ");
+            .map(|v| v.to_sql_value())
+            .collect::<Result<Vec<String>, EloquentError>>()?;
 
-        match self.operator {
-            Operator::Between => format!(
-                "{} {} {} AND {}",
-                self.field,
-                self.operator,
-                values.split(", ").next().unwrap(),
-                values.split(", ").last().unwrap()
-            ),
+        let sql = match self.operator {
+            Operator::Between => match values.as_slice() {
+                [min, max] => format!("{} {} {} AND {}", self.field, self.operator, min, max),
+                _ => return Err(EloquentError::MissingPlaceholders),
+            },
+            // `IN ()` is invalid SQL
+            Operator::In if values.is_empty() => String::from("0 = 1"),
+            Operator::NotIn if values.is_empty() => String::from("1 = 1"),
             Operator::In | Operator::NotIn => {
                 if self.values.iter().any(|v| v.is_subquery()) {
                     // subquery already contains parentheses so we don't need to add them
-                    format!("{} {} {}", self.field, self.operator, values)
+                    format!("{} {} {}", self.field, self.operator, values.join(", "))
                 } else {
-                    format!("{} {} ({})", self.field, self.operator, values)
+                    format!("{} {} ({})", self.field, self.operator, values.join(", "))
                 }
             }
             Operator::IsNull | Operator::IsNotNull => format!("{} {}", self.field, self.operator),
             Operator::Date | Operator::Year | Operator::Month | Operator::Day => {
-                format!("{}({}) = {}", self.operator, self.field, values)
+                format!("{}({}) = {}", self.operator, self.field, values.join(", "))
             }
-            _ => format!("{} {} {}", self.field, self.operator, values),
-        }
+            _ => format!("{} {} {}", self.field, self.operator, values.join(", ")),
+        };
+
+        Ok(sql)
     }
 }
 

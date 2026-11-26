@@ -1,4 +1,6 @@
-use crate::{Columnable, Condition, Logic, Operator, QueryBuilder, ToSql};
+use crate::{
+    Columnable, Condition, ConditionGroup, Logic, Operator, QueryBuilder, ToSql, WhereClause,
+};
 
 impl QueryBuilder {
     fn add_condition(
@@ -8,8 +10,9 @@ impl QueryBuilder {
         logic: Logic,
         values: Vec<Box<dyn ToSql>>,
     ) -> Self {
-        self.conditions
-            .push(Condition::new(field, operator, logic, values));
+        self.conditions.push(WhereClause::Condition(Condition::new(
+            field, operator, logic, values,
+        )));
 
         self
     }
@@ -564,8 +567,7 @@ impl QueryBuilder {
         let columns = columns.to_columns();
 
         for column in columns.iter() {
-            self.conditions
-                .push(Condition::new(column, Operator::IsNull, Logic::And, vec![]));
+            self = self.add_condition(column, Operator::IsNull, Logic::And, vec![]);
         }
 
         self
@@ -612,12 +614,7 @@ impl QueryBuilder {
         let columns = columns.to_columns();
 
         for column in columns.iter() {
-            self.conditions.push(Condition::new(
-                column,
-                Operator::IsNotNull,
-                Logic::And,
-                vec![],
-            ));
+            self = self.add_condition(column, Operator::IsNotNull, Logic::And, vec![]);
         }
 
         self
@@ -656,17 +653,11 @@ impl QueryBuilder {
     ///     "SELECT * FROM flights WHERE (origin = 'AMS' OR origin = 'FRA')"
     /// );
     /// ```
-    pub fn where_closure<F>(mut self, closure: F) -> Self
+    pub fn where_closure<F>(self, closure: F) -> Self
     where
         F: FnOnce(Self) -> Self,
     {
-        let mut nested_builder = QueryBuilder::new();
-
-        nested_builder = closure(nested_builder);
-
-        self.closures.push((Logic::And, nested_builder.conditions));
-
-        self
+        self.add_closure(Logic::And, closure)
     }
 
     /// Add an OR where closure condition to the query.
@@ -684,15 +675,23 @@ impl QueryBuilder {
     ///     "SELECT * FROM flights WHERE departure_time IS NOT NULL OR (origin = 'AMS' AND destination = 'FRA')"
     /// );
     /// ```
-    pub fn or_where_closure<F>(mut self, closure: F) -> Self
+    pub fn or_where_closure<F>(self, closure: F) -> Self
     where
         F: FnOnce(Self) -> Self,
     {
-        let mut nested_builder = QueryBuilder::new();
+        self.add_closure(Logic::Or, closure)
+    }
 
-        nested_builder = closure(nested_builder);
+    fn add_closure<F>(mut self, logic: Logic, closure: F) -> Self
+    where
+        F: FnOnce(Self) -> Self,
+    {
+        let nested_builder = closure(QueryBuilder::new());
 
-        self.closures.push((Logic::Or, nested_builder.conditions));
+        self.conditions.push(WhereClause::Group(ConditionGroup {
+            logic,
+            clauses: nested_builder.conditions,
+        }));
 
         self
     }
@@ -798,6 +797,136 @@ mod tests {
                 .unwrap()
                 .as_str(),
             "SELECT * FROM flights WHERE id = '1'"
+        );
+    }
+
+    #[test]
+    fn test_nested_where_closures() {
+        let result = QueryBuilder::new()
+            .table("flights")
+            .where_closure(|q| {
+                q.r#where("a", 1).or_where_closure(|q| {
+                    q.r#where("b", 2)
+                        .where_closure(|q| q.r#where("c", 3).or_where("d", 4))
+                })
+            })
+            .sql();
+
+        assert_eq!(
+            result.unwrap(),
+            "SELECT * FROM flights WHERE (a = 1 OR (b = 2 AND (c = 3 OR d = 4)))"
+        );
+    }
+
+    #[test]
+    fn test_empty_where_closure_is_skipped() {
+        let result = QueryBuilder::new()
+            .table("flights")
+            .r#where("a", 1)
+            .where_closure(|q| q)
+            .where_closure(|q| q.when(false, |q| q.r#where("b", 2)))
+            .sql();
+
+        assert_eq!(result.unwrap(), "SELECT * FROM flights WHERE a = 1");
+
+        let result = QueryBuilder::new()
+            .table("flights")
+            .where_closure(|q| q)
+            .sql();
+
+        assert_eq!(result.unwrap(), "SELECT * FROM flights");
+    }
+
+    #[test]
+    fn test_where_in_empty_list() {
+        let result = QueryBuilder::new()
+            .table("flights")
+            .where_in("id", Vec::<i32>::new())
+            .sql();
+
+        assert_eq!(result.unwrap(), "SELECT * FROM flights WHERE 0 = 1");
+
+        let result = QueryBuilder::new()
+            .table("flights")
+            .where_not_in("id", Vec::<i32>::new())
+            .sql();
+
+        assert_eq!(result.unwrap(), "SELECT * FROM flights WHERE 1 = 1");
+    }
+
+    #[test]
+    fn test_where_between_values_containing_comma() {
+        let result = QueryBuilder::new()
+            .table("flights")
+            .where_between("name", "a, b", "c, d")
+            .sql();
+
+        assert_eq!(
+            result.unwrap(),
+            "SELECT * FROM flights WHERE name BETWEEN 'a, b' AND 'c, d'"
+        );
+    }
+
+    #[test]
+    fn test_query_builder_as_value_is_parenthesized() {
+        let result = QueryBuilder::new()
+            .table("flights")
+            .r#where(
+                "airport_id",
+                QueryBuilder::new()
+                    .table("airports")
+                    .select("id")
+                    .r#where("code", "AMS"),
+            )
+            .sql();
+
+        assert_eq!(
+            result.unwrap(),
+            "SELECT * FROM flights WHERE airport_id = (SELECT id FROM airports WHERE code = 'AMS')"
+        );
+
+        let result = QueryBuilder::new()
+            .table("flights")
+            .where_in(
+                "airport_id",
+                vec![QueryBuilder::new().table("airports").select("id")],
+            )
+            .sql();
+
+        assert_eq!(
+            result.unwrap(),
+            "SELECT * FROM flights WHERE airport_id IN (SELECT id FROM airports)"
+        );
+    }
+
+    #[test]
+    fn test_closures_keep_their_position() {
+        let result = QueryBuilder::new()
+            .table("flights")
+            .r#where("a", 1)
+            .or_where_closure(|q| q.r#where("b", 2).r#where("c", 3))
+            .r#where("d", 4)
+            .sql();
+
+        assert_eq!(
+            result.unwrap(),
+            "SELECT * FROM flights WHERE a = 1 OR (b = 2 AND c = 3) AND d = 4"
+        );
+
+        let result = QueryBuilder::new()
+            .table("flights")
+            .where_closure(|q| q.r#where("a", 1).or_where("b", 2))
+            .where_not_null("c")
+            .where_closure(|q| {
+                q.r#where("d", 4)
+                    .or_where_closure(|q| q.r#where("e", 5))
+                    .r#where("f", 6)
+            })
+            .sql();
+
+        assert_eq!(
+            result.unwrap(),
+            "SELECT * FROM flights WHERE (a = 1 OR b = 2) AND c IS NOT NULL AND (d = 4 OR (e = 5) AND f = 6)"
         );
     }
 }

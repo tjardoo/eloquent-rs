@@ -9,8 +9,8 @@ impl QueryBuilder {
             inserts: Vec::new(),
             updates: Vec::new(),
             delete: false,
+            distinct: false,
             conditions: Vec::new(),
-            closures: Vec::new(),
             joins: Vec::new(),
             havings: Vec::new(),
             group_by: Vec::new(),
@@ -19,6 +19,7 @@ impl QueryBuilder {
             offset: None,
             enable_checks: true,
             paginate: None,
+            error: None,
         }
     }
 

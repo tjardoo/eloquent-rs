@@ -181,7 +181,7 @@
 //! ```
 //!
 //! ```sql
-//! SELECT flight_number FROM departures LIMIT 25
+//! SELECT flight_number FROM departures ORDER BY id ASC LIMIT 25
 //! ```
 //!
 //! ```rust
@@ -197,7 +197,7 @@
 //! ```
 //!
 //! ```sql
-//! SELECT flight_number FROM departures WHERE id > 40 LIMIT 25
+//! SELECT flight_number FROM departures WHERE id > 40 ORDER BY id ASC LIMIT 25
 //! ```
 
 pub use eloquent_core::*;
