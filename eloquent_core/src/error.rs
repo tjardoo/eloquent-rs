@@ -1,4 +1,4 @@
-#[derive(Debug, PartialEq)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum EloquentError {
     MissingTable,
     DuplicatedColumnNames(String),

@@ -1,17 +1,24 @@
-use crate::OrderColumn;
+use crate::{OrderColumn, Paginate};
 
-pub(crate) fn format(order_by: &[OrderColumn], sql: &mut String) -> String {
-    if !order_by.is_empty() {
+pub(crate) fn format(
+    order_by: &[OrderColumn],
+    paginate: &Option<Paginate>,
+    sql: &mut String,
+) -> String {
+    let mut columns: Vec<String> = paginate
+        .iter()
+        .map(|paginate| format!("{} ASC", paginate.column))
+        .collect();
+
+    columns.extend(
+        order_by
+            .iter()
+            .map(|order| format!("{} {}", order.column, order.order)),
+    );
+
+    if !columns.is_empty() {
         sql.push_str(" ORDER BY ");
-        order_by.iter().for_each(|order| {
-            sql.push_str(&order.column);
-            sql.push(' ');
-            sql.push_str(&order.order.to_string());
-
-            if order != order_by.last().unwrap() {
-                sql.push_str(", ");
-            }
-        });
+        sql.push_str(&columns.join(", "));
     }
 
     sql.to_string()

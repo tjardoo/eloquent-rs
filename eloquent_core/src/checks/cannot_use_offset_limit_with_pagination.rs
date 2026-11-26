@@ -20,6 +20,12 @@ impl PerformChecks for CannotUseOffsetLimitWithPagination {
             ));
         }
 
+        if !builder.order_by.is_empty() {
+            return Err(EloquentError::CannotUseOffsetLimitWithPagination(
+                "ORDER BY".to_string(),
+            ));
+        }
+
         Ok(())
     }
 }
@@ -60,5 +66,21 @@ mod tests {
             Err(_error) => panic!(),
             Ok(_value) => panic!(),
         }
+    }
+
+    #[test]
+    fn test_cannot_use_order_by_with_pagination() {
+        let result = QueryBuilder::new()
+            .table("departures")
+            .paginate("id", Some(1000), 10)
+            .order_by_desc("departure_time")
+            .sql();
+
+        assert_eq!(
+            result,
+            Err(EloquentError::CannotUseOffsetLimitWithPagination(
+                "ORDER BY".to_string()
+            ))
+        );
     }
 }

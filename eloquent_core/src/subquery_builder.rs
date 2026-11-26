@@ -6,6 +6,7 @@ impl SubqueryBuilder {
         Self {
             table: None,
             selects: Vec::new(),
+            distinct: false,
             conditions: Vec::new(),
             joins: Vec::new(),
             havings: Vec::new(),
@@ -13,6 +14,7 @@ impl SubqueryBuilder {
             order_by: Vec::new(),
             limit: None,
             offset: None,
+            error: None,
         }
     }
 

@@ -1,4 +1,4 @@
-use crate::{Columnable, Function, QueryBuilder, Select, Selectable, ToSql};
+use crate::{interpolate_raw, Columnable, Function, QueryBuilder, Select, Selectable, ToSql};
 
 impl QueryBuilder {
     /// Select single or multiple columns from the table.
@@ -121,16 +121,16 @@ impl QueryBuilder {
     /// );
     /// ```
     pub fn select_raw(mut self, raw: &str, values: Vec<impl ToSql + 'static>) -> Self {
-        let mut formatted_raw = raw.to_string();
-        for value in values {
-            formatted_raw = formatted_raw.replacen('?', &value.to_sql().unwrap(), 1);
+        match interpolate_raw(raw, values) {
+            Ok(column) => self.selects.push(Select {
+                function: None,
+                column,
+                alias: None,
+            }),
+            Err(error) => {
+                self.error.get_or_insert(error);
+            }
         }
-
-        self.selects.push(Select {
-            function: None,
-            column: formatted_raw.to_string(),
-            alias: None,
-        });
 
         self
     }
@@ -289,11 +289,74 @@ impl QueryBuilder {
         T: Selectable,
     {
         self.selects.push(Select {
-            function: Some(Function::Distinct),
+            function: None,
             column: column.to_select_column(),
             alias: None,
         });
 
+        self.distinct()
+    }
+
+    /// Select only distinct rows.
+    ///
+    /// ```
+    /// use eloquent_core::QueryBuilder;
+    ///
+    /// let result = QueryBuilder::new()
+    ///     .table("flights")
+    ///     .select(vec!["origin", "destination"])
+    ///     .distinct();
+    ///
+    /// assert_eq!(
+    ///     result.sql().unwrap(),
+    ///     "SELECT DISTINCT origin, destination FROM flights"
+    /// );
+    /// ```
+    pub fn distinct(mut self) -> Self {
+        self.distinct = true;
+
         self
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::{error::EloquentError, QueryBuilder};
+
+    #[test]
+    fn test_select_with_select_distinct() {
+        let result = QueryBuilder::new()
+            .table("flights")
+            .select("origin")
+            .select_distinct("destination")
+            .sql();
+
+        assert_eq!(
+            result.unwrap(),
+            "SELECT DISTINCT origin, destination FROM flights"
+        );
+    }
+
+    #[test]
+    fn test_select_raw_value_containing_question_mark() {
+        let result = QueryBuilder::new()
+            .table("flights")
+            .select_raw("CONCAT(?, ?) AS label", vec!["why?", "now"])
+            .sql();
+
+        assert_eq!(
+            result.unwrap(),
+            "SELECT CONCAT('why?', 'now') AS label FROM flights"
+        );
+    }
+
+    #[test]
+    fn test_select_raw_missing_value() {
+        let result = QueryBuilder::new()
+            .table("flights")
+            .select_raw("duration * ? + ?", vec![5])
+            .sql();
+
+        assert_eq!(result, Err(EloquentError::MissingPlaceholders));
     }
 }

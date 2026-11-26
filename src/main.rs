@@ -91,7 +91,7 @@ fn main() {
 
     assert_eq!(
         query.sql().unwrap(),
-        "SELECT flight_number, departure_date FROM departures LIMIT 25"
+        "SELECT flight_number, departure_date FROM departures ORDER BY id ASC LIMIT 25"
     );
 
     last_id = Some(1000);
@@ -103,6 +103,6 @@ fn main() {
 
     assert_eq!(
         query.sql().unwrap(),
-        "SELECT flight_number, departure_date FROM departures WHERE id > 1000 LIMIT 25"
+        "SELECT flight_number, departure_date FROM departures WHERE id > 1000 ORDER BY id ASC LIMIT 25"
     );
 }

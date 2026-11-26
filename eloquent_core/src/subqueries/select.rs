@@ -1,4 +1,4 @@
-use crate::{Columnable, Function, Select, SubqueryBuilder, ToSql};
+use crate::{interpolate_raw, Columnable, Function, Select, SubqueryBuilder, ToSql};
 
 impl SubqueryBuilder {
     pub fn select<T>(mut self, columns: T) -> Self
@@ -29,16 +29,16 @@ impl SubqueryBuilder {
     }
 
     pub fn select_raw(mut self, raw: &str, values: Vec<impl ToSql + 'static>) -> Self {
-        let mut formatted_raw = raw.to_string();
-        for value in values {
-            formatted_raw = formatted_raw.replacen('?', &value.to_sql().unwrap(), 1);
+        match interpolate_raw(raw, values) {
+            Ok(column) => self.selects.push(Select {
+                function: None,
+                column,
+                alias: None,
+            }),
+            Err(error) => {
+                self.error.get_or_insert(error);
+            }
         }
-
-        self.selects.push(Select {
-            function: None,
-            column: formatted_raw.to_string(),
-            alias: None,
-        });
 
         self
     }
@@ -95,10 +95,16 @@ impl SubqueryBuilder {
 
     pub fn select_distinct(mut self, column: &str) -> Self {
         self.selects.push(Select {
-            function: Some(Function::Distinct),
+            function: None,
             column: column.to_string(),
             alias: None,
         });
+
+        self.distinct()
+    }
+
+    pub fn distinct(mut self) -> Self {
+        self.distinct = true;
 
         self
     }

@@ -24,6 +24,30 @@ impl PerformChecks for CannotApplyClauseOnUpdate {
             return Err(EloquentError::CannotApplyClauseOnUpdate("JOIN".to_string()));
         }
 
+        if !builder.order_by.is_empty() {
+            return Err(EloquentError::CannotApplyClauseOnUpdate(
+                "ORDER BY".to_string(),
+            ));
+        }
+
+        if builder.limit.is_some() {
+            return Err(EloquentError::CannotApplyClauseOnUpdate(
+                "LIMIT".to_string(),
+            ));
+        }
+
+        if builder.offset.is_some() {
+            return Err(EloquentError::CannotApplyClauseOnUpdate(
+                "OFFSET".to_string(),
+            ));
+        }
+
+        if builder.paginate.is_some() {
+            return Err(EloquentError::CannotApplyClauseOnUpdate(
+                "PAGINATE".to_string(),
+            ));
+        }
+
         Ok(())
     }
 }
@@ -47,5 +71,55 @@ mod tests {
             Err(_error) => panic!(),
             Ok(_value) => panic!(),
         }
+    }
+
+    #[test]
+    fn test_cannot_apply_limit_on_update() {
+        let result = QueryBuilder::new()
+            .table("flights")
+            .update("status", "cancelled")
+            .r#where("origin", "AMS")
+            .limit(1)
+            .sql();
+
+        assert_eq!(
+            result,
+            Err(EloquentError::CannotApplyClauseOnUpdate(
+                "LIMIT".to_string()
+            ))
+        );
+    }
+
+    #[test]
+    fn test_cannot_apply_order_by_on_update() {
+        let result = QueryBuilder::new()
+            .table("flights")
+            .update("status", "cancelled")
+            .order_by_asc("id")
+            .sql();
+
+        assert_eq!(
+            result,
+            Err(EloquentError::CannotApplyClauseOnUpdate(
+                "ORDER BY".to_string()
+            ))
+        );
+    }
+
+    #[test]
+    fn test_update_limit_is_not_dropped_when_validation_is_skipped() {
+        let result = QueryBuilder::new()
+            .table("flights")
+            .update("status", "cancelled")
+            .r#where("origin", "AMS")
+            .order_by_asc("id")
+            .limit(1)
+            .skip_validation()
+            .sql();
+
+        assert_eq!(
+            result.unwrap(),
+            "UPDATE flights SET status = 'cancelled' WHERE origin = 'AMS' ORDER BY id ASC LIMIT 1"
+        );
     }
 }

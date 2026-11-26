@@ -1,4 +1,4 @@
-use crate::{Insert, QueryBuilder, ToSql};
+use crate::{InsertRow, QueryBuilder, ToSql};
 
 impl QueryBuilder {
     /// Insert single or multiple columns into the table.
@@ -17,7 +17,14 @@ impl QueryBuilder {
     /// );
     /// ```
     pub fn insert(mut self, column: &str, value: impl ToSql + 'static) -> Self {
-        self.add_insert(column, Box::new(value));
+        let value: Box<dyn ToSql> = Box::new(value);
+
+        match self.inserts.last_mut() {
+            Some(row) if !row.has_column(column) => row.values.push((column.to_string(), value)),
+            _ => self.inserts.push(InsertRow {
+                values: vec![(column.to_string(), value)],
+            }),
+        }
 
         self
     }
@@ -51,24 +58,36 @@ impl QueryBuilder {
     /// );
     /// ```
     pub fn insert_many(mut self, rows: Vec<Vec<(&str, Box<dyn ToSql>)>>) -> Self {
-        rows.into_iter().for_each(|row| self.add_row(row));
+        self.inserts.extend(rows.into_iter().map(|row| {
+            InsertRow {
+                values: row
+                    .into_iter()
+                    .map(|(column, value)| (column.to_string(), value))
+                    .collect(),
+            }
+        }));
 
         self
     }
+}
 
-    fn add_insert(&mut self, column: &str, value: Box<dyn ToSql>) {
-        if let Some(insert) = self.inserts.iter_mut().find(|i| i.column == column) {
-            insert.values.push(value);
-        } else {
-            self.inserts.push(Insert {
-                column: column.to_string(),
-                values: vec![value],
-            });
-        }
-    }
+#[cfg(test)]
+mod tests {
+    use crate::QueryBuilder;
 
-    fn add_row(&mut self, row: Vec<(&str, Box<dyn ToSql>)>) {
-        row.into_iter()
-            .for_each(|(column, value)| self.add_insert(column, value));
+    #[test]
+    fn test_insert_repeated_column_starts_new_row() {
+        let result = QueryBuilder::new()
+            .table("flights")
+            .insert("origin_airport", "AMS")
+            .insert("destination_airport", "FRA")
+            .insert("origin_airport", "BKK")
+            .insert("destination_airport", "SIN")
+            .sql();
+
+        assert_eq!(
+            result.unwrap(),
+            "INSERT INTO flights (origin_airport, destination_airport) VALUES ('AMS', 'FRA'), ('BKK', 'SIN')"
+        );
     }
 }

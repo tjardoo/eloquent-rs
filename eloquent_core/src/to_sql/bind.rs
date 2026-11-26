@@ -91,6 +91,20 @@ mod tests {
 
     #[test]
     #[cfg(feature = "bind-placeholder-questionmark")]
+    fn test_bind_query_builder_update_with_where() {
+        let query = QueryBuilder::new()
+            .table("flights")
+            .update("name", bind(1))
+            .r#where("id", bind(2));
+
+        assert_eq!(
+            query.to_sql().unwrap(),
+            "UPDATE flights SET name = ?1 WHERE id = ?2"
+        );
+    }
+
+    #[test]
+    #[cfg(feature = "bind-placeholder-questionmark")]
     fn test_bind_question_mark() {
         assert_eq!(bind(7).to_sql(), Ok(String::from("?7")));
     }
